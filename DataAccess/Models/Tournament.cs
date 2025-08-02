@@ -8,10 +8,12 @@ namespace DataAccess.Models
     {
         [Key]
         public int Id { get; set; }
-        public string Name { get; set; } = null!;
-        public string Type { get; set; } = null!; // league, knockout, etc.
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-
+        public string Name { get; set; } = string.Empty;
+        public string GameTitle { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public int MaxParticipants { get; set; }
+        public string Format { get; set; } = string.Empty;
+        public string Prize { get; set; } = string.Empty;
+        public string? CreatedByUserId { get; set; }
     }
 }

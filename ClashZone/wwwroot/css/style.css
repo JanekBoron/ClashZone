@@ -1,0 +1,71 @@
+﻿html,
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+    color: whitesmoke;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+a {
+    text-decoration: none;
+    color: white;
+    font-size: 16px;
+    padding: 8px 12px;
+}
+
+.navbar-custom {
+    background-color: #0A0A0A !important; 
+}
+
+.main-menu-container {
+    text-align: center;
+    margin-top: 100px;
+    color: white;
+}
+
+.main-title {
+    font-size: 40px;
+    margin-bottom: 50px;
+}
+
+.menu-grid {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.menu-card {
+    width: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none;
+    color: white;
+    background-color: #111; /* black card background */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.2s ease;
+    padding: 20px 0;
+}
+
+    .menu-card:hover {
+        transform: scale(1.03);
+    }
+
+.menu-icon {
+    width: 80px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.menu-label {
+    font-size: 18px;
+    font-weight: bold;
+}
+

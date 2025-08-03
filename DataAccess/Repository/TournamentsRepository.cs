@@ -12,8 +12,8 @@ namespace ClashZone.DataAccess.Repository
 {
     /// <summary>
     /// Provides methods for accessing tournament data.  It supports filtering
-    /// upcoming tournaments by format and retrieving tournaments for a specific
-    /// user.
+    /// upcoming tournaments by format, retrieving tournaments for a specific
+    /// user and fetching a single tournament by its identifier.
     /// </summary>
     public class TournamentsRepository : ITournamentsRepository
     {
@@ -46,28 +46,21 @@ namespace ClashZone.DataAccess.Repository
                 return Array.Empty<Tournament>();
             }
             // If you have a UserTournaments join table: return tournaments where the
-            // user is a participant.  Otherwise fall back to tournaments created
-            // by the user.
-            // Example pivot query (requires a DbSet<UserTournament> with
-            // navigation properties):
-            // return await _context.UserTournaments
-            //    .Where(ut => ut.UserId == userId)
-            //    .Select(ut => ut.Tournament)
-            //    .OrderBy(t => t.StartDate)
-            //    .ToListAsync();
-
+            // user is a participant.  Otherwise fall back to tournaments created by
+            // the user.
             return await _context.Tournaments
                 .Where(t => t.CreatedByUserId == userId)
                 .OrderBy(t => t.StartDate)
                 .ToListAsync();
         }
 
+        /// <inheritdoc/>
         public async Task AddTournamentAsync(Tournament tournament)
         {
             if (tournament == null)
                 throw new ArgumentNullException(nameof(tournament));
 
-            // Jeśli turniej jest prywatny, wygeneruj kod dołączenia
+            // If the tournament is private, generate a join code
             if (!tournament.IsPublic)
             {
                 tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
@@ -77,5 +70,10 @@ namespace ClashZone.DataAccess.Repository
             await _context.SaveChangesAsync();
         }
 
+        /// <inheritdoc/>
+        public async Task<Tournament?> GetTournamentByIdAsync(int id)
+        {
+            return await _context.Tournaments.FirstOrDefaultAsync(t => t.Id == id);
+        }
     }
 }

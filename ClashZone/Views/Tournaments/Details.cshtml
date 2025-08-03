@@ -1,0 +1,104 @@
+﻿@model DataAccess.Models.Tournament
+
+@{
+    // Set page title to tournament name
+    ViewData["Title"] = Model.Name;
+}
+
+<!--
+    Tournament details page.  Presents an overview of the selected tournament
+    using a dark theme (#111) with red accents (#FF2B3E) to match the
+    existing site style.  Future sections such as chat, bracket, participants,
+    matches and rules can be implemented and linked via the navigation tabs
+    when available.
+-->
+<div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">@Model.Name</h2>
+            <small class="text-muted">Zorganizowane przez @Model.CreatedByUserId</small>
+        </div>
+        <div>
+            <!-- TODO: implement join logic -->
+            <a class="btn" style="background-color:#FF2B3E; color:#fff;" href="#">Dołącz do turnieju</a>
+        </div>
+    </div>
+    <hr style="border-color:#444;" />
+
+    <!-- Navigation bar for different views within the tournament -->
+    <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom: 1px solid #FF2B3E;">
+        <li class="nav-item">
+            <a class="nav-link active" href="#" style="color:#FF2B3E; border: none;">Przegląd</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Czat</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Drabinka</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Uczestnicy</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Reguły</a>
+        </li>
+    </ul>
+
+    <!-- Overview section -->
+    <div class="row">
+        <div class="col-md-8">
+            <h4 class="mb-3">Szczegóły</h4>
+            <dl class="row">
+                <dt class="col-sm-4">Gra</dt>
+                <dd class="col-sm-8">@Model.GameTitle</dd>
+
+                <dt class="col-sm-4">Format drużyny</dt>
+                <dd class="col-sm-8">@Model.Format</dd>
+
+                <dt class="col-sm-4">Rozmiar drużyn</dt>
+                <dd class="col-sm-8">@Model.MaxParticipants</dd>
+
+                <dt class="col-sm-4">Check‑in</dt>
+                <dd class="col-sm-8">
+                    @{
+                        // define a check‑in window: 30 minutes before start time by default
+                        var start = Model.StartDate;
+                        var checkinStart = Model.StartDate.AddMinutes(-30);
+                    }
+                    @checkinStart.ToString("dd MMM yyyy, HH:mm") – @start.ToString("dd MMM yyyy, HH:mm") CEST
+                </dd>
+
+                <dt class="col-sm-4">Rozpoczęcia</dt>
+                <dd class="col-sm-8">@Model.StartDate.ToString("dd MMM yyyy, HH:mm") CEST</dd>
+
+                <dt class="col-sm-4">Pula nagród</dt>
+                <dd class="col-sm-8">@Model.Prize</dd>
+            </dl>
+
+            <h4 class="mt-4">Informacje</h4>
+            <p>Prosimy upewnić się, że pobrałeś i zainstalowałeś wymagane oprogramowanie (np. klient anty‑cheat) przed rozpoczęciem wydarzenia. Jeśli nigdy nie został zainstalowany, może okazać się, że nie zdążysz dołączyć do serwera na czas.</p>
+            <p>Pamiętaj, aby uruchomić go podczas check‑in i sprawdzić, czy są dostępne aktualizacje gry.</p>
+        </div>
+        <div class="col-md-4">
+            <h4 class="mb-3">Nagrody</h4>
+            <!-- Simple placeholder prize list.  Real values can be bound from a future Prize model or list -->
+            <ol class="list-group list-group-numbered">
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    1.
+                    <span>@Model.Prize</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    2.
+                    <span>@Model.Prize</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    3.–4.
+                    <span>@Model.Prize</span>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>

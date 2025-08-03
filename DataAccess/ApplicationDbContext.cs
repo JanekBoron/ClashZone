@@ -21,11 +21,12 @@ namespace DataAccess
         public ApplicationDbContext() { }
 
         public DbSet<Tournament> Tournaments { get; set; }
+        public DbSet<Team> Teams { get; set; } 
+        public DbSet<TeamMember> TeamMembers { get; set; } 
 
-
-/*        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        { 
-            base.OnModelCreating(modelBuilder);
-        }*/
+        /*        protected override void OnModelCreating(ModelBuilder modelBuilder)
+                { 
+                    base.OnModelCreating(modelBuilder);
+                }*/
     }
 }

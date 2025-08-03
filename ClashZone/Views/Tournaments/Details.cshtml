@@ -102,3 +102,26 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var copyBtn = document.getElementById('copyInviteLink');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function () {
+                    var input = document.getElementById('inviteLinkInput');
+                    if (input && input.value) {
+                        navigator.clipboard.writeText(input.value).then(function () {
+                            copyBtn.innerHTML = 'Skopiowano';
+                            setTimeout(function () {
+                                copyBtn.innerHTML = 'Kopiuj zaproszenie';
+                            }, 2000);
+                        }, function (err) {
+                            console.error('Nie udało się skopiować: ', err);
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+}

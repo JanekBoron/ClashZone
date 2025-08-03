@@ -38,6 +38,10 @@
                         <h5 class="mb-1">@t.Name</h5>
                         <small>@t.StartDate.ToString("dd.MM.yyyy HH:mm") • Format: @t.Format</small>
                         <div class="text-muted">@t.GameTitle</div>
+                        <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;"
+                           asp-action="Details" asp-route-id="@t.Id">
+                            Sprawdź turniej
+                        </a>
                     </div>
                     <span class="badge bg-warning text-dark">@t.MaxParticipants uczestników</span>
                 </div>

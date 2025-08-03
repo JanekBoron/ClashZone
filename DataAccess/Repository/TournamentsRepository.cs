@@ -132,5 +132,31 @@ namespace ClashZone.DataAccess.Repository
             }
             return team.TournamentId;
         }
+
+        /// <inheritdoc/>
+        public async Task AddChatMessageAsync(ChatMessage message)
+        {
+            if (message == null) throw new ArgumentNullException(nameof(message));
+            _context.ChatMessages.Add(message);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<ChatMessage>> GetAllChatMessagesAsync(int tournamentId)
+        {
+            return await _context.ChatMessages
+                .Where(m => m.TournamentId == tournamentId && m.TeamId == null)
+                .OrderBy(m => m.SentAt)
+                .ToListAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<ChatMessage>> GetTeamChatMessagesAsync(int tournamentId, int teamId)
+        {
+            return await _context.ChatMessages
+                .Where(m => m.TournamentId == tournamentId && m.TeamId == teamId)
+                .OrderBy(m => m.SentAt)
+                .ToListAsync();
+        }
     }
 }

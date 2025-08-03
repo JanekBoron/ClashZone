@@ -30,6 +30,77 @@ namespace ClashZone.Controllers
         }
 
         /// <summary>
+        /// Displays the chat page for a specific tournament.  Shows both the
+        /// public chat and the current user's team chat (if applicable).
+        /// </summary>
+        [Authorize]
+        public async Task<IActionResult> Chat(int id)
+        {
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            if (tournament == null) return NotFound();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userTeam = await _tournamentsRepository.GetUserTeamAsync(id, userId);
+            var model = new ChatViewModel
+            {
+                Tournament = tournament,
+                HasTeam = userTeam != null
+            };
+            model.AllMessages = await _tournamentsRepository.GetAllChatMessagesAsync(id);
+            if (userTeam != null)
+            {
+                model.TeamMessages = await _tournamentsRepository.GetTeamChatMessagesAsync(id, userTeam.Id);
+            }
+            // Build dictionary of userId -> display name for messages
+            var userIds = model.AllMessages.Select(m => m.UserId).Concat(model.TeamMessages.Select(m => m.UserId)).Distinct().ToList();
+            foreach (var uid in userIds)
+            {
+                var user = await _userManager.FindByIdAsync(uid);
+                if (user != null && !model.UserNames.ContainsKey(uid))
+                {
+                    model.UserNames[uid] = user.UserName;
+                }
+            }
+            return View(model);
+        }
+
+        /// <summary>
+        /// Handles posting of chat messages.  Users can post to the entire
+        /// tournament or to their team only.  After posting, the user is
+        /// redirected back to the chat page.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PostMessage(int id, string message, bool toTeam)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return RedirectToAction(nameof(Chat), new { id });
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            int? teamId = null;
+            if (toTeam)
+            {
+                var userTeam = await _tournamentsRepository.GetUserTeamAsync(id, userId);
+                if (userTeam == null)
+                {
+                    return NotFound();
+                }
+                teamId = userTeam.Id;
+            }
+            var chatMsg = new ChatMessage
+            {
+                TournamentId = id,
+                TeamId = teamId,
+                UserId = userId,
+                Message = message,
+                SentAt = DateTime.UtcNow
+            };
+            await _tournamentsRepository.AddChatMessageAsync(chatMsg);
+            return RedirectToAction(nameof(Chat), new { id });
+        }
+
+        /// <summary>
         /// Displays a list of upcoming tournaments.  An optional format filter
         /// restricts results to tournaments with a specific team size.
         /// </summary>

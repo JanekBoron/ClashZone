@@ -76,5 +76,25 @@ namespace ClashZone.DataAccess.Repository.Interfaces
         /// the tournament identifier.
         /// </summary>
         Task<int?> AddUserToTeamAsync(int teamId, string userId, string code);
+
+        // ---------------------------------------------------------------------
+        // Chat related methods
+
+        /// <summary>
+        /// Persists a chat message to the underlying data store.
+        /// </summary>
+        Task AddChatMessageAsync(ChatMessage message);
+
+        /// <summary>
+        /// Retrieves all chat messages visible to all participants of a
+        /// tournament (TeamId is null), ordered by timestamp ascending.
+        /// </summary>
+        Task<List<ChatMessage>> GetAllChatMessagesAsync(int tournamentId);
+
+        /// <summary>
+        /// Retrieves chat messages for a specific team within a tournament,
+        /// ordered by timestamp ascending.
+        /// </summary>
+        Task<List<ChatMessage>> GetTeamChatMessagesAsync(int tournamentId, int teamId);
     }
 }

@@ -39,6 +39,11 @@ namespace DataAccess
         /// </summary>
         public DbSet<TeamMember> TeamMembers { get; set; }
 
+        /// <summary>
+        /// Collection of chat messages posted in tournaments.
+        /// </summary>
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         /*
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

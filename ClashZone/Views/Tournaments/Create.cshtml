@@ -1,11 +1,19 @@
 ﻿@model DataAccess.Models.Tournament
+
 @{
+    // Ustaw tytuł strony dla górnego paska przeglądarki oraz widoku.
     ViewData["Title"] = "Utwórz turniej";
 }
 
 <h2>Utwórz turniej</h2>
 
-<form asp-action="Create" method="post">
+<!--
+    Formularz tworzenia nowego turnieju.  Pole `asp-action` wskazuje na metodę
+    `CreateTournament` w kontrolerze `TournamentsController`, która obsługuje
+    żądania POST i dodaje turniej do bazy danych.  Zastosowano klasę Bootstrap
+    dla estetycznego wyświetlania pól formularza i walidacji po stronie klienta.
+-->
+<form asp-action="CreateTournament" method="post">
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
@@ -18,6 +26,7 @@
     </div>
     <div class="mb-3">
         <label asp-for="StartDate" class="form-label"></label>
+        <!-- `datetime-local` umożliwia wybór daty i godziny w jednym polu -->
         <input asp-for="StartDate" type="datetime-local" class="form-control" />
         <span asp-validation-for="StartDate" class="text-danger"></span>
     </div>
@@ -42,13 +51,16 @@
     </div>
     <div class="form-check mb-3">
         <input asp-for="IsPublic" class="form-check-input" />
-        <label asp-for="IsPublic" class="form-check-label">Publiczny (widoczny dla wszystkich)</label>
+        <label asp-for="IsPublic" class="form-check-label">
+            Publiczny (widoczny dla wszystkich)
+        </label>
     </div>
     <button type="submit" class="btn btn-primary">Opublikuj</button>
 </form>
 
 @section Scripts {
     @{
+        // Załaduj częściowe widoki z walidacją JavaScript (jQuery validation)
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

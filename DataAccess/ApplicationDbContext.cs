@@ -7,10 +7,11 @@ using DataAccess.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ClashZone.DataAccess.Models;
 
 namespace DataAccess
 {
-    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
+    public class ApplicationDbContext : IdentityDbContext<ClashUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -20,6 +21,7 @@ namespace DataAccess
         public ApplicationDbContext() { }
 
         public DbSet<Tournament> Tournaments { get; set; }
+
 
 /*        protected override void OnModelCreating(ModelBuilder modelBuilder)
         { 

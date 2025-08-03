@@ -28,7 +28,7 @@ namespace ClashZone.DataAccess.DbInitializer
         {
             using var scope = services.CreateScope();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ClashUser>>();
 
             // Ensure roles exist
             foreach (var role in Roles)
@@ -46,7 +46,7 @@ namespace ClashZone.DataAccess.DbInitializer
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)
             {
-                adminUser = new User
+                adminUser = new ClashUser
                 {
                     UserName = adminEmail,
                     Email = adminEmail,

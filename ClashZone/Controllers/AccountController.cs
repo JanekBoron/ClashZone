@@ -1,4 +1,5 @@
-﻿using ClashZone.ViewModels;
+﻿using ClashZone.DataAccess.Models;
+using ClashZone.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,10 +7,10 @@ namespace ClashZone.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly UserManager<IdentityUser> _userManager;
-        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<ClashUser> _userManager;
+        private readonly SignInManager<ClashUser> _signInManager;
 
-        public AccountController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager)
+        public AccountController(UserManager<ClashUser> userManager, SignInManager<ClashUser> signInManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -25,7 +26,7 @@ namespace ClashZone.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new IdentityUser { UserName = model.UserName, Email = model.Email };
+                var user = new ClashUser { UserName = model.UserName, Email = model.Email };
                 var result = await _userManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)
                 {

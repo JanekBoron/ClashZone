@@ -1,0 +1,54 @@
+﻿@model DataAccess.Models.Tournament
+@{
+    ViewData["Title"] = "Utwórz turniej";
+}
+
+<h2>Utwórz turniej</h2>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="GameTitle" class="form-label"></label>
+        <input asp-for="GameTitle" class="form-control" />
+        <span asp-validation-for="GameTitle" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" type="datetime-local" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="MaxParticipants" class="form-label"></label>
+        <input asp-for="MaxParticipants" type="number" min="1" class="form-control" />
+        <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Format" class="form-label">Format drużyn</label>
+        <select asp-for="Format" class="form-select">
+            <option value="1v1">1v1</option>
+            <option value="2v2">2v2</option>
+            <option value="5v5">5v5</option>
+        </select>
+        <span asp-validation-for="Format" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Prize" class="form-label"></label>
+        <input asp-for="Prize" class="form-control" />
+        <span asp-validation-for="Prize" class="text-danger"></span>
+    </div>
+    <div class="form-check mb-3">
+        <input asp-for="IsPublic" class="form-check-input" />
+        <label asp-for="IsPublic" class="form-check-label">Publiczny (widoczny dla wszystkich)</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Opublikuj</button>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

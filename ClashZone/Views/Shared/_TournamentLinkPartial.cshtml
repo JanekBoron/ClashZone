@@ -1,0 +1,15 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using ClashZone.DataAccess.Models
+@inject SignInManager<ClashUser> SignInManager
+@inject UserManager<ClashUser> UserManager
+
+@* This partial adds a navigation link for organizers and administrators to access
+   the tournament management (creation) page.  Include it in your main
+   navigation, e.g. in _Layout.cshtml within the <ul> of navigation items. *@
+
+@if (SignInManager.IsSignedIn(User) && (User.IsInRole("Organizer") || User.IsInRole("Admin")))
+{
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Tournaments" asp-action="Create">Zarządzanie turniejami</a>
+    </li>
+}

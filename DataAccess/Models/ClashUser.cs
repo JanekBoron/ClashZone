@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ClashZone.DataAccess.Models
 {
-    public class User : IdentityUser
+    public class ClashUser : IdentityUser
     {
         /// <summary>
         /// Friendly nickname shown in public rankings and on profiles.

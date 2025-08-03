@@ -21,6 +21,9 @@
 			</button>
 			<div class="collapse navbar-collapse" id="navbarSupportedContent">
 				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+					<li class="nav-item">
+						@await Html.PartialAsync("_TournamentLinkPartial")
+					</li>
 				</ul>
 
 				@await Html.PartialAsync("_LoginPartial")

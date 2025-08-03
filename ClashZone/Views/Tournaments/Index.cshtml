@@ -1,33 +1,47 @@
 ﻿@model IEnumerable<DataAccess.Models.Tournament>
-
 @{
-    ViewData["Title"] = "Nadchodzące turnieje";
+    bool isMy = ViewBag.IsMy != null && (bool)ViewBag.IsMy;
+    string selectedFormat = ViewBag.SelectedFormat as string;
+    ViewData["Title"] = isMy ? "Moje turnieje" : "Nadchodzące turnieje";
 }
 
-<h2>Nadchodzące turnieje</h2>
+<div class="container mt-4">
+    <!-- Navigation tabs between browsing and user's tournaments -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(isMy ? "" : "active")" asp-action="Index">Przeglądaj</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(isMy ? "active" : "")" asp-action="MyTournaments">Moje turnieje</a>
+        </li>
+    </ul>
 
-@if (!Model.Any())
-{
-    <p>Brak nadchodzących turniejów.</p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nazwa</th>
-                <th>Data rozpoczęcia</th>
-                <th>Opis</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var tournament in Model)
+    <!-- Filter buttons for team size -->
+    <div class="btn-group mb-3" role="group">
+        <a class="btn btn-outline-primary @(selectedFormat == "1v1" ? "active" : "")" asp-action="Index" asp-route-format="1v1">1v1</a>
+        <a class="btn btn-outline-primary @(selectedFormat == "2v2" ? "active" : "")" asp-action="Index" asp-route-format="2v2">2v2</a>
+        <a class="btn btn-outline-primary @(selectedFormat == "5v5" ? "active" : "")" asp-action="Index" asp-route-format="5v5">5v5</a>
+        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(selectedFormat) ? "active" : "")" asp-action="Index">Wszystkie</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted">Brak turniejów.</p>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var t in Model)
             {
-                <tr>
-                    <td>@tournament.Name</td>
-                    <td>@tournament.StartDate.?ToString("dd.MM.yyyy")</td>
-                </tr>
+                <div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">@t.Name</h5>
+                        <small>@t.StartDate.ToString("dd.MM.yyyy HH:mm") • Format: @t.Format</small>
+                        <div class="text-muted">@t.GameTitle</div>
+                    </div>
+                    <span class="badge bg-warning text-dark">@t.MaxParticipants uczestników</span>
+                </div>
             }
-        </tbody>
-    </table>
-}
+        </div>
+    }
+</div>

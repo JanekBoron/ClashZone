@@ -29,5 +29,7 @@ namespace ClashZone.DataAccess.Repository.Interfaces
         /// użytkownika (CreatedByUserId).
         /// </summary>
         Task<IEnumerable<Tournament>> GetUserTournamentsAsync(string userId);
+
+        Task AddTournamentAsync(Tournament tournament);
     }
 }

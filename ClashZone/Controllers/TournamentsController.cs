@@ -1,7 +1,9 @@
-﻿using ClashZone.DataAccess.Repository.Interfaces;
+﻿using ClashZone.DataAccess.Models;
+using ClashZone.DataAccess.Repository.Interfaces;
 using DataAccess;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,10 +14,11 @@ namespace ClashZone.Controllers
     public class TournamentsController : Controller
     {
         private readonly ITournamentsRepository _tournamentsRepository;
-
-        public TournamentsController(ITournamentsRepository tournamentsRepository)
+        private readonly UserManager<ClashUser> _userManager;
+        public TournamentsController(ITournamentsRepository tournamentsRepository, UserManager<ClashUser> userManager)
         {
             _tournamentsRepository = tournamentsRepository;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -40,6 +43,35 @@ namespace ClashZone.Controllers
             ViewBag.SelectedFormat = null;
             ViewBag.IsMy = true;
             return View("Index", tournaments);
+        }
+
+        [Authorize(Roles = "Organizer,Admin")]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Organizer,Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTournament(Tournament tournament)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                tournament.CreatedByUserId = user.Id;
+
+                // Generuj kod tylko dla turniejów prywatnych
+                if (!tournament.IsPublic)
+                {
+                    tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+                }
+
+                await _tournamentsRepository.AddTournamentAsync(tournament);
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(tournament);
         }
     }
 }

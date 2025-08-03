@@ -61,5 +61,21 @@ namespace ClashZone.DataAccess.Repository
                 .OrderBy(t => t.StartDate)
                 .ToListAsync();
         }
+
+        public async Task AddTournamentAsync(Tournament tournament)
+        {
+            if (tournament == null)
+                throw new ArgumentNullException(nameof(tournament));
+
+            // Jeśli turniej jest prywatny, wygeneruj kod dołączenia
+            if (!tournament.IsPublic)
+            {
+                tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+            }
+
+            _context.Tournaments.Add(tournament);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

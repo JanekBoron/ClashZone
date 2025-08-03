@@ -1,5 +1,6 @@
 ﻿using ClashZone.DataAccess.Models;
 using ClashZone.DataAccess.Repository.Interfaces;
+using ClashZone.ViewModels;
 using DataAccess;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -106,7 +107,84 @@ namespace ClashZone.Controllers
             {
                 return NotFound();
             }
-            return View(tournament);
+            var viewModel = new TournamentDetailsViewModel { Tournament = tournament };
+            var userId = User.Identity?.IsAuthenticated == true ? User.FindFirstValue(ClaimTypes.NameIdentifier) : null;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                // Retrieve user's team using repository
+                var team = await _tournamentsRepository.GetUserTeamAsync(id, userId);
+                if (team != null)
+                {
+                    viewModel.UserTeam = team;
+                    var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+                    foreach (var uid in memberIds)
+                    {
+                        var user = await _userManager.FindByIdAsync(uid);
+                        if (user != null)
+                        {
+                            viewModel.TeamMembers.Add(user.UserName);
+                        }
+                    }
+                }
+            }
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Handles joining a tournament.  If the tournament format is 1v1 the
+        /// user simply creates a single‑player team.  For larger formats a
+        /// team is created and an invitation link is generated via
+        /// <see cref="TempData"/> so that the user can invite friends.  This
+        /// action requires the user to be authenticated.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Join(int id)
+        {
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            if (tournament == null)
+            {
+                return NotFound();
+            }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Check if the user already belongs to a team in this tournament
+            var existingTeam = await _tournamentsRepository.GetUserTeamAsync(id, userId);
+            if (existingTeam != null)
+            {
+                // Already joined
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            // Create a new team and add the current user as captain
+            var team = await _tournamentsRepository.CreateTeamWithCaptainAsync(id, userId);
+
+            // Generate invitation link for team tournaments (more than one player)
+            if (tournament.Format != "1v1")
+            {
+                var inviteLink = Url.Action(nameof(JoinTeam), nameof(TournamentsController).Replace("Controller", string.Empty), new { teamId = team.Id, code = team.JoinCode }, Request.Scheme);
+                TempData["InviteLink"] = inviteLink;
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        /// <summary>
+        /// Allows a user to join an existing team via an invitation link.  The
+        /// <paramref name="code"/> must match the team's join code.  If the
+        /// code is invalid or the team does not exist, a 404 is returned.
+        /// </summary>
+        [Authorize]
+        public async Task<IActionResult> JoinTeam(int teamId, string code)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var tournamentId = await _tournamentsRepository.AddUserToTeamAsync(teamId, userId, code);
+            if (!tournamentId.HasValue)
+            {
+                return NotFound();
+            }
+            return RedirectToAction(nameof(Details), new { id = tournamentId.Value });
         }
     }
 }

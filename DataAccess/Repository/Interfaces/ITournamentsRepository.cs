@@ -1,9 +1,10 @@
-﻿using System;
+﻿using ClashZone.DataAccess.Models;
+using DataAccess.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DataAccess.Models;
 
 namespace ClashZone.DataAccess.Repository.Interfaces
 {
@@ -41,5 +42,39 @@ namespace ClashZone.DataAccess.Repository.Interfaces
         /// </summary>
         /// <param name="id">Primary key of the tournament.</param>
         Task<Tournament?> GetTournamentByIdAsync(int id);
+
+        // ---------------------------------------------------------------------
+        // Team management methods.  These methods encapsulate operations
+        // related to creating and joining teams for tournaments.  They hide
+        // direct access to the database context from the controller.
+
+        /// <summary>
+        /// Returns the team that the specified user belongs to within a given
+        /// tournament.  If the user is not yet part of any team, returns
+        /// <c>null</c>.
+        /// </summary>
+        Task<Team?> GetUserTeamAsync(int tournamentId, string userId);
+
+        /// <summary>
+        /// Returns a list of user identifiers for all members of the given team.
+        /// </summary>
+        Task<List<string>> GetTeamMemberIdsAsync(int teamId);
+
+        /// <summary>
+        /// Creates a new team for the specified tournament and assigns the
+        /// given user as its captain.  A new join code is generated for the
+        /// team.  The captain is also added as the first member of the team.
+        /// </summary>
+        Task<Team> CreateTeamWithCaptainAsync(int tournamentId, string userId);
+
+        /// <summary>
+        /// Adds a user to an existing team.  The provided code must match the
+        /// team's join code.  Returns the tournament identifier if the
+        /// operation succeeds.  Returns <c>null</c> if the team does not
+        /// exist or the join code is invalid.  If the user is already a
+        /// member of the team, the operation is a no‑op and also returns
+        /// the tournament identifier.
+        /// </summary>
+        Task<int?> AddUserToTeamAsync(int teamId, string userId, string code);
     }
 }

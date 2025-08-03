@@ -1,8 +1,8 @@
-﻿@model DataAccess.Models.Tournament
+﻿@model ClashZone.ViewModels.TournamentDetailsViewModel
 
 @{
     // Set page title to tournament name
-    ViewData["Title"] = Model.Name;
+    ViewData["Title"] = Model.Tournament.Name;
 }
 
 <!--
@@ -15,14 +15,40 @@
 <div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h2 class="mb-1">@Model.Name</h2>
-            <small class="text-muted">Zorganizowane przez @Model.CreatedByUserId</small>
+            <h2 class="mb-1">@Model.Tournament.Name</h2>
+            <small class="text-muted">Zorganizowane przez @Model.Tournament.CreatedByUserId</small>
         </div>
         <div>
-            <!-- TODO: implement join logic -->
-            <a class="btn" style="background-color:#FF2B3E; color:#fff;" href="#">Dołącz do turnieju</a>
+            <!-- Form posts back to Join action to handle tournament enrolment -->
+            <form asp-action="Join" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Dołącz do turnieju</button>
+            </form>
         </div>
     </div>
+    @section Scripts {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var copyBtn = document.getElementById('copyInviteLink');
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', function () {
+                        var input = document.getElementById('inviteLinkInput');
+                        if (input && input.value) {
+                            navigator.clipboard.writeText(input.value).then(function () {
+                                // Optionally notify the user that the link has been copied
+                                copyBtn.innerHTML = 'Skopiowano';
+                                setTimeout(function () {
+                                    copyBtn.innerHTML = 'Kopiuj zaproszenie';
+                                }, 2000);
+                            }, function (err) {
+                                console.error('Nie udało się skopiować: ', err);
+                            });
+                        }
+                    });
+                }
+            });
+        </script>
+    }
     <hr style="border-color:#444;" />
 
     <!-- Navigation bar for different views within the tournament -->
@@ -53,34 +79,108 @@
             <h4 class="mb-3">Szczegóły</h4>
             <dl class="row">
                 <dt class="col-sm-4">Gra</dt>
-                <dd class="col-sm-8">@Model.GameTitle</dd>
+                <dd class="col-sm-8">@Model.Tournament.GameTitle</dd>
 
                 <dt class="col-sm-4">Format drużyny</dt>
-                <dd class="col-sm-8">@Model.Format</dd>
+                <dd class="col-sm-8">@Model.Tournament.Format</dd>
 
                 <dt class="col-sm-4">Rozmiar drużyn</dt>
-                <dd class="col-sm-8">@Model.MaxParticipants</dd>
+                <dd class="col-sm-8">@Model.Tournament.MaxParticipants</dd>
 
                 <dt class="col-sm-4">Check‑in</dt>
                 <dd class="col-sm-8">
                     @{
                         // define a check‑in window: 30 minutes before start time by default
-                        var start = Model.StartDate;
-                        var checkinStart = Model.StartDate.AddMinutes(-30);
+                        var start = Model.Tournament.StartDate;
+                        var checkinStart = Model.Tournament.StartDate.AddMinutes(-30);
                     }
                     @checkinStart.ToString("dd MMM yyyy, HH:mm") – @start.ToString("dd MMM yyyy, HH:mm") CEST
                 </dd>
 
                 <dt class="col-sm-4">Rozpoczęcia</dt>
-                <dd class="col-sm-8">@Model.StartDate.ToString("dd MMM yyyy, HH:mm") CEST</dd>
+                <dd class="col-sm-8">@Model.Tournament.StartDate.ToString("dd MMM yyyy, HH:mm") CEST</dd>
 
                 <dt class="col-sm-4">Pula nagród</dt>
-                <dd class="col-sm-8">@Model.Prize</dd>
+                <dd class="col-sm-8">@Model.Tournament.Prize</dd>
             </dl>
 
             <h4 class="mt-4">Informacje</h4>
             <p>Prosimy upewnić się, że pobrałeś i zainstalowałeś wymagane oprogramowanie (np. klient anty‑cheat) przed rozpoczęciem wydarzenia. Jeśli nigdy nie został zainstalowany, może okazać się, że nie zdążysz dołączyć do serwera na czas.</p>
             <p>Pamiętaj, aby uruchomić go podczas check‑in i sprawdzić, czy są dostępne aktualizacje gry.</p>
+        </div>
+
+        @* Display user's team if they have joined *@
+        @if (Model.UserTeam != null)
+        {
+            <div class="mt-4">
+                <h4>Twoja drużyna</h4>
+                <ul class="list-group">
+                    @foreach (var member in Model.TeamMembers)
+                    {
+                        <li class="list-group-item" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                            @member
+                        </li>
+                    }
+                </ul>
+                <!-- If the tournament format is not 1v1, show an invitation prompt for additional players -->
+                @if (Model.Tournament.Format == "1v1")
+                {
+                    <div class="mt-3 d-flex justify-content-between align-items-center p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
+                        <div>
+                            <span class="text-success">Gotowy</span>
+                            <span class="text-muted ms-2">Drużyna gotowa do gry.</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mt-3 d-flex justify-content-between align-items-center p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
+                        <div>
+                            <span class="text-danger">Niegotowy</span>
+                            @* Determine how many additional players are needed: for 2v2, 1 more; for 5v5, 4 more *@
+                            <span class="text-muted ms-2">Zaproś co najmniej @(Model.Tournament.Format == "2v2" ? 1 : 4) graczy do Twojej drużyny.</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="text-primary" style="cursor: pointer;">Zarządzaj drużyną</span>
+                            <button type="button" class="btn" style="background-color:#FF2B3E; color:#fff;" data-bs-toggle="modal" data-bs-target="#inviteModal">Zaproś</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Modal for inviting friends or selecting a team.  Uses Bootstrap classes for layout and dark styling. *@
+        <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="background-color:#111; color:#f8f9fa; border:1px solid #444;">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="inviteModalLabel">Zaproś</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Zaproś znajomych lub wybierz drużynę, z którą chcesz grać.</p>
+                        <div class="mb-3">
+                            <label class="form-label">Zaproś przez link</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="inviteLinkInput" readonly value="@(TempData["InviteLink"] ?? "")" style="background-color:#222; border-color:#444; color:#fff;">
+                                <button class="btn" type="button" id="copyInviteLink" style="background-color:#FF2B3E; color:#fff;">
+                                    Kopiuj zaproszenie
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center my-2">lub</div>
+                        <div class="mb-3">
+                            <label class="form-label">Zaproś drużynę</label>
+                            <div class="border" style="background-color:#222; border-color:#444; padding:10px; border-radius:4px;">
+                                <p class="mb-0 text-muted">Brak drużyn<br />Gdy utworzysz drużynę, zobaczysz ją tutaj.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-4">
             <h4 class="mb-3">Nagrody</h4>
@@ -88,40 +188,17 @@
             <ol class="list-group list-group-numbered">
                 <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
                     1.
-                    <span>@Model.Prize</span>
+                    <span>@Model.Tournament.Prize</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
                     2.
-                    <span>@Model.Prize</span>
+                    <span>@Model.Tournament.Prize</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
                     3.–4.
-                    <span>@Model.Prize</span>
+                    <span>@Model.Tournament.Prize</span>
                 </li>
             </ol>
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var copyBtn = document.getElementById('copyInviteLink');
-            if (copyBtn) {
-                copyBtn.addEventListener('click', function () {
-                    var input = document.getElementById('inviteLinkInput');
-                    if (input && input.value) {
-                        navigator.clipboard.writeText(input.value).then(function () {
-                            copyBtn.innerHTML = 'Skopiowano';
-                            setTimeout(function () {
-                                copyBtn.innerHTML = 'Kopiuj zaproszenie';
-                            }, 2000);
-                        }, function (err) {
-                            console.error('Nie udało się skopiować: ', err);
-                        });
-                    }
-                });
-            }
-        });
-    </script>
-}

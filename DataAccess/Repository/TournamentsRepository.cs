@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ClashZone.DataAccess.Models;
 using ClashZone.DataAccess.Repository.Interfaces;
 using DataAccess;
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Repository
 {
@@ -74,6 +75,62 @@ namespace ClashZone.DataAccess.Repository
         public async Task<Tournament?> GetTournamentByIdAsync(int id)
         {
             return await _context.Tournaments.FirstOrDefaultAsync(t => t.Id == id);
+        }
+
+        /// <inheritdoc/>
+        public async Task<Team?> GetUserTeamAsync(int tournamentId, string userId)
+        {
+            if (string.IsNullOrEmpty(userId)) return null;
+            // find membership including team relation
+            var membership = await _context.TeamMembers
+                .Include(tm => tm.Team)
+                .FirstOrDefaultAsync(tm => tm.UserId == userId && tm.Team.TournamentId == tournamentId);
+            return membership?.Team;
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<string>> GetTeamMemberIdsAsync(int teamId)
+        {
+            return await _context.TeamMembers
+                .Where(tm => tm.TeamId == teamId)
+                .Select(tm => tm.UserId)
+                .ToListAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task<Team> CreateTeamWithCaptainAsync(int tournamentId, string userId)
+        {
+            if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
+            // Create new team and generate join code
+            var team = new Team
+            {
+                TournamentId = tournamentId,
+                CaptainId = userId,
+                JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+                Name = null
+            };
+            _context.Teams.Add(team);
+            await _context.SaveChangesAsync();
+            // Add captain as the first member
+            var member = new TeamMember { TeamId = team.Id, UserId = userId };
+            _context.TeamMembers.Add(member);
+            await _context.SaveChangesAsync();
+            return team;
+        }
+
+        /// <inheritdoc/>
+        public async Task<int?> AddUserToTeamAsync(int teamId, string userId, string code)
+        {
+            var team = await _context.Teams.FindAsync(teamId);
+            if (team == null || team.JoinCode != code) return null;
+            // Check if user already a member
+            var existing = await _context.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId == userId && tm.TeamId == teamId);
+            if (existing == null)
+            {
+                _context.TeamMembers.Add(new TeamMember { TeamId = teamId, UserId = userId });
+                await _context.SaveChangesAsync();
+            }
+            return team.TournamentId;
         }
     }
 }

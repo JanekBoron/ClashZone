@@ -15,7 +15,6 @@
             <a class="nav-link @(isMy ? "active" : "")" asp-action="MyTournaments">Moje turnieje</a>
         </li>
     </ul>
-
     <!-- Filter buttons for team size -->
     <div class="btn-group mb-3" role="group">
         <a class="btn btn-outline-primary @(selectedFormat == "1v1" ? "active" : "")" asp-action="Index" asp-route-format="1v1">1v1</a>
@@ -38,12 +37,11 @@
                         <h5 class="mb-1">@t.Name</h5>
                         <small>@t.StartDate.ToString("dd.MM.yyyy HH:mm") • Format: @t.Format</small>
                         <div class="text-muted">@t.GameTitle</div>
-                        <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;"
-                           asp-action="Details" asp-route-id="@t.Id">
-                            Sprawdź turniej
-                        </a>
                     </div>
-                    <span class="badge bg-warning text-dark">@t.MaxParticipants uczestników</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark">@t.MaxParticipants uczestników</span>
+                        <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;" asp-action="Details" asp-route-id="@t.Id">Sprawdź turniej</a>
+                    </div>
                 </div>
             }
         </div>

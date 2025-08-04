@@ -1,0 +1,43 @@
+﻿@model ClashZone.ViewModels.SubscriptionIndexViewModel
+@{
+    ViewData["Title"] = "Pakiety subskrypcyjne";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">Pakiety subskrypcyjne</h2>
+    @if (ViewBag.SubscriptionError != null)
+    {
+        <div class="alert alert-warning">
+            @ViewBag.SubscriptionError
+        </div>
+    }
+    @if (Model.ActiveSubscription != null)
+    {
+        <div class="alert alert-info">
+            Twój aktywny pakiet: <strong>@Model.ActiveSubscription.Plan.Name</strong>
+            (ważny do @Model.ActiveSubscription.ExpiryDate.ToLocalTime().ToString("yyyy-MM-dd"))
+        </div>
+    }
+    <div class="row">
+        @foreach (var plan in Model.Plans)
+        {
+            <div class="col-md-4 mb-3">
+                <div class="card h-100" style="background-color:#0A0A0A; color:white;">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@plan.Name</h5>
+                        <p class="card-text">Cena: <strong>@plan.Price.ToString("0.00") EUR/miesiąc</strong></p>
+                        <ul class="list-unstyled flex-grow-1">
+                            <li>@(plan.IsPremiumAccess ? "✔ Dostęp do turniejów premium" : "✖ Brak dostępu do turniejów premium")</li>
+                            <li>@(plan.IsLeagueAccess ? "✔ Dostęp do ligi" : "✖ Brak dostępu do ligi")</li>
+                        </ul>
+                        <form asp-action="Purchase" asp-controller="Subscription" method="post" class="mt-auto">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="planId" value="@plan.Id" />
+                            <button type="submit" class="btn btn-block" style="background-color:#FF2B3E; color:white;">Wykup</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

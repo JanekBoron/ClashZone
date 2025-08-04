@@ -12,10 +12,10 @@ using ClashZone.DataAccess.Models;
 namespace DataAccess
 {
     /// <summary>
-    /// Application database context.  Inherits from <see
-    /// cref="IdentityDbContext{TUser}"/> to include ASP.NET Core Identity
-    /// tables for authentication and authorization.  Additional DbSet
-    /// properties are defined for tournaments, teams and team members.
+    /// Application database context.  Dziedziczy po IdentityDbContext aby
+    /// umożliwić integrację tabel użytkowników i ról z dodatkowymi tabelami
+    /// domenowymi systemu.  Zawiera zbiory dla turniejów, drużyn, członków,
+    /// wiadomości czatu oraz nowe zbiory subskrypcji.
     /// </summary>
     public class ApplicationDbContext : IdentityDbContext<ClashUser>
     {
@@ -28,28 +28,26 @@ namespace DataAccess
         public ApplicationDbContext() { }
 
         public DbSet<Tournament> Tournaments { get; set; }
-
         /// <summary>
-        /// Collection of teams participating in tournaments.
+        /// Kolekcja drużyn biorących udział w turniejach.
         /// </summary>
         public DbSet<Team> Teams { get; set; }
-
         /// <summary>
-        /// Collection linking users to teams.
+        /// Powiązanie użytkowników z drużynami.
         /// </summary>
         public DbSet<TeamMember> TeamMembers { get; set; }
-
         /// <summary>
-        /// Collection of chat messages posted in tournaments.
+        /// Wiadomości czatu publikowane w turniejach.
         /// </summary>
         public DbSet<ChatMessage> ChatMessages { get; set; }
-
-        /*
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            // Additional configuration can be placed here.
-        }
-        */
+        /// <summary>
+        /// Kolekcja dostępnych planów subskrypcji.  Plany definiują poziomy
+        /// dostępu (premium, liga, ultra) oraz cenę miesięczną.
+        /// </summary>
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        /// <summary>
+        /// Subskrypcje wykupione przez użytkowników wraz z datą ważności.
+        /// </summary>
+        public DbSet<UserSubscription> UserSubscriptions { get; set; }
     }
 }

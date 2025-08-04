@@ -1,0 +1,39 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using ClashZone.DataAccess.Models
+@inject SignInManager<ClashUser> SignInManager
+@inject UserManager<ClashUser> UserManager
+@inject ClashZone.DataAccess.Repository.Interfaces.ISubscriptionRepository SubscriptionRepository
+
+@* Wyświetla informację o aktualnym pakiecie użytkownika lub link do zakupu pakietu.
+   Używany w nawigacji głównej (_Layout.cshtml).  Jeśli subskrypcja wygasa w ciągu
+   kilku dni, prezentuje ostrzeżenie. *@
+@{
+    ClashZone.DataAccess.Models.UserSubscription? activeSub = null;
+    if (SignInManager.IsSignedIn(User))
+    {
+        var uid = UserManager.GetUserId(User);
+        activeSub = await SubscriptionRepository.GetActiveSubscriptionAsync(uid);
+    }
+}
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <li class="nav-item">
+        @if (activeSub != null)
+        {
+            var daysLeft = (activeSub.ExpiryDate - DateTime.UtcNow).TotalDays;
+            <span class="navbar-text text-light">
+                Pakiet: @activeSub.Plan.Name
+                (do @activeSub.ExpiryDate.ToLocalTime().ToString("yyyy-MM-dd"))
+                @if (daysLeft <= 3)
+                {
+                    <span class="badge bg-warning text-dark ms-2">Wygasa za @Math.Ceiling(daysLeft) dni!</span>
+                }
+            </span>
+        }
+        else
+        {
+            <a class="nav-link" asp-controller="Subscription" asp-action="Index" style="color:#FF2B3E;">Wykup pakiet</a>
+        }
+    </li>
+}

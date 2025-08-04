@@ -4,6 +4,12 @@ using System.Text.RegularExpressions;
 
 namespace DataAccess.Models
 {
+    /// <summary>
+    /// Reprezentuje pojedynczy turniej w systemie Clash Zone.  Zawiera podstawowe
+    /// informacje takie jak nazwa, tytuł gry, data rozpoczęcia czy liczba
+    /// uczestników.  Pola te są używane w wielu miejscach w aplikacji przy
+    /// tworzeniu i wyświetlaniu turniejów.
+    /// </summary>
     public class Tournament
     {
         [Key]
@@ -13,7 +19,8 @@ namespace DataAccess.Models
         public DateTime StartDate { get; set; }
         public int MaxParticipants { get; set; }
         /// <summary>
-        /// Format drużyny, np. "1v1", "2v2", "5v5".
+        /// Format drużyny, np. "1v1", "2v2", "5v5".  Używany do określenia
+        /// liczby graczy na drużynę.
         /// </summary>
         public string Format { get; set; } = string.Empty;
         public string Prize { get; set; } = string.Empty;
@@ -28,5 +35,12 @@ namespace DataAccess.Models
         /// turnieju i może być udostępniany innym graczom.
         /// </summary>
         public string? JoinCode { get; set; }
+        /// <summary>
+        /// Określa czy turniej jest turniejem premium.  Użytkownicy bez aktywnej
+        /// subskrypcji premium (lub pakietu Ultra) nie będą mogli dołączyć do
+        /// tego turnieju.  Domyślnie false, aby istniejące turnieje pozostały
+        /// dostępne dla wszystkich.
+        /// </summary>
+        public bool IsPremium { get; set; } = false;
     }
 }

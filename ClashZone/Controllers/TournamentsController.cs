@@ -8,25 +8,33 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace ClashZone.Controllers
 {
     /// <summary>
-    /// Handles actions related to tournaments, including listing upcoming
-    /// tournaments, displaying tournaments created by the current user,
-    /// creating new tournaments and showing detailed information about a
-    /// specific tournament.
+    /// Kontroler obsługujący wszystkie akcje związane z turniejami, w tym
+    /// wyświetlanie listy nadchodzących turniejów, tworzenie nowych turniejów,
+    /// dołączanie do turniejów oraz prezentację drabinki.  Dodano obsługę
+    /// subskrypcji, dzięki czemu turnieje oznaczone jako premium wymagają
+    /// aktywnego planu Premium lub Ultra.
     /// </summary>
     public class TournamentsController : Controller
     {
         private readonly ITournamentsRepository _tournamentsRepository;
         private readonly UserManager<ClashUser> _userManager;
+        private readonly ISubscriptionRepository _subscriptionRepository;
 
-        public TournamentsController(ITournamentsRepository tournamentsRepository, UserManager<ClashUser> userManager)
+        public TournamentsController(ITournamentsRepository tournamentsRepository,
+                                     UserManager<ClashUser> userManager,
+                                     ISubscriptionRepository subscriptionRepository)
         {
             _tournamentsRepository = tournamentsRepository;
             _userManager = userManager;
+            _subscriptionRepository = subscriptionRepository;
         }
 
         /// <summary>
@@ -51,7 +59,9 @@ namespace ClashZone.Controllers
                 model.TeamMessages = await _tournamentsRepository.GetTeamChatMessagesAsync(id, userTeam.Id);
             }
             // Build dictionary of userId -> display name for messages
-            var userIds = model.AllMessages.Select(m => m.UserId).Concat(model.TeamMessages.Select(m => m.UserId)).Distinct().ToList();
+            var userIds = model.AllMessages.Select(m => m.UserId)
+                .Concat(model.TeamMessages.Select(m => m.UserId))
+                .Distinct().ToList();
             foreach (var uid in userIds)
             {
                 var user = await _userManager.FindByIdAsync(uid);
@@ -102,9 +112,9 @@ namespace ClashZone.Controllers
 
         /// <summary>
         /// Displays the tournament bracket for a specific event.  The bracket
-        /// becomes available only after the check‑in period has closed (i.e.
-        /// the start time has been reached).  If the tournament is not yet
-        /// ready, users are redirected back to the details page.
+        /// becomes available only after the check‑in period has closed (i.e. the
+        /// start time has been reached).  If the tournament is not yet ready,
+        /// users are redirected back to the details page.
         /// </summary>
         [Authorize]
         public async Task<IActionResult> Bracket(int id)
@@ -114,7 +124,6 @@ namespace ClashZone.Controllers
             // Check that check‑in is closed: bracket available after start time
             if (DateTime.UtcNow < tournament.StartDate)
             {
-                // You can choose to show a view with a message instead of redirecting
                 return RedirectToAction(nameof(Details), new { id });
             }
             // Get participating teams
@@ -132,7 +141,6 @@ namespace ClashZone.Controllers
                 }
                 teamNames.Add(name);
             }
-            // If fewer than two teams have registered, there is no bracket to show.
             List<List<MatchInfo>> rounds;
             if (teamNames.Count < 2)
             {
@@ -173,7 +181,6 @@ namespace ClashZone.Controllers
                 slots[i] = i < n ? shuffled[i] : null;
             }
             var result = new List<List<MatchInfo>>();
-            var currentRoundTeams = new List<string?>();
             // Initialize first round
             var firstRoundMatches = new List<MatchInfo>();
             for (int i = 0; i < bracketSize; i += 2)
@@ -188,7 +195,6 @@ namespace ClashZone.Controllers
             {
                 var t1 = slots[i];
                 var t2 = slots[i + 1];
-                // Determine automatic winner if one team is null
                 if (t1 != null && t2 == null)
                 {
                     winners.Add(t1);
@@ -199,7 +205,6 @@ namespace ClashZone.Controllers
                 }
                 else
                 {
-                    // Unknown winner
                     winners.Add(null);
                 }
             }
@@ -252,8 +257,7 @@ namespace ClashZone.Controllers
 
         /// <summary>
         /// Shows tournaments associated with the currently logged‑in user.  If
-        /// there is no join table, tournaments created by the user are
-        /// displayed.
+        /// there is no join table, tournaments created by the user are displayed.
         /// </summary>
         [Authorize]
         public async Task<IActionResult> MyTournaments()
@@ -266,8 +270,7 @@ namespace ClashZone.Controllers
         }
 
         /// <summary>
-        /// Returns the view for creating a new tournament.  Only organizers
-        /// and administrators have access.
+        /// Returns the view for creating a new tournament.  Only organizers and administrators have access.
         /// </summary>
         [Authorize(Roles = "Organizer,Admin")]
         public IActionResult Create()
@@ -276,10 +279,8 @@ namespace ClashZone.Controllers
         }
 
         /// <summary>
-        /// Handles POST requests for creating a new tournament.  On
-        /// successful validation a new tournament is added to the repository
-        /// and the user is redirected back to the index.  Only organizers and
-        /// administrators can create tournaments.
+        /// Handles POST requests for creating a new tournament.  On successful validation a new tournament is added to the repository
+        /// and the user is redirected back to the index.  Only organizers and administrators can create tournaments.
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Organizer,Admin")]
@@ -290,23 +291,19 @@ namespace ClashZone.Controllers
             {
                 var user = await _userManager.GetUserAsync(User);
                 tournament.CreatedByUserId = user.Id;
-
                 // Generate join code for private tournaments
                 if (!tournament.IsPublic)
                 {
                     tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
                 }
-
                 await _tournamentsRepository.AddTournamentAsync(tournament);
                 return RedirectToAction(nameof(Index));
             }
-
             return View(tournament);
         }
 
         /// <summary>
-        /// Displays details of a specific tournament.  Only authenticated
-        /// users can access tournament details.
+        /// Displays details of a specific tournament.  Only authenticated users can access tournament details.
         /// </summary>
         [Authorize]
         public async Task<IActionResult> Details(int id)
@@ -340,11 +337,9 @@ namespace ClashZone.Controllers
         }
 
         /// <summary>
-        /// Handles joining a tournament.  If the tournament format is 1v1 the
-        /// user simply creates a single‑player team.  For larger formats a
-        /// team is created and an invitation link is generated via
-        /// <see cref="TempData"/> so that the user can invite friends.  This
-        /// action requires the user to be authenticated.
+        /// Handles joining a tournament.  If the tournament is premium, checks the user's subscription.
+        /// If the tournament format is 1v1 the user simply creates a single‑player team.  For larger formats a
+        /// team is created and an invitation link is generated via TempData so that the user can invite friends.
         /// </summary>
         [HttpPost]
         [Authorize]
@@ -357,7 +352,16 @@ namespace ClashZone.Controllers
                 return NotFound();
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
+            // Jeśli turniej jest premium, upewnij się że użytkownik posiada aktywną subskrypcję z dostępem premium
+            if (tournament.IsPremium)
+            {
+                var subscription = await _subscriptionRepository.GetActiveSubscriptionAsync(userId);
+                if (subscription == null || !subscription.Plan.IsPremiumAccess)
+                {
+                    TempData["SubscriptionError"] = "Ten turniej jest dostępny tylko dla użytkowników z pakietem Premium lub Ultra.";
+                    return RedirectToAction("Index", "Subscription");
+                }
+            }
             // Check if the user already belongs to a team in this tournament
             var existingTeam = await _tournamentsRepository.GetUserTeamAsync(id, userId);
             if (existingTeam != null)
@@ -365,24 +369,20 @@ namespace ClashZone.Controllers
                 // Already joined
                 return RedirectToAction(nameof(Details), new { id });
             }
-
             // Create a new team and add the current user as captain
             var team = await _tournamentsRepository.CreateTeamWithCaptainAsync(id, userId);
-
             // Generate invitation link for team tournaments (more than one player)
             if (tournament.Format != "1v1")
             {
                 var inviteLink = Url.Action(nameof(JoinTeam), nameof(TournamentsController).Replace("Controller", string.Empty), new { teamId = team.Id, code = team.JoinCode }, Request.Scheme);
                 TempData["InviteLink"] = inviteLink;
             }
-
             return RedirectToAction(nameof(Details), new { id });
         }
 
         /// <summary>
-        /// Allows a user to join an existing team via an invitation link.  The
-        /// <paramref name="code"/> must match the team's join code.  If the
-        /// code is invalid or the team does not exist, a 404 is returned.
+        /// Allows a user to join an existing team via an invitation link.  The code must match the team's join code.
+        /// If the code is invalid or the team does not exist, a 404 is returned.
         /// </summary>
         [Authorize]
         public async Task<IActionResult> JoinTeam(int teamId, string code)

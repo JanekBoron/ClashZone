@@ -101,6 +101,144 @@ namespace ClashZone.Controllers
         }
 
         /// <summary>
+        /// Displays the tournament bracket for a specific event.  The bracket
+        /// becomes available only after the check‑in period has closed (i.e.
+        /// the start time has been reached).  If the tournament is not yet
+        /// ready, users are redirected back to the details page.
+        /// </summary>
+        [Authorize]
+        public async Task<IActionResult> Bracket(int id)
+        {
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            if (tournament == null) return NotFound();
+            // Check that check‑in is closed: bracket available after start time
+            if (DateTime.UtcNow < tournament.StartDate)
+            {
+                // You can choose to show a view with a message instead of redirecting
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            // Get participating teams
+            var teams = await _tournamentsRepository.GetTeamsForTournamentAsync(id);
+            // Build list of team names
+            var teamNames = new List<string>();
+            foreach (var team in teams)
+            {
+                string? name = team.Name;
+                if (string.IsNullOrEmpty(name))
+                {
+                    // Fallback to captain's username
+                    var captain = await _userManager.FindByIdAsync(team.CaptainId);
+                    name = captain?.UserName != null ? $"team_{captain.UserName}" : $"Team_{team.Id}";
+                }
+                teamNames.Add(name);
+            }
+            // If fewer than two teams have registered, there is no bracket to show.
+            List<List<MatchInfo>> rounds;
+            if (teamNames.Count < 2)
+            {
+                rounds = new List<List<MatchInfo>>();
+            }
+            else
+            {
+                rounds = GenerateBracketRounds(teamNames);
+            }
+            var model = new BracketViewModel
+            {
+                Tournament = tournament,
+                Rounds = rounds
+            };
+            return View(model);
+        }
+
+        /// <summary>
+        /// Generates a tournament bracket for the given list of team names.
+        /// Creates pairs for each round, automatically advancing teams when
+        /// there are byes.  The algorithm calculates the next power of two
+        /// greater than or equal to the number of teams to determine the
+        /// bracket size.
+        /// </summary>
+        private List<List<MatchInfo>> GenerateBracketRounds(List<string> teams)
+        {
+            // Shuffle teams randomly
+            var random = new Random();
+            var shuffled = teams.OrderBy(_ => random.Next()).ToList();
+            int n = shuffled.Count;
+            // Determine bracket size (next power of two)
+            int rounds = (int)Math.Ceiling(Math.Log2(n));
+            int bracketSize = (int)Math.Pow(2, rounds);
+            // Fill slots with teams and null for byes
+            var slots = new string?[bracketSize];
+            for (int i = 0; i < bracketSize; i++)
+            {
+                slots[i] = i < n ? shuffled[i] : null;
+            }
+            var result = new List<List<MatchInfo>>();
+            var currentRoundTeams = new List<string?>();
+            // Initialize first round
+            var firstRoundMatches = new List<MatchInfo>();
+            for (int i = 0; i < bracketSize; i += 2)
+            {
+                var match = new MatchInfo { Team1Name = slots[i], Team2Name = slots[i + 1] };
+                firstRoundMatches.Add(match);
+            }
+            result.Add(firstRoundMatches);
+            // Compute winners for next rounds and build match pairs
+            var winners = new List<string?>();
+            for (int i = 0; i < bracketSize; i += 2)
+            {
+                var t1 = slots[i];
+                var t2 = slots[i + 1];
+                // Determine automatic winner if one team is null
+                if (t1 != null && t2 == null)
+                {
+                    winners.Add(t1);
+                }
+                else if (t2 != null && t1 == null)
+                {
+                    winners.Add(t2);
+                }
+                else
+                {
+                    // Unknown winner
+                    winners.Add(null);
+                }
+            }
+            // Build subsequent rounds
+            for (int r = 1; r < rounds; r++)
+            {
+                var roundMatches = new List<MatchInfo>();
+                var nextWinners = new List<string?>();
+                for (int i = 0; i < winners.Count; i += 2)
+                {
+                    var match = new MatchInfo
+                    {
+                        Team1Name = winners[i],
+                        Team2Name = (i + 1 < winners.Count) ? winners[i + 1] : null
+                    };
+                    roundMatches.Add(match);
+                    // Determine automatic winner for next round
+                    var w1 = winners[i];
+                    var w2 = (i + 1 < winners.Count) ? winners[i + 1] : null;
+                    if (w1 != null && w2 == null)
+                    {
+                        nextWinners.Add(w1);
+                    }
+                    else if (w2 != null && w1 == null)
+                    {
+                        nextWinners.Add(w2);
+                    }
+                    else
+                    {
+                        nextWinners.Add(null);
+                    }
+                }
+                result.Add(roundMatches);
+                winners = nextWinners;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Displays a list of upcoming tournaments.  An optional format filter
         /// restricts results to tournaments with a specific team size.
         /// </summary>

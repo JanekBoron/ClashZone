@@ -1,0 +1,79 @@
+﻿@model ClashZone.ViewModels.BracketViewModel
+
+@{
+    // Title reflects the tournament name for improved SEO and clarity
+    ViewData["Title"] = $"Drabinka – {Model.Tournament.Name}";
+}
+
+<!--
+    Tournament bracket view.  Displays a generated bracket for a tournament
+    once the check‑in period has closed.  The bracket is arranged in
+    columns, one per round, with each match showing the two competing
+    teams.  A null (bye) entry means the opposing team advances
+    automatically.  Colours follow the site's dark theme (#111) with
+    red accents (#FF2B3E).
+-->
+<div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
+    <h2 class="mb-3">Drabinka – @Model.Tournament.Name</h2>
+
+    <!-- Navigation bar consistent with the details view.  Highlights the bracket tab. -->
+    <ul class="nav nav-tabs mb-3" style="border-bottom: 1px solid #FF2B3E;">
+        <li class="nav-item">
+            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Przegląd</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="#" style="color:#FF2B3E; border:none;">Drabinka</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Uczestnicy</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Reguły</a>
+        </li>
+    </ul>
+
+    @if (Model.Rounds.Count == 0)
+    {
+        <div class="alert alert-warning" role="alert" style="background-color:#1a1a1a; border-color:#444; color:#fff;">
+            Brak informacji o drabince.  Upewnij się, że check‑in jest zakończony i turniej ma co najmniej dwie drużyny.
+        </div>
+    }
+    else
+    {
+        <!-- Container for the entire bracket.  Uses flexbox to arrange rounds horizontally with horizontal scroll if needed. -->
+        <div class="d-flex" style="overflow-x: auto; padding-bottom: 1rem;">
+            @for (int r = 0; r < Model.Rounds.Count; r++)
+            {
+                var roundNumber = r + 1;
+                <div class="me-4">
+                    <h6 class="text-center mb-3">Runda @roundNumber</h6>
+                    @foreach (var match in Model.Rounds[r])
+                    {
+                        <div class="mb-4 p-2" style="background-color:#1a1a1a; border:1px solid #444; border-radius:6px; min-width: 180px;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>@(match.Team1Name ?? "Bye")</span>
+                                @if (match.Team1Name != null)
+                                {
+                                    <span class="badge bg-secondary">0</span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span>@(match.Team2Name ?? "Bye")</span>
+                                @if (match.Team2Name != null)
+                                {
+                                    <span class="badge bg-secondary">0</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

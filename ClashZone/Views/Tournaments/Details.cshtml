@@ -60,7 +60,9 @@
             <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link disabled" href="#" style="color:#6c757d;">Drabinka</a>
+            <!-- Link to the bracket view.  The Bracket action will redirect back
+                 to details if check‑in is still open. -->
+            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Drabinka</a>
         </li>
         <li class="nav-item">
             <a class="nav-link disabled" href="#" style="color:#6c757d;">Uczestnicy</a>

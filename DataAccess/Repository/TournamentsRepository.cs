@@ -158,5 +158,14 @@ namespace ClashZone.DataAccess.Repository
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
         }
+
+        public async Task<List<Team>> GetTeamsForTournamentAsync(int tournamentId)
+        {
+            return await _context.TeamMembers
+                .Where(tm => tm.Team.TournamentId == tournamentId)
+                .Select(tm => tm.Team)
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }

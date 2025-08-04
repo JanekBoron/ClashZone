@@ -96,5 +96,7 @@ namespace ClashZone.DataAccess.Repository.Interfaces
         /// ordered by timestamp ascending.
         /// </summary>
         Task<List<ChatMessage>> GetTeamChatMessagesAsync(int tournamentId, int teamId);
+
+        Task<List<Team>> GetTeamsForTournamentAsync(int tournamentId);
     }
 }

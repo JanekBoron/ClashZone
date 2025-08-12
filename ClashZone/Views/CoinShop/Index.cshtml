@@ -1,0 +1,25 @@
+﻿@model IReadOnlyList<ClashZone.DataAccess.Models.Product>
+@{
+    ViewData["Title"] = "Sklep";
+}
+@await Html.PartialAsync("~/Views/Shared/_CoinShopStyles.cshtml")
+
+<section class="shop-hero">
+    <div class="container">
+        <h2 class="mb-1">Sklep Clash Zone</h2>
+        <div class="text-secondary">Wydaj Clash Coins na limitowane itemy i nagrody cyfrowe.</div>
+        @if (User.Identity?.IsAuthenticated ?? false)
+        {
+            <div class="mt-2">Twój balans: <span class="cc-badge">F @((int)ViewBag.Balance)</span></div>
+        }
+    </div>
+</section>
+
+<div class="container my-4">
+    <div class="grid-products">
+        @foreach (var p in Model)
+        {
+            @await Html.PartialAsync("ProductCard", p)
+        }
+    </div>
+</div>

@@ -49,5 +49,14 @@ namespace DataAccess
         /// Subskrypcje wykupione przez użytkowników wraz z datą ważności.
         /// </summary>
         public DbSet<UserSubscription> UserSubscriptions { get; set; }
+
+        //ClashCoins
+        public DbSet<Product> Products { get; set; }
+        public DbSet<ProductCategory> ProductCategories { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<CoinWallet> CoinWallets { get; set; }
+        public DbSet<CoinWalletTransaction> CoinWalletTransactions { get; set; }
+        public DbSet<ProductRedeem> ProductRedeems { get; set; }
+
     }
 }

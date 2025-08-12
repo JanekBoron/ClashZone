@@ -1,0 +1,12 @@
+﻿@model ClashZone.DataAccess.Models.Product
+@{
+    ViewData["Title"] = "Usuń produkt";
+}
+<div class="container my-4 text-white">
+    <h2>Czy na pewno usunąć „@Model.Name”?</h2>
+    <form asp-action="ConfirmDelete" method="post">
+        <input type="hidden" asp-for="Id" />
+        <a class="btn btn-outline-light" href="@Url.Action("Index")">Anuluj</a>
+        <button class="btn btn-danger">Usuń</button>
+    </form>
+</div>

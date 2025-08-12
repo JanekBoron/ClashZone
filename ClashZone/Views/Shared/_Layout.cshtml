@@ -23,6 +23,9 @@
                     <li class="nav-item">
                         @await Html.PartialAsync("_TournamentLinkPartial")
                     </li>
+                    <li class="nav-item">
+                        @await Html.PartialAsync("_ProductsLinkPartial")
+                    </li>
                 </ul>
                 @await Html.PartialAsync("_LoginPartial")
                 @await Html.PartialAsync("_SubscriptionLinkPartial")
@@ -34,9 +37,9 @@
             @RenderBody()
         </main>
     </div>
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted align-middle">
         <div class="container">
-            &copy; 2025 PC Shop
+            &copy; 2025 Clash Zone
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

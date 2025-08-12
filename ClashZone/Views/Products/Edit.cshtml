@@ -1,0 +1,59 @@
+﻿@model ClashZone.DataAccess.Models.Product
+@{
+    ViewData["Title"] = "Edytuj produkt";
+    var categories = ViewBag.Categories as List<ClashZone.DataAccess.Models.ProductCategory> ?? new();
+    var primary = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url;
+}
+@await Html.PartialAsync("~/Views/Shared/_ShopStyles.cshtml")
+
+<div class="container my-4 text-white">
+    <h2>Edytuj produkt</h2>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nazwa</label>
+                <input asp-for="Name" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Cena (F)</label>
+                <input asp-for="ClashCoins" type="number" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Kategoria</label>
+                <select asp-for="CategoryId" class="form-select">
+                    <option value="">—</option>
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Krótki opis</label>
+                <input asp-for="ShortDescription" class="form-control" />
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Opis</label>
+                <textarea asp-for="LongDescription" class="form-control" rows="6"></textarea>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Stock (puste = ∞)</label>
+                <input asp-for="Stock" type="number" class="form-control" />
+            </div>
+            <div class="col-md-3 form-check mt-4">
+                <input asp-for="LimitedEdition" class="form-check-input" />
+                <label class="form-check-label">Limited edition</label>
+            </div>
+            <div class="col-md-3 form-check mt-4">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label class="form-check-label">Aktywny</label>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Główne zdjęcie (URL)</label>
+                <input name="primaryImageUrl" class="form-control" value="@primary" />
+            </div>
+        </div>
+        <button class="btn-cc mt-3">Zapisz</button>
+    </form>
+</div>

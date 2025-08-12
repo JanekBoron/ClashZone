@@ -1,0 +1,56 @@
+﻿@model ClashZone.ViewModels.RulesViewModel
+
+@{
+    ViewData["Title"] = $"Reguły – {Model.Tournament.Name}";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">Reguły – @Model.Tournament.Name</h2>
+            <small class="text-muted">Turniej: @Model.Tournament.GameTitle</small>
+        </div>
+    </div>
+    <hr style="border-color:#444;" />
+
+    <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom:1px solid #FF2B3E;">
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Tournaments" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Przegląd</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Tournaments" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Tournaments" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Drabinka</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Participants" asp-action="Index" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Uczestnicy</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="#" style="color:#FF2B3E; border:none;">Reguły</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>
+        </li>
+    </ul>
+
+    <div class="row">
+        <div class="col-md-12">
+            @if (Model.Rules.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var rule in Model.Rules)
+                    {
+                        <li class="list-group-item mb-2" style="background-color:#1a1a1a; border-color:#444; color:#fff;">
+                            @rule
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted">Brak zasad dla tego turnieju.</p>
+            }
+        </div>
+    </div>
+</div>

@@ -5,30 +5,24 @@
     ViewData["Title"] = $"Drabinka – {Model.Tournament.Name}";
 }
 
-<!--
-    Tournament bracket view.  Displays a generated bracket for a tournament
-    once the check‑in period has closed.  The bracket is arranged in
-    columns, one per round, with each match showing the two competing
-    teams.  A null (bye) entry means the opposing team advances
-    automatically.  Colours follow the site's dark theme (#111) with
-    red accents (#FF2B3E).
--->
 <div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
     <h2 class="mb-3">Drabinka – @Model.Tournament.Name</h2>
 
-    <!-- Navigation bar consistent with the details view.  Highlights the bracket tab. -->
-    <ul class="nav nav-tabs mb-3" style="border-bottom: 1px solid #FF2B3E;">
+    <!-- Navigation bar consistent with the details view.  Highlights the bracket tab and enables participants and rules links. -->
+    <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom: 1px solid #FF2B3E;">
         <li class="nav-item">
-            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Przegląd</a>
+            <a class="nav-link active" href="#" style="color:#FF2B3E; border: none;">Przegląd</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link active" href="#" style="color:#FF2B3E; border:none;">Drabinka</a>
+            <!-- Link to the bracket view.  The Bracket action will redirect back
+                 to details if check‑in is still open. -->
+            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Drabinka</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link disabled" href="#" style="color:#6c757d;">Uczestnicy</a>
+            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Uczestnicy</a>
         </li>
         <li class="nav-item">
             <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>

@@ -1,0 +1,35 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using ClashZone.DataAccess.Models
+@using System.Security.Claims
+@inject SignInManager<ClashUser> SignInManager
+@inject UserManager<ClashUser> UserManager
+@inject ClashZone.Services.Interfaces.ICoinWalletService CoinWalletService
+
+@{
+    var isLoggedIn = SignInManager.IsSignedIn(User);
+    int balance = 0;
+
+    if (isLoggedIn)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        balance = await CoinWalletService.GetBalanceAsync(userId);
+    }
+}
+
+<li class="nav-item d-flex align-items-center gap-2">
+    <a class="nav-link" asp-controller="CoinShop" asp-action="Index">Sklep</a>
+    @if (isLoggedIn)
+    {
+        <span class="badge" style="background-color:#FF2B3E;color:white;">Clash @balance</span>
+    }
+</li>
+
+@if (isLoggedIn && User.IsInRole("Admin"))
+{
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Admin</a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+            <li><a class="dropdown-item" href="@Url.Action("Index", "Products", new { area = "" })">Produkty</a></li>
+        </ul>
+    </li>
+}

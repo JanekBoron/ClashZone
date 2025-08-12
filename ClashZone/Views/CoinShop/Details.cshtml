@@ -1,0 +1,55 @@
+﻿@model ClashZone.DataAccess.Models.Product
+@{
+    ViewData["Title"] = Model.Name;
+    var img = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url ?? Model.Images.FirstOrDefault()?.Url ?? "/images/placeholder.png";
+    var error = TempData["ShopError"] as string;
+    var ok = TempData["ShopOk"] as string;
+}
+@await Html.PartialAsync("~/Views/Shared/_ShopStyles.cshtml")
+
+<div class="container my-4 text-white">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="img">
+                    <img src="@img" alt="@Model.Name" />
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h2>@Model.Name</h2>
+            <div class="mb-2 text-secondary">@Model.ShortDescription</div>
+            <div class="mb-3 cc-price">F @Model.ClashCoins</div>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <div class="alert alert-danger">@error</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(ok))
+            {
+                <div class="alert alert-success">@ok</div>
+            }
+
+            <form asp-action="Buy" method="post">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn-cc" @(Model.IsActive ? "" : "disabled")>Kup za Clash Coins</button>
+            </form>
+
+            @if (Model.LimitedEdition)
+            {
+                <div class="mt-2"><span class="badge-limited">Limited edition</span></div>
+            }
+
+            @if (Model.Stock.HasValue)
+            {
+                <div class="mt-2 text-secondary">Stan: @(Model.Stock.Value > 0 ? Model.Stock.Value : 0)</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.LongDescription))
+            {
+                <hr />
+                <div>@Html.Raw(Model.LongDescription)</div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+﻿@model ClashZone.ViewModels.ParticipantsViewModel
+
+@{
+    // Set page title to show participants page for tournament
+    ViewData["Title"] = $"Uczestnicy – {Model.Tournament.Name}";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">Uczestnicy – @Model.Tournament.Name</h2>
+            <small class="text-muted">Turniej: @Model.Tournament.GameTitle</small>
+        </div>
+    </div>
+    <hr style="border-color:#444;" />
+
+    <!-- Navigation bar linking back to other tournament views -->
+    <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom: 1px solid #FF2B3E;">
+        <li class="nav-item">
+            <a class="nav-link active" href="#" style="color:#FF2B3E; border: none;">Przegląd</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
+        </li>
+        <li class="nav-item">
+            <!-- Link to the bracket view.  The Bracket action will redirect back
+                 to details if check‑in is still open. -->
+            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Drabinka</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Uczestnicy</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link disabled" href="#" style="color:#6c757d;">Reguły</a>
+        </li>
+    </ul>
+
+    <!-- Participants listing -->
+    <div class="row">
+        <div class="col-md-12">
+            @if (Model.Teams.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var team in Model.Teams)
+                    {
+                        <li class="list-group-item mb-2" style="background-color:#1a1a1a; border-color:#444; color:#fff;">
+                            <strong style="color:#FF2B3E;">@team.Name</strong>
+                            @if (team.Members.Any())
+                            {
+                                <ul class="mt-2" style="padding-left:1rem;">
+                                    @foreach (var member in team.Members)
+                                    {
+                                        <li style="list-style-type:disc;">@member</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Brak członków w drużynie.</p>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-muted">Brak uczestników w tym turnieju.</p>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,40 @@
+﻿@model IEnumerable<ClashZone.DataAccess.Models.Product>
+@{
+    ViewData["Title"] = "Produkty (Admin)";
+}
+@await Html.PartialAsync("~/Views/Shared/_CoinShopStyles.cshtml")
+
+<div class="container my-4 text-white">
+    <h2>Produkty</h2>
+    <a class="btn-cc my-2 d-inline-block" href="@Url.Action("Create")">+ Dodaj</a>
+    <table class="table table-dark table-striped align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nazwa</th>
+                <th>Cena</th>
+                <th>Aktywny</th>
+                <th>Stock</th>
+                <th>Kategoria</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Name</td>
+                    <td>F @p.ClashCoins</td>
+                    <td>@(p.IsActive ? "✓" : "—")</td>
+                    <td>@(p.Stock?.ToString() ?? "∞")</td>
+                    <td>@p.Category?.Name</td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-light" href="@Url.Action("Edit", new { id = p.Id })">Edytuj</a>
+                        <a class="btn btn-sm btn-outline-danger" href="@Url.Action("Delete", new { id = p.Id })">Usuń</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

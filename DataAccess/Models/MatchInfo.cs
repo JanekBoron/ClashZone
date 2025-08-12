@@ -13,11 +13,17 @@ namespace ClashZone.DataAccess.Models
     /// </summary>
     public class MatchInfo
     {
-        public string? Team1Name { get; set; }
-        public string? Team2Name { get; set; }
+        //nullowalny string glupio
+        public string Team1Name { get; set; }
+        public string Team2Name { get; set; }
 
         // Optional: could be used in future to track winner or score
+        //unikac null?
         public int? Team1Score { get; set; }
         public int? Team2Score { get; set; }
+        public int? Round {  get; set; }
+
+        public int? MatchNum { get; set; }
+
     }
 }

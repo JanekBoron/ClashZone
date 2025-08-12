@@ -1,0 +1,26 @@
+﻿@model ClashZone.DataAccess.Models.Product
+@{
+    var img = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url ?? Model.Images.FirstOrDefault()?.Url ?? "/images/placeholder.png";
+}
+<div class="card">
+    <a class="img d-block" href="@Url.Action("Details", "Shop", new { id = Model.Id })">
+        <img src="@img" alt="@Model.Name" />
+    </a>
+    <div class="body">
+        <div class="title">@Model.Name</div>
+        <div class="meta">
+            @if (Model.LimitedEdition)
+            {
+                <span class="badge-limited">Limited edition</span>
+            }
+            @if (Model.Category != null)
+            {
+                <text> · @Model.Category.Name</text>
+            }
+        </div>
+        <div class="actions">
+            <div class="cc-price">F @Model.ClashCoins</div>
+            <a class="btn-cc" href="@Url.Action("Details", "Shop", new { id = Model.Id })">Zobacz</a>
+        </div>
+    </div>
+</div>

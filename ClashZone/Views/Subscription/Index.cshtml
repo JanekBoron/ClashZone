@@ -30,10 +30,12 @@
                             <li>@(plan.IsPremiumAccess ? "✔ Dostęp do turniejów premium" : "✖ Brak dostępu do turniejów premium")</li>
                             <li>@(plan.IsLeagueAccess ? "✔ Dostęp do ligi" : "✖ Brak dostępu do ligi")</li>
                         </ul>
-                        <form asp-action="Purchase" asp-controller="Subscription" method="post" class="mt-auto">
+                        <form asp-controller="Payment" asp-action="CreateCheckoutSession" method="post" class="mt-auto">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="planId" value="@plan.Id" />
-                            <button type="submit" class="btn btn-block" style="background-color:#FF2B3E; color:white;">Wykup</button>
+                            <button type="submit" class="btn btn-block" style="background-color:#FF2B3E; color:white;">
+                                Wykup
+                            </button>
                         </form>
                     </div>
                 </div>

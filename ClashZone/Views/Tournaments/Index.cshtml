@@ -5,22 +5,33 @@
     ViewData["Title"] = isMy ? "Moje turnieje" : "Nadchodzące turnieje";
 }
 
-<div class="container mt-4">
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <!-- Navigation tabs between browsing and user's tournaments -->
-    <ul class="nav nav-tabs mb-3">
+    <ul class="nav nav-tabs mb-3" style="border-bottom:1px solid #FF2B3E;">
         <li class="nav-item">
-            <a class="nav-link @(isMy ? "" : "active")" asp-action="Index">Przeglądaj</a>
+            <a class="nav-link @(isMy ? "" : "active")" asp-action="Index" style="color:#FF2B3E; border:none;">Przeglądaj</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link @(isMy ? "active" : "")" asp-action="MyTournaments">Moje turnieje</a>
+            <a class="nav-link @(isMy ? "active" : "")" asp-action="MyTournaments" style="color:#FF2B3E; border:none;">Moje turnieje</a>
         </li>
     </ul>
     <!-- Filter buttons for team size -->
     <div class="btn-group mb-3" role="group">
-        <a class="btn btn-outline-primary @(selectedFormat == "1v1" ? "active" : "")" asp-action="Index" asp-route-format="1v1">1v1</a>
-        <a class="btn btn-outline-primary @(selectedFormat == "2v2" ? "active" : "")" asp-action="Index" asp-route-format="2v2">2v2</a>
-        <a class="btn btn-outline-primary @(selectedFormat == "5v5" ? "active" : "")" asp-action="Index" asp-route-format="5v5">5v5</a>
-        <a class="btn btn-outline-secondary @(string.IsNullOrEmpty(selectedFormat) ? "active" : "")" asp-action="Index">Wszystkie</a>
+        <a class="btn" asp-action="Index" asp-route-format="1v1"
+           style="@(selectedFormat == "1v1" ? "background-color:#FF2B3E; color:#fff; border-color:#FF2B3E;" : "background-color:transparent; color:#FF2B3E; border-color:#FF2B3E;")">
+            1v1
+        </a>
+        <a class="btn" asp-action="Index" asp-route-format="2v2"
+           style="@(selectedFormat == "2v2" ? "background-color:#FF2B3E; color:#fff; border-color:#FF2B3E;" : "background-color:transparent; color:#FF2B3E; border-color:#FF2B3E;")">
+            2v2
+        </a>
+        <a class="btn" asp-action="Index" asp-route-format="5v5"
+           style="@(selectedFormat == "5v5" ? "background-color:#FF2B3E; color:#fff; border-color:#FF2B3E;" : "background-color:transparent; color:#FF2B3E; border-color:#FF2B3E;")">
+            5v5
+        </a>
+        <a class="btn" asp-action="Index" style="@((string.IsNullOrEmpty(selectedFormat) ? "background-color:#FF2B3E; color:#fff; border-color:#FF2B3E;" : "background-color:transparent; color:#FF2B3E; border-color:#FF2B3E;"))">
+            Wszystkie
+        </a>
     </div>
 
     @if (!Model.Any())
@@ -29,17 +40,17 @@
     }
     else
     {
-        <div class="list-group">
+        <div>
             @foreach (var t in Model)
             {
-                <div class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">
+                <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px; display:flex; justify-content:space-between; align-items:center; color:#f8f9fa;">
                     <div>
-                        <h5 class="mb-1">@t.Name</h5>
+                        <h5 class="mb-1" style="color:#FF2B3E;">@t.Name</h5>
                         <small>@t.StartDate.ToString("dd.MM.yyyy HH:mm") • Format: @t.Format</small>
                         <div class="text-muted">@t.GameTitle</div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-warning text-dark">@t.MaxParticipants uczestników</span>
+                        <span class="badge" style="background-color:#FFC107; color:#0A0A0A;">@t.MaxParticipants uczestników</span>
                         <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;" asp-action="Details" asp-route-id="@t.Id">Sprawdź turniej</a>
                     </div>
                 </div>

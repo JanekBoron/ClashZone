@@ -4,6 +4,9 @@ using ClashZone.Services.Interfaces;
 using ClashZone.ViewModels;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Identity;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ClashZone.Services
 {
@@ -78,6 +81,13 @@ namespace ClashZone.Services
             if (tournament == null)
             {
                 result.NotFound = true;
+                return result;
+            }
+            // Check if the tournament has reached its maximum number of participants
+            var existingTeams = await _tournamentsRepository.GetTeamsForTournamentAsync(id);
+            if (tournament.MaxParticipants > 0 && existingTeams != null && existingTeams.Count >= tournament.MaxParticipants)
+            {
+                result.MaxParticipantsExceeded = true;
                 return result;
             }
             // Check premium requirement

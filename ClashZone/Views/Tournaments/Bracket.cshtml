@@ -5,8 +5,12 @@
     ViewData["Title"] = $"Drabinka – {Model.Tournament.Name}";
 }
 
-<div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
+<div class="container mt-4" style="background-color:#0A0A0A; padding: 20px; border-radius: 10px; color: #f8f9fa;">
     <h2 class="mb-3">Drabinka – @Model.Tournament.Name</h2>
+    <!-- Button to generate random results for the bracket -->
+    <form asp-action="GenerateResults" asp-route-id="@Model.Tournament.Id" method="post" class="mb-3">
+        <button type="submit" class="btn" style="background-color:#FF2B3E; border-color:#FF2B3E; color:#fff;">Wyniki</button>
+    </form>
 
     <!-- Navigation bar consistent with the details view.  Highlights the bracket tab and enables participants and rules links. -->
     <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom: 1px solid #FF2B3E;">
@@ -54,14 +58,20 @@
                                 <span>@(match.Team1Name ?? "Bye")</span>
                                 @if (match.Team1Name != null)
                                 {
-                                    <span class="badge bg-secondary">0</span>
+                                    <span class="badge"
+                                          style="background-color:@((match.Team1Score.HasValue && match.Team2Score.HasValue && match.Team1Score.Value >= match.Team2Score.Value) ? "#FF2B3E" : "#6c757d");">
+                                        @(match.Team1Score ?? 0)
+                                    </span>
                                 }
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
                                 <span>@(match.Team2Name ?? "Bye")</span>
                                 @if (match.Team2Name != null)
                                 {
-                                    <span class="badge bg-secondary">0</span>
+                                    <span class="badge"
+                                          style="background-color:@((match.Team1Score.HasValue && match.Team2Score.HasValue && match.Team2Score.Value > match.Team1Score.Value) ? "#FF2B3E" : "#6c757d");">
+                                        @(match.Team2Score ?? 0)
+                                    </span>
                                 }
                             </div>
                         </div>

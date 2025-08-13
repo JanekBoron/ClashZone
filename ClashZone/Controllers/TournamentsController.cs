@@ -97,7 +97,7 @@ namespace ClashZone.Controllers
                 case "counter strike 2":
                 case "counter-strike 2":
                 case "cs2":
-                    rules.Add("Każdy mecz rozgrywany jest w formacie best of 3 (do dwóch wygranych map).\n");
+                    rules.Add("Każdy mecz rozgrywany jest w formacie best of  3 (do dwóch wygranych map).\n");
                     rules.Add("Zabrania się wykorzystywania błędów gry oraz niedozwolonych skryptów.");
                     rules.Add("Skład drużyny musi liczyć dokładnie 5 zawodników.");
                     break;
@@ -201,6 +201,23 @@ namespace ClashZone.Controllers
             return View(model);
         }
 
+        /// <summary>
+        /// Generates random results for all matches in the bracket and displays the updated bracket.
+        /// This action is invoked when the user presses the 'Wyniki' button on the bracket view.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateResults(int id)
+        {
+            var model = await _bracketService.GetBracketWithResultsAsync(id);
+            if (model == null)
+            {
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            return View("Bracket", model);
+        }
+
         public async Task<IActionResult> Index(string? format)
         {
             var tournaments = await _tournamentService.GetUpcomingTournamentsAsync(format);
@@ -269,6 +286,11 @@ namespace ClashZone.Controllers
             }
             if (result.AlreadyJoined)
             {
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            if (result.MaxParticipantsExceeded)
+            {
+                TempData["JoinError"] = "Limit uczestników został osiągnięty. Nie można dołączyć do tego turnieju.";
                 return RedirectToAction(nameof(Details), new { id });
             }
             // If a new team was created and the tournament is not a solo format, generate an invitation link

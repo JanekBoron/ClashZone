@@ -2,6 +2,7 @@
 using ClashZone.DataAccess.Repository.Interfaces;
 using ClashZone.Services.Interfaces;
 using ClashZone.ViewModels;
+using DataAccess.Models;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -10,16 +11,28 @@ using System.Threading.Tasks;
 
 namespace ClashZone.Services
 {
+    /// <summary>
+    /// Service responsible for generating and annotating tournament brackets.
+    /// This implementation has been extended to dispatch email notifications
+    /// for initial matchups (reminders) and automatic advances (byes).
+    /// </summary>
     public class BracketService : IBracketService
     {
         private readonly ITournamentsRepository _tournamentsRepository;
         private readonly UserManager<ClashUser> _userManager;
-        public BracketService(ITournamentsRepository tournamentsRepository, UserManager<ClashUser> userManager)
+        private readonly IEmailService _emailService;
+
+        public BracketService(
+            ITournamentsRepository tournamentsRepository,
+            UserManager<ClashUser> userManager,
+            IEmailService emailService)
         {
             _tournamentsRepository = tournamentsRepository;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
+        /// <inheritdoc />
         public async Task<BracketViewModel?> GetBracketAsync(int tournamentId)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -49,6 +62,8 @@ namespace ClashZone.Services
                 rounds = GenerateBracketRounds(teamNames);
             }
             var annotatedRounds = AnnotateRounds(rounds);
+            // Send notifications for first round matchups and byes
+            await NotifyInitialMatchesAsync(tournament, teams, annotatedRounds);
             return new BracketViewModel
             {
                 Tournament = tournament,
@@ -56,6 +71,7 @@ namespace ClashZone.Services
             };
         }
 
+        /// <inheritdoc />
         public async Task<BracketViewModel?> GetBracketWithResultsAsync(int tournamentId)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -89,6 +105,100 @@ namespace ClashZone.Services
                 Tournament = tournament,
                 Rounds = rounds
             };
+        }
+
+        /// <summary>
+        /// Sends email reminders for the first round of the tournament bracket and
+        /// notifies teams that automatically advance due to byes.  This method
+        /// builds a mapping from team names to team entities in order to look up
+        /// members and captains for emailing.  It is invoked from within
+        /// <see cref="GetBracketAsync"/> after the bracket is generated.
+        /// </summary>
+        /// <param name="tournament">The tournament for which the bracket was generated.</param>
+        /// <param name="teams">List of participating teams for lookup.</param>
+        /// <param name="rounds">Annotated rounds of the bracket.</param>
+        private async Task NotifyInitialMatchesAsync(Tournament tournament, List<Team> teams, List<List<MatchInfo>> rounds)
+        {
+            if (rounds.Count == 0)
+            {
+                return;
+            }
+            // Build dictionary from team display names to team objects
+            var teamNameMap = new Dictionary<string, Team>(StringComparer.OrdinalIgnoreCase);
+            foreach (var team in teams)
+            {
+                string? name = team.Name;
+                if (string.IsNullOrEmpty(name))
+                {
+                    var captain = await _userManager.FindByIdAsync(team.CaptainId);
+                    name = captain?.UserName != null ? $"team_{captain.UserName}" : $"Team_{team.Id}";
+                }
+                if (!string.IsNullOrEmpty(name))
+                {
+                    teamNameMap[name] = team;
+                }
+            }
+            var firstRound = rounds[0];
+            foreach (var match in firstRound)
+            {
+                // Both teams present: send match reminders to both sides
+                if (!string.IsNullOrEmpty(match.Team1Name) && !string.IsNullOrEmpty(match.Team2Name))
+                {
+                    if (teamNameMap.TryGetValue(match.Team1Name!, out var team1))
+                    {
+                        await NotifyTeamMatchAsync(team1, match.Team2Name!, tournament);
+                    }
+                    if (teamNameMap.TryGetValue(match.Team2Name!, out var team2))
+                    {
+                        await NotifyTeamMatchAsync(team2, match.Team1Name!, tournament);
+                    }
+                }
+                else
+                {
+                    // One team has a bye; notify that team of advancement
+                    var advancingName = match.Team1Name ?? match.Team2Name;
+                    if (!string.IsNullOrEmpty(advancingName) && teamNameMap.TryGetValue(advancingName, out var team))
+                    {
+                        // Advance to round 2
+                        await NotifyTeamAdvanceAsync(team, tournament, 2);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a match reminder to all members of the specified team about an upcoming match.
+        /// </summary>
+        private async Task NotifyTeamMatchAsync(Team team, string opponentName, Tournament tournament)
+        {
+            // Collect all unique member IDs including the captain
+            var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+            var allMembers = new HashSet<string>(memberIds) { team.CaptainId };
+            foreach (var memberId in allMembers)
+            {
+                var user = await _userManager.FindByIdAsync(memberId);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    await _emailService.SendMatchReminderAsync(user.Email, tournament.Name, opponentName, scheduledAt: null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a promotion notification to all members of the specified team indicating they have advanced to the given round.
+        /// </summary>
+        private async Task NotifyTeamAdvanceAsync(Team team, Tournament tournament, int round)
+        {
+            var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+            var allMembers = new HashSet<string>(memberIds) { team.CaptainId };
+            foreach (var memberId in allMembers)
+            {
+                var user = await _userManager.FindByIdAsync(memberId);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    await _emailService.SendPromotionNotificationAsync(user.Email, tournament.Name, round);
+                }
+            }
         }
 
         /// <summary>
@@ -171,10 +281,10 @@ namespace ClashZone.Services
         }
 
         /// <summary>
-        /// Internal helper to generate bracket rounds with random scores. The winners of
+        /// Internal helper to generate bracket rounds with random scores.  The winners of
         /// each match are chosen based on the higher score (or bye) and placed in the
-        /// appropriate position in the next round. Each MatchInfo is annotated with the
-        /// Round number and MatchNum.
+        /// appropriate position in the next round. Each MatchInfo is annotated
+        /// with the Round number and MatchNum.
         /// </summary>
         private static List<List<MatchInfo>> GenerateBracketWithResults(List<string> teams)
         {
@@ -188,110 +298,74 @@ namespace ClashZone.Services
             {
                 slots[i] = i < n ? shuffled[i] : null;
             }
-
             var result = new List<List<MatchInfo>>();
-            var winners = new List<string?>();
-            int matchCounter = 1;
+            // First round with random scores
             var firstRound = new List<MatchInfo>();
+            var winners = new List<string?>();
             for (int i = 0; i < bracketSize; i += 2)
             {
-                var team1 = slots[i];
-                var team2 = slots[i + 1];
-                var match = new MatchInfo
+                var m = new MatchInfo { Team1Name = slots[i], Team2Name = slots[i + 1] };
+                // Assign random scores (0-16) for CS:GO style simulation
+                m.Team1Score = m.Team1Name != null ? random.Next(0, 16) : (int?)null;
+                m.Team2Score = m.Team2Name != null ? random.Next(0, 16) : (int?)null;
+                // Determine winner by higher score (or bye)
+                if (m.Team1Score.HasValue && m.Team2Score.HasValue)
                 {
-                    Team1Name = team1,
-                    Team2Name = team2,
-                    Round = 1,
-                    MatchNum = matchCounter++
-                };
-                if (team1 != null && team2 != null)
-                {
-                    int score1 = random.Next(0, 11);
-                    int score2 = random.Next(0, 11);
-                    if (score1 == score2)
-                    {
-                        score2 += 1;
-                    }
-                    match.Team1Score = score1;
-                    match.Team2Score = score2;
-                    winners.Add(score1 >= score2 ? team1 : team2);
+                    winners.Add(m.Team1Score > m.Team2Score ? m.Team1Name : m.Team2Name);
                 }
-                else if (team1 != null && team2 == null)
+                else if (m.Team1Score.HasValue)
                 {
-                    match.Team1Score = 1;
-                    match.Team2Score = 0;
-                    winners.Add(team1);
+                    winners.Add(m.Team1Name);
                 }
-                else if (team2 != null && team1 == null)
+                else if (m.Team2Score.HasValue)
                 {
-                    match.Team1Score = 0;
-                    match.Team2Score = 1;
-                    winners.Add(team2);
+                    winners.Add(m.Team2Name);
                 }
                 else
                 {
                     winners.Add(null);
                 }
-                firstRound.Add(match);
+                firstRound.Add(m);
             }
             result.Add(firstRound);
-
-            for (int r = 2; r <= rounds; r++)
+            // Subsequent rounds
+            for (int r = 1; r < rounds; r++)
             {
-                var nextWinners = new List<string?>();
                 var roundMatches = new List<MatchInfo>();
-                matchCounter = 1;
+                var nextWinners = new List<string?>();
                 for (int i = 0; i < winners.Count; i += 2)
                 {
-                    var w1 = winners[i];
-                    var w2 = (i + 1 < winners.Count) ? winners[i + 1] : null;
-                    var match = new MatchInfo
+                    var m = new MatchInfo { Team1Name = winners[i], Team2Name = (i + 1 < winners.Count) ? winners[i + 1] : null };
+                    m.Team1Score = m.Team1Name != null ? random.Next(0, 16) : (int?)null;
+                    m.Team2Score = m.Team2Name != null ? random.Next(0, 16) : (int?)null;
+                    if (m.Team1Score.HasValue && m.Team2Score.HasValue)
                     {
-                        Team1Name = w1,
-                        Team2Name = w2,
-                        Round = r,
-                        MatchNum = matchCounter++
-                    };
-                    if (w1 != null && w2 != null)
-                    {
-                        int score1 = random.Next(0, 11);
-                        int score2 = random.Next(0, 11);
-                        if (score1 == score2)
-                        {
-                            score1 += 1;
-                        }
-                        match.Team1Score = score1;
-                        match.Team2Score = score2;
-                        nextWinners.Add(score1 >= score2 ? w1 : w2);
+                        nextWinners.Add(m.Team1Score > m.Team2Score ? m.Team1Name : m.Team2Name);
                     }
-                    else if (w1 != null && w2 == null)
+                    else if (m.Team1Score.HasValue)
                     {
-                        match.Team1Score = 1;
-                        match.Team2Score = 0;
-                        nextWinners.Add(w1);
+                        nextWinners.Add(m.Team1Name);
                     }
-                    else if (w2 != null && w1 == null)
+                    else if (m.Team2Score.HasValue)
                     {
-                        match.Team1Score = 0;
-                        match.Team2Score = 1;
-                        nextWinners.Add(w2);
+                        nextWinners.Add(m.Team2Name);
                     }
                     else
                     {
                         nextWinners.Add(null);
                     }
-                    roundMatches.Add(match);
+                    roundMatches.Add(m);
                 }
                 result.Add(roundMatches);
                 winners = nextWinners;
             }
-            return result;
+            // Annotate rounds and matches for readability
+            var annotated = AnnotateRounds(result);
+            return annotated;
         }
 
         /// <summary>
-        /// Updates the bracket rounds generated by GenerateBracketRounds to include Round
-        /// and MatchNum on each match. This helper is used when generating a bracket
-        /// without scores so that the UI can rely on these properties for ordering.
+        /// Annotates each match in the bracket with its round and match number for display purposes.
         /// </summary>
         private static List<List<MatchInfo>> AnnotateRounds(List<List<MatchInfo>> rounds)
         {

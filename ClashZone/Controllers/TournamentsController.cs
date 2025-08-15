@@ -23,7 +23,8 @@ namespace ClashZone.Controllers
     /// wyświetlanie listy nadchodzących turniejów, tworzenie nowych turniejów,
     /// dołączanie do turniejów oraz prezentację drabinki.  Dodano obsługę
     /// subskrypcji, dzięki czemu turnieje oznaczone jako premium wymagają
-    /// aktywnego planu Premium lub Ultra.
+    /// aktywnego planu Premium lub Ultra.  Zintegrowano również wysyłanie
+    /// wiadomości e‑mail po pomyślnym dołączeniu do turnieju.
     /// </summary>
     public class TournamentsController : Controller
     {
@@ -33,13 +34,16 @@ namespace ClashZone.Controllers
         private readonly IBracketService _bracketService;
         private readonly ITournamentService _tournamentService;
         private readonly ITournamentsRepository _tournamentsRepository;
+        private readonly IEmailService _emailService;
 
-        public TournamentsController(UserManager<ClashUser> userManager,
-                                     ISubscriptionRepository subscriptionRepository,
-                                     IChatService chatService,
-                                     IBracketService bracketService,
-                                     ITournamentService tournamentService,
-                                     ITournamentsRepository tournamentsRepository)
+        public TournamentsController(
+            UserManager<ClashUser> userManager,
+            ISubscriptionRepository subscriptionRepository,
+            IChatService chatService,
+            IBracketService bracketService,
+            ITournamentService tournamentService,
+            ITournamentsRepository tournamentsRepository,
+            IEmailService emailService)
         {
             _userManager = userManager;
             _subscriptionRepository = subscriptionRepository;
@@ -47,6 +51,7 @@ namespace ClashZone.Controllers
             _bracketService = bracketService;
             _tournamentService = tournamentService;
             _tournamentsRepository = tournamentsRepository;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -97,7 +102,7 @@ namespace ClashZone.Controllers
                 case "counter strike 2":
                 case "counter-strike 2":
                 case "cs2":
-                    rules.Add("Każdy mecz rozgrywany jest w formacie best of  3 (do dwóch wygranych map).\n");
+                    rules.Add("Każdy mecz rozgrywany jest w formacie best of 3 (do dwóch wygranych map).\n");
                     rules.Add("Zabrania się wykorzystywania błędów gry oraz niedozwolonych skryptów.");
                     rules.Add("Skład drużyny musi liczyć dokładnie 5 zawodników.");
                     break;
@@ -298,6 +303,13 @@ namespace ClashZone.Controllers
             {
                 var inviteLink = Url.Action(nameof(JoinTeam), nameof(TournamentsController).Replace("Controller", string.Empty), new { teamId = result.Team.Id, code = result.Team.JoinCode }, Request.Scheme);
                 TempData["InviteLink"] = inviteLink;
+            }
+            // Send tournament registration confirmation email
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null && tournament != null && !string.IsNullOrEmpty(user.Email))
+            {
+                await _emailService.SendTournamentRegistrationConfirmationAsync(user.Email, tournament.Name);
             }
             return RedirectToAction(nameof(Details), new { id });
         }

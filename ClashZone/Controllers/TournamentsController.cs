@@ -35,6 +35,7 @@ namespace ClashZone.Controllers
         private readonly ITournamentService _tournamentService;
         private readonly ITournamentsRepository _tournamentsRepository;
         private readonly IEmailService _emailService;
+        private readonly IMatchesService _matchesService;
 
         public TournamentsController(
             UserManager<ClashUser> userManager,
@@ -43,7 +44,8 @@ namespace ClashZone.Controllers
             IBracketService bracketService,
             ITournamentService tournamentService,
             ITournamentsRepository tournamentsRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            IMatchesService matchesService)
         {
             _userManager = userManager;
             _subscriptionRepository = subscriptionRepository;
@@ -52,6 +54,45 @@ namespace ClashZone.Controllers
             _tournamentService = tournamentService;
             _tournamentsRepository = tournamentsRepository;
             _emailService = emailService;
+            _matchesService = matchesService;
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Matches(int id)
+        {
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            if (tournament == null)
+            {
+                return NotFound();
+            }
+            var matches = await _matchesService.GetMatchesForTournamentAsync(id);
+            var viewModel = new TournamentMatchesViewModel
+            {
+                Tournament = tournament,
+                Matches = matches
+            };
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// Displays detailed statistics for a single match within a
+        /// tournament.  Delegates to the matches service to assemble
+        /// per‑player statistics, team names and captain avatars.
+        /// </summary>
+        /// <param name="tournamentId">Identifier of the tournament.</param>
+        /// <param name="id">Identifier of the match.</param>
+        /// <param name="matchesService">Service used to build the match details view model.</param>
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> MatchDetails(int tournamentId, int id)
+        {
+            var model = await _matchesService.GetMatchDetailsAsync(tournamentId, id);
+            if (model == null)
+            {
+                return NotFound();
+            }
+            return View(model);
         }
 
         /// <summary>

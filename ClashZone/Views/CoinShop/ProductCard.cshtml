@@ -3,7 +3,7 @@
     var img = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url ?? Model.Images.FirstOrDefault()?.Url ?? "/images/placeholder.png";
 }
 <div class="card">
-    <a class="img d-block" href="@Url.Action("Details", "Shop", new { id = Model.Id })">
+    <a class="img d-block" href="@Url.Action("Details", "CoinShop", new { id = Model.Id })">
         <img src="@img" alt="@Model.Name" />
     </a>
     <div class="body">
@@ -20,7 +20,7 @@
         </div>
         <div class="actions">
             <div class="cc-price">F @Model.ClashCoins</div>
-            <a class="btn-cc" href="@Url.Action("Details", "Shop", new { id = Model.Id })">Zobacz</a>
+            <a class="btn-cc" href="@Url.Action("Details", "CoinShop", new { id = Model.Id })">Zobacz</a>
         </div>
     </div>
 </div>

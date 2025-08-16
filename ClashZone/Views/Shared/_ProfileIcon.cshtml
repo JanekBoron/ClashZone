@@ -1,0 +1,24 @@
+@using ClashZone.DataAccess.Models
+@inject Microsoft.AspNetCore.Identity.UserManager<ClashUser> _userManager
+
+@{
+    // Retrieve the currently logged in user.  Because this runs in a
+    // view component/partial, we can await the user manager directly.
+    ClashUser? currentUser = null;
+    if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        currentUser = await _userManager.GetUserAsync(User);
+    }
+}
+
+@if (currentUser != null)
+{
+    string profileUrl = !string.IsNullOrEmpty(currentUser.ProfilePicturePath)
+        ? currentUser.ProfilePicturePath
+        : Url.Content("~/images/default-profile.png");
+    <li class="nav-item dropdown">
+        <a class="nav-link d-flex align-items-center" asp-controller="Profile" asp-action="Index" title="Profil">
+            <img src="@profileUrl" alt="Avatar" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" />
+        </a>
+    </li>
+}

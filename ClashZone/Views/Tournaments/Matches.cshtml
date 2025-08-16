@@ -1,0 +1,56 @@
+@model ClashZone.ViewModels.TournamentMatchesViewModel
+
+@{
+    ViewData["Title"] = "Mecze turnieju";
+}
+
+<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">@Model.Tournament.Name – Mecze</h2>
+        <!-- Link back to the tournament overview -->
+        <a asp-action="Details" asp-route-id="@Model.Tournament.Id" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Przegląd</a>
+    </div>
+    @if (!Model.Matches.Any())
+    {
+        <p>Brak rozegranych meczów w tym turnieju.</p>
+    }
+    else
+    {
+        <table class="table table-dark table-hover">
+            <thead>
+                <tr>
+                    <th>Drużyna 1</th>
+                    <th class="text-center">Wynik</th>
+                    <th class="text-end">Drużyna 2</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Matches)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="@Url.Content(item.Team1ProfileUrl)" alt="Drużyna 1" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;" />
+                                <span>@item.Team1Name</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <strong>@item.Match.Team1Score</strong> – <strong>@item.Match.Team2Score</strong>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex align-items-center justify-content-end">
+                                <span class="me-2">@item.Team2Name</span>
+                                <img src="@Url.Content(item.Team2ProfileUrl)" alt="Drużyna 2" class="rounded-circle" style="width:32px;height:32px;object-fit:cover;" />
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <!-- Navigate to match details within the tournament context -->
+                            <a asp-action="MatchDetails" asp-route-tournamentId="@item.Match.TournamentId" asp-route-id="@item.Match.Id" class="btn btn-sm" style="background-color:#FF2B3E;color:#ffffff;">Szczegóły</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

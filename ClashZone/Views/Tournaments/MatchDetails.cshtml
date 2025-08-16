@@ -1,0 +1,93 @@
+@model ClashZone.ViewModels.MatchDetailsViewModel
+
+@{
+    ViewData["Title"] = "Szczegóły meczu";
+}
+
+<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
+    <div class="mb-4">
+        <!-- Return to the matches list for the tournament -->
+        <a asp-action="Matches" asp-route-id="@Model.Match.TournamentId" class="btn" style="background-color:#FF2B3E;color:#ffffff;">&larr; Powrót</a>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <img src="@Url.Content(Model.Team1ProfileUrl)" alt="Drużyna 1" class="rounded-circle me-2" style="width:48px;height:48px;object-fit:cover;" />
+            <div>
+                <h4 class="mb-0">@Model.Team1Name</h4>
+                <small>Wynik: <strong>@Model.Match.Team1Score</strong></small>
+            </div>
+        </div>
+        <div class="display-6 fw-bold">vs</div>
+        <div class="d-flex align-items-center text-end">
+            <div class="me-2">
+                <h4 class="mb-0">@Model.Team2Name</h4>
+                <small>Wynik: <strong>@Model.Match.Team2Score</strong></small>
+            </div>
+            <img src="@Url.Content(Model.Team2ProfileUrl)" alt="Drużyna 2" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <h5>@Model.Team1Name</h5>
+            <table class="table table-dark table-bordered">
+                <thead>
+                    <tr>
+                        <th>Gracz</th>
+                        <th>Kills</th>
+                        <th>Deaths</th>
+                        <th>Assists</th>
+                        <th>K/D</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var stat in Model.Team1Stats)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="@Url.Content(!string.IsNullOrEmpty(stat.Player.ProfilePicturePath) ? stat.Player.ProfilePicturePath : "~/images/default-profile.png")" alt="@stat.Player.DisplayName" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;" />
+                                    <span>@(stat.Player.DisplayName ?? stat.Player.UserName)</span>
+                                </div>
+                            </td>
+                            <td>@stat.Kills</td>
+                            <td>@stat.Deaths</td>
+                            <td>@stat.Assists</td>
+                            <td>@stat.KDRatio.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h5>@Model.Team2Name</h5>
+            <table class="table table-dark table-bordered">
+                <thead>
+                    <tr>
+                        <th>Gracz</th>
+                        <th>Kills</th>
+                        <th>Deaths</th>
+                        <th>Assists</th>
+                        <th>K/D</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var stat in Model.Team2Stats)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="@Url.Content(!string.IsNullOrEmpty(stat.Player.ProfilePicturePath) ? stat.Player.ProfilePicturePath : "~/images/default-profile.png")" alt="@stat.Player.DisplayName" class="rounded-circle me-2" style="width:24px;height:24px;object-fit:cover;" />
+                                    <span>@(stat.Player.DisplayName ?? stat.Player.UserName)</span>
+                                </div>
+                            </td>
+                            <td>@stat.Kills</td>
+                            <td>@stat.Deaths</td>
+                            <td>@stat.Assists</td>
+                            <td>@stat.KDRatio.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

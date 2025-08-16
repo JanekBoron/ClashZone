@@ -1,0 +1,54 @@
+@model ClashZone.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = "Profil użytkownika";
+}
+
+<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Profil użytkownika</h2>
+        <a asp-action="Edit" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Edytuj profil</a>
+    </div>
+    <div class="row">
+        <div class="col-md-4 text-center">
+            <img src="@(!string.IsNullOrEmpty(Model.User.ProfilePicturePath) ? Model.User.ProfilePicturePath : Url.Content("~/images/default-profile.png"))" class="img-fluid rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;" alt="Profilowe" />
+            <h4 class="mt-2">@Model.User.DisplayName ?? Model.User.UserName</h4>
+        </div>
+        <div class="col-md-8">
+            <div class="mb-3">
+                <strong>Username:</strong> @Model.User.UserName
+            </div>
+            <div class="mb-3">
+                <strong>Email:</strong> @Model.User.Email
+            </div>
+            <div class="mb-3">
+                <strong>Pakiet:</strong>
+                @if (Model.Subscription != null)
+                {
+                    <span>@Model.Subscription.Plan.Name (do @Model.Subscription.ExpiryDate.ToString("dd.MM.yyyy"))</span>
+                }
+                else
+                {
+                    <span>Brak aktywnego pakietu</span>
+                }
+            </div>
+            <div>
+                <strong>Statystyki:</strong>
+                @if (Model.Statistics != null)
+                {
+                    <ul class="list-unstyled mt-2">
+                        <li>Mecze: @Model.Statistics.MatchesPlayed</li>
+                        <li>Łącznie zabójstw: @Model.Statistics.TotalKills</li>
+                        <li>Łącznie zgonów: @Model.Statistics.TotalDeaths</li>
+                        <li>Łącznie asyst: @Model.Statistics.TotalAssists</li>
+                        <li>Średni K/D: @Model.Statistics.AverageKD.ToString("0.00")</li>
+                    </ul>
+                }
+                else
+                {
+                    <p class="mt-2">Brak danych statystycznych.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

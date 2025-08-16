@@ -3,19 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ClashZone.DataAccess.Models;
 using DataAccess.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ClashZone.DataAccess.Models;
 
 namespace DataAccess
 {
     /// <summary>
-    /// Application database context.  Dziedziczy po IdentityDbContext aby
-    /// umożliwić integrację tabel użytkowników i ról z dodatkowymi tabelami
-    /// domenowymi systemu.  Zawiera zbiory dla turniejów, drużyn, członków,
-    /// wiadomości czatu oraz nowe zbiory subskrypcji.
+    /// Application database context.  Inherits from <see cref="IdentityDbContext{TUser}"/>
+    /// to integrate Identity tables with domain-specific tables.  This class
+    /// exposes <see cref="DbSet"/> properties for all persistent entities used
+    /// throughout the application including tournaments, teams, chat messages,
+    /// subscriptions, products and newly added match and statistics entities.
     /// </summary>
     public class ApplicationDbContext : IdentityDbContext<ClashUser>
     {
@@ -24,39 +24,42 @@ namespace DataAccess
         {
         }
 
-        // Parameterless constructor used by tools; do not remove
+        // Parameterless constructor used by tooling; do not remove.
         public ApplicationDbContext() { }
 
-        public DbSet<Tournament> Tournaments { get; set; }
+        public DbSet<Tournament> Tournaments { get; set; } = null!;
         /// <summary>
-        /// Kolekcja drużyn biorących udział w turniejach.
+        /// Collection of teams participating in tournaments.
         /// </summary>
-        public DbSet<Team> Teams { get; set; }
+        public DbSet<Team> Teams { get; set; } = null!;
         /// <summary>
-        /// Powiązanie użytkowników z drużynami.
+        /// Association between users and teams.
         /// </summary>
-        public DbSet<TeamMember> TeamMembers { get; set; }
+        public DbSet<TeamMember> TeamMembers { get; set; } = null!;
         /// <summary>
-        /// Wiadomości czatu publikowane w turniejach.
+        /// Chat messages published in tournaments.
         /// </summary>
-        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; } = null!;
         /// <summary>
-        /// Kolekcja dostępnych planów subskrypcji.  Plany definiują poziomy
-        /// dostępu (premium, liga, ultra) oraz cenę miesięczną.
+        /// Subscription plans available to purchase.
         /// </summary>
-        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; } = null!;
         /// <summary>
-        /// Subskrypcje wykupione przez użytkowników wraz z datą ważności.
+        /// Subscriptions purchased by users.
         /// </summary>
-        public DbSet<UserSubscription> UserSubscriptions { get; set; }
+        public DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
 
-        //ClashCoins
-        public DbSet<Product> Products { get; set; }
-        public DbSet<ProductCategory> ProductCategories { get; set; }
-        public DbSet<ProductImage> ProductImages { get; set; }
-        public DbSet<CoinWallet> CoinWallets { get; set; }
-        public DbSet<CoinWalletTransaction> CoinWalletTransactions { get; set; }
-        public DbSet<ProductRedeem> ProductRedeems { get; set; }
+        // ClashCoins tables
+        public DbSet<Product> Products { get; set; } = null!;
+        public DbSet<ProductCategory> ProductCategories { get; set; } = null!;
+        public DbSet<ProductImage> ProductImages { get; set; } = null!;
+        public DbSet<CoinWallet> CoinWallets { get; set; } = null!;
+        public DbSet<CoinWalletTransaction> CoinWalletTransactions { get; set; } = null!;
+        public DbSet<ProductRedeem> ProductRedeems { get; set; } = null!;
 
+        // New entities for match results and statistics
+        public DbSet<Match> Matches { get; set; } = null!;
+        public DbSet<PlayerMatchStat> PlayerMatchStats { get; set; } = null!;
+        public DbSet<UserStat> UserStats { get; set; } = null!;
     }
 }

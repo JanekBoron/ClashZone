@@ -1,0 +1,56 @@
+@model ClashZone.ViewModels.EditProfileViewModel
+
+@{
+    ViewData["Title"] = "Edytuj profil";
+}
+
+<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
+    <h2 class="mb-4">Edytuj profil</h2>
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label asp-for="UserName" class="form-label">Nazwa użytkownika</label>
+            <input asp-for="UserName" class="form-control" required />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="DisplayName" class="form-label">Wyświetlana nazwa</label>
+            <input asp-for="DisplayName" class="form-control" />
+            <span asp-validation-for="DisplayName" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control" required />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Zdjęcie profilowe</label>
+            <input asp-for="ProfileImage" type="file" class="form-control" accept="image/*" />
+            <span asp-validation-for="ProfileImage" class="text-danger"></span>
+        </div>
+        <hr class="my-4" />
+        <h5 class="mb-3">Zmiana hasła</h5>
+        <div class="mb-3">
+            <label asp-for="CurrentPassword" class="form-label">Aktualne hasło</label>
+            <input asp-for="CurrentPassword" type="password" class="form-control" />
+            <span asp-validation-for="CurrentPassword" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="NewPassword" class="form-label">Nowe hasło</label>
+            <input asp-for="NewPassword" type="password" class="form-control" />
+            <span asp-validation-for="NewPassword" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="ConfirmPassword" class="form-label">Potwierdź nowe hasło</label>
+            <input asp-for="ConfirmPassword" type="password" class="form-control" />
+            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+            <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+            <button type="submit" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Zapisz zmiany</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

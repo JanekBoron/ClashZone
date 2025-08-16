@@ -12,27 +12,25 @@
         <button type="submit" class="btn" style="background-color:#FF2B3E; border-color:#FF2B3E; color:#fff;">Wyniki</button>
     </form>
 
-    <!-- Navigation bar consistent with the details view.  Highlights the bracket tab and enables participants and rules links. -->
-    <ul class="nav nav-tabs mb-3" id="tournamentTabs" style="border-bottom: 1px solid #FF2B3E;">
+    <!-- Navigation tabs -->
+    <ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
         <li class="nav-item">
-            <a class="nav-link active" href="#" style="color:#FF2B3E; border: none;">Przegląd</a>
+            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Przegląd</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Czat</a>
+            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Czat</a>
+        </li>
+        <li class="nav-item ">
+            <a class="nav-link active" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Drabinka</a>
         </li>
         <li class="nav-item">
-            <!-- Link to the bracket view.  The Bracket action will redirect back
-                 to details if check‑in is still open. -->
-            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Drabinka</a>
+            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Uczestnicy</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E; border:none;">Uczestnicy</a>
+            <a class="nav-link" asp-action="Matches" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Mecze</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link disabled" href="#" style="color:#6c757d;">Mecze</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link disabled" href="#" style="color:#6c757d;">Reguły</a>
+            <a class="nav-link" asp-action="Rules" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Reguły</a>
         </li>
     </ul>
 

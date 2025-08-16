@@ -89,22 +89,33 @@ namespace ClashZone.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Szukamy użytkownika po adresie e-mail (logowanie po e-mailu)
+            var user = await _userManager.FindByEmailAsync(model.Email?.Trim());
+
             if (user != null)
             {
-                // Ensure the user has confirmed their email before allowing login
+                /* // Ensure the user has confirmed their email before allowing login
                 if (!await _userManager.IsEmailConfirmedAsync(user))
                 {
                     ModelState.AddModelError(string.Empty, "Konto nie jest potwierdzone. Sprawdź skrzynkę e-mail.");
                     return View(model);
-                }
-                var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: false);
+                } */
+
+                // Uwaga: PasswordSignInAsync wymaga NAZWY UŻYTKOWNIKA, nie e-maila
+                var result = await _signInManager.PasswordSignInAsync(
+                    user.UserName,               // <- kluczowa zmiana (wcześniej było user.Email)
+                    model.Password,
+                    model.RememberMe,
+                    lockoutOnFailure: false);
+
                 if (result.Succeeded)
-                {
                     return RedirectToAction("Index", "Home");
-                }
             }
+
+            // Celowo nie zdradzamy, czy e-mail istnieje — komunikat ogólny
             ModelState.AddModelError(string.Empty, "Nieprawidłowa próba logowania.");
             return View(model);
         }

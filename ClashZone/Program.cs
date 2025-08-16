@@ -22,8 +22,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Configure Identity.  Require email confirmation for login to enable account activation.
 builder.Services.AddIdentity<ClashUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
-    options.SignIn.RequireConfirmedEmail = true;
+    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedEmail = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
@@ -34,6 +34,7 @@ builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
 builder.Services.AddScoped<IProductRedeemRepository, ProductRedeemRepository>();
 builder.Services.AddScoped<ICoinWalletRepository, CoinWalletRepository>();
+builder.Services.AddScoped<IMatchesRepository,MatchesRepository>();
 
 // Register business services
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -42,6 +43,7 @@ builder.Services.AddScoped<ITournamentService, TournamentService>();
 builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ICoinShopService, CoinShopService>();
 builder.Services.AddScoped<ICoinWalletService, CoinWalletService>();
+builder.Services.AddScoped<IMatchesService, MatchesService>();
 
 // Register custom email service used for account activation and notifications
 builder.Services.AddScoped<IEmailService, EmailService>();

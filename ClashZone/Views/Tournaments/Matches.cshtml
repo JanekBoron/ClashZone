@@ -5,11 +5,12 @@
 }
 
 <div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">@Model.Tournament.Name – Mecze</h2>
-        <!-- Link back to the tournament overview -->
-        <a asp-action="Details" asp-route-id="@Model.Tournament.Id" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Przegląd</a>
     </div>
+
+    @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Matches"))
+
     @if (!Model.Matches.Any())
     {
         <p>Brak rozegranych meczów w tym turnieju.</p>
@@ -45,7 +46,6 @@
                             </div>
                         </td>
                         <td class="text-end">
-                            <!-- Navigate to match details within the tournament context -->
                             <a asp-action="MatchDetails" asp-route-tournamentId="@item.Match.TournamentId" asp-route-id="@item.Match.Id" class="btn btn-sm" style="background-color:#FF2B3E;color:#ffffff;">Szczegóły</a>
                         </td>
                     </tr>

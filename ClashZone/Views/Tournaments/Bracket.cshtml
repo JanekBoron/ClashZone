@@ -1,81 +1,85 @@
-﻿@model ClashZone.ViewModels.BracketViewModel
+@model ClashZone.ViewModels.BracketViewModel
 
 @{
-    // Title reflects the tournament name for improved SEO and clarity
+    // Set a descriptive page title incorporating the tournament name
     ViewData["Title"] = $"Drabinka – {Model.Tournament.Name}";
 }
 
-<div class="container mt-4" style="background-color:#0A0A0A; padding: 20px; border-radius: 10px; color: #f8f9fa;">
-    <h2 class="mb-3">Drabinka – @Model.Tournament.Name</h2>
-    <!-- Button to generate random results for the bracket -->
-    <form asp-action="GenerateResults" asp-route-id="@Model.Tournament.Id" method="post" class="mb-3">
-        <button type="submit" class="btn" style="background-color:#FF2B3E; border-color:#FF2B3E; color:#fff;">Wyniki</button>
+<h2 class="mb-3" style="color:#FF2B3E;">Drabinka – @Model.Tournament.Name</h2>
+
+<!-- Button to simulate the entire bracket and persist results/statistics -->
+<div class="mb-4">
+    <form asp-action="GenerateResults" asp-controller="Tournaments" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Tournament.Id" />
+        <button type="submit" class="btn" style="background-color:#FF2B3E;color:#0A0A0A;">Wyniki</button>
     </form>
-
-    <!-- Navigation tabs -->
-    <ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Przegląd</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Czat</a>
-        </li>
-        <li class="nav-item ">
-            <a class="nav-link active" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Drabinka</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Uczestnicy</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Matches" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Mecze</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Rules" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Reguły</a>
-        </li>
-    </ul>
-
-    @if (Model.Rounds.Count == 0)
-    {
-        <div class="alert alert-warning" role="alert" style="background-color:#1a1a1a; border-color:#444; color:#fff;">
-            Brak informacji o drabince.  Upewnij się, że check‑in jest zakończony i turniej ma co najmniej dwie drużyny.
-        </div>
-    }
-    else
-    {
-        <!-- Container for the entire bracket.  Uses flexbox to arrange rounds horizontally with horizontal scroll if needed. -->
-        <div class="d-flex" style="overflow-x: auto; padding-bottom: 1rem;">
-            @for (int r = 0; r < Model.Rounds.Count; r++)
-            {
-                var roundNumber = r + 1;
-                <div class="me-4">
-                    <h6 class="text-center mb-3">Runda @roundNumber</h6>
-                    @foreach (var match in Model.Rounds[r])
-                    {
-                        <div class="mb-4 p-2" style="background-color:#1a1a1a; border:1px solid #444; border-radius:6px; min-width: 180px;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span>@(match.Team1Name ?? "Bye")</span>
-                                @if (match.Team1Name != null)
-                                {
-                                    <span class="badge"
-                                          style="background-color:@((match.Team1Score.HasValue && match.Team2Score.HasValue && match.Team1Score.Value >= match.Team2Score.Value) ? "#FF2B3E" : "#6c757d");">
-                                        @(match.Team1Score ?? 0)
-                                    </span>
-                                }
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span>@(match.Team2Name ?? "Bye")</span>
-                                @if (match.Team2Name != null)
-                                {
-                                    <span class="badge"
-                                          style="background-color:@((match.Team1Score.HasValue && match.Team2Score.HasValue && match.Team2Score.Value > match.Team1Score.Value) ? "#FF2B3E" : "#6c757d");">
-                                        @(match.Team2Score ?? 0)
-                                    </span>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-        </div>
-    }
 </div>
+
+<!-- Navigation tabs for different tournament sections -->
+<nav class="nav nav-tabs mb-4" style="border-bottom:1px solid #FF2B3E;">
+    <a class="nav-link text-light" asp-action="Details" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Przegląd</a>
+    <a class="nav-link text-light" asp-action="Chat" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Czat</a>
+    <a class="nav-link active" style="color:#FF2B3E;border-bottom:2px solid #FF2B3E;" asp-action="Bracket" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Drabinka</a>
+    <a class="nav-link text-light" asp-action="ParticipantsList" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Uczestnicy</a>
+    <a class="nav-link text-light" asp-action="Matches" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Mecze</a>
+    <a class="nav-link text-light" asp-action="Rules" asp-controller="Tournaments" asp-route-id="@Model.Tournament.Id">Reguły</a>
+</nav>
+
+@if (Model.Rounds == null || Model.Rounds.Count == 0)
+{
+    <p class="text-light">Brak informacji o drabince. Upewnij się, że check‑in jest zakończony i turniej ma co najmniej dwie drużyny.</p>
+}
+else
+{
+    <!-- Use a horizontally scrollable container to accommodate many rounds -->
+    <div class="row flex-nowrap" style="overflow-x:auto;">
+        @for (int r = 0; r < Model.Rounds.Count; r++)
+        {
+            var roundNumber = r + 1;
+            <div class="col-auto me-4">
+                <h5 class="text-light mb-3">Runda @roundNumber</h5>
+                @for (int m = 0; m < Model.Rounds[r].Count; m++)
+                {
+                    var match = Model.Rounds[r][m];
+                    var matchNumber = m + 1;
+                    <div class="card mb-4" style="background-color:#0A0A0A; border:1px solid #FF2B3E; min-width:200px;">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-light">@(!string.IsNullOrEmpty(match.Team1Name) ? match.Team1Name : "Bye")</span>
+                                @if (!string.IsNullOrEmpty(match.Team1Name))
+                                {
+                                    bool bothScored = match.Team1Score.HasValue && match.Team2Score.HasValue;
+                                    bool highlight = bothScored && match.Team1Score.Value >= match.Team2Score.Value;
+                                    string bg = highlight ? "#FF2B3E" : "#6c757d";
+                                    <span class="badge" style="background-color:@bg;color:#0A0A0A;">@(match.Team1Score ?? 0)</span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="text-light">@(!string.IsNullOrEmpty(match.Team2Name) ? match.Team2Name : "Bye")</span>
+                                @if (!string.IsNullOrEmpty(match.Team2Name))
+                                {
+                                    bool bothScored2 = match.Team1Score.HasValue && match.Team2Score.HasValue;
+                                    bool highlight2 = bothScored2 && match.Team2Score.Value > match.Team1Score.Value;
+                                    string bg2 = highlight2 ? "#FF2B3E" : "#6c757d";
+                                    <span class="badge" style="background-color:@bg2;color:#0A0A0A;">@(match.Team2Score ?? 0)</span>
+                                }
+                            </div>
+                            @* Show the simulation button only when both teams are present and no result exists *@
+                            @if (!string.IsNullOrEmpty(match.Team1Name) && !string.IsNullOrEmpty(match.Team2Name) && !match.Team1Score.HasValue && !match.Team2Score.HasValue)
+                            {
+                                <form asp-action="SimulateMatch" asp-controller="Bracket" method="post" class="mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Tournament.Id" />
+                                    <input type="hidden" name="roundNumber" value="@roundNumber" />
+                                    <input type="hidden" name="matchNumber" value="@matchNumber" />
+                                    <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#0A0A0A;">Symuluj</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}

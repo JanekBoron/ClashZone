@@ -1,7 +1,6 @@
 ﻿@model ClashZone.ViewModels.ParticipantsViewModel
 
 @{
-    // Set page title to show participants page for tournament
     ViewData["Title"] = $"Uczestnicy – {Model.Tournament.Name}";
 }
 
@@ -14,29 +13,8 @@
     </div>
     <hr style="border-color:#444;" />
 
-    <!-- Navigation tabs -->
-    <ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Przegląd</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Czat</a>
-        </li>
-        <li class="nav-item ">
-            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Drabinka</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Uczestnicy</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Matches" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Mecze</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Rules" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Reguły</a>
-        </li>
-    </ul>
+    @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Participants"))
 
-    <!-- Participants listing -->
     <div class="row">
         <div class="col-md-12">
             @if (Model.Teams.Any())

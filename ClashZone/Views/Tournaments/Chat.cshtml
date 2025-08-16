@@ -1,4 +1,4 @@
-﻿@model ClashZone.ViewModels.ChatViewModel
+@model ClashZone.ViewModels.ChatViewModel
 
 @{
     ViewData["Title"] = $"Czat – {Model.Tournament.Name}";
@@ -12,27 +12,8 @@
         </div>
     </div>
     <hr style="border-color:#444;" />
-    <!-- Navigation tabs -->
-    <ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Przegląd</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" asp-action="Chat" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Czat</a>
-        </li>
-        <li class="nav-item ">
-            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Drabinka</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Uczestnicy</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Matches" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Mecze</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Rules" asp-route-id="@Model.Tournament.Id" style="color:#FF2B3E;">Reguły</a>
-        </li>
-    </ul>
+
+    @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Chat"))
 
     <!-- All Chat section -->
     <div class="row mb-4">

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClashZone", "ClashZone.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClashZone.DataAccess", "..\DataAccess\ClashZone.DataAccess.csproj", "{9B2F4077-9D16-4B9E-9B78-722392B7F730}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClashZone.Tests", "..\ClashZone.Tests\ClashZone.Tests.csproj", "{229CEE9D-E511-448C-9E56-8DED547D5973}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9B2F4077-9D16-4B9E-9B78-722392B7F730}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B2F4077-9D16-4B9E-9B78-722392B7F730}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B2F4077-9D16-4B9E-9B78-722392B7F730}.Release|Any CPU.Build.0 = Release|Any CPU
+		{229CEE9D-E511-448C-9E56-8DED547D5973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{229CEE9D-E511-448C-9E56-8DED547D5973}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{229CEE9D-E511-448C-9E56-8DED547D5973}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{229CEE9D-E511-448C-9E56-8DED547D5973}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

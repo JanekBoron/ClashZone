@@ -1,0 +1,66 @@
+﻿@model ClashZone.ViewModels.RankingViewModel
+
+@{
+    ViewData["Title"] = "Rankingi";
+}
+
+<h2 class="my-4" style="color: var(--cz-red);">Rankingi graczy</h2>
+
+<div class="table-responsive">
+    <table class="table" style="color: #fff; background-color: var(--cz-black);">
+        <thead>
+            <tr style="background-color: var(--cz-gray); color: #fff;">
+                <th scope="col">#</th>
+                <th scope="col">Gracz</th>
+                <th scope="col">Średnia K/D</th>
+                <th scope="col">Zabójstwa</th>
+                <th scope="col">Śmierci</th>
+                <th scope="col">Mecze</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var startRank = (Model.CurrentPage - 1) * Model.PageSize;
+                for (int i = 0; i < Model.UserStats.Count; i++)
+                {
+                    var stat = Model.UserStats[i];
+                    var rank = startRank + i + 1;
+                    <tr>
+                        <td>@rank</td>
+                        <td>@(stat.User.DisplayName ?? stat.User.UserName)</td>
+                        <td>@stat.AverageKD</td>
+                        <td>@stat.TotalKills</td>
+                        <td>@stat.TotalDeaths</td>
+                        <td>@stat.MatchesPlayed</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Ranking pagination">
+        <ul class="pagination justify-content-center">
+            @if (Model.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" style="background-color: var(--cz-red); color: #fff; border: none;" asp-controller="Rankings" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)">Poprzednia</a>
+                </li>
+            }
+            @for (int p = 1; p <= Model.TotalPages; p++)
+            {
+                <li class="page-item @(p == Model.CurrentPage ? "active" : null)">
+                    <a class="page-link" style="background-color: var(--cz-black); color: var(--cz-red); border: none;" asp-controller="Rankings" asp-action="Index" asp-route-page="@p">@p</a>
+                </li>
+            }
+            @if (Model.CurrentPage < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" style="background-color: var(--cz-red); color: #fff; border: none;" asp-controller="Rankings" asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)">Następna</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

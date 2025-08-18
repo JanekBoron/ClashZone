@@ -1,0 +1,15 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using ClashZone.DataAccess.Models
+@inject SignInManager<ClashUser> SignInManager
+
+@* Navigation link for the rankings page.  The link is visible only when
+   the user is authenticated.  To integrate this partial into the main
+   navigation bar add a call to Html.PartialAsync("_RankingsLinkPartial")
+   in the appropriate location of your layout. *@
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Rankings" asp-action="Index">Rankingi</a>
+    </li>
+}

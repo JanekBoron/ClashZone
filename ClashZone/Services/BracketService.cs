@@ -25,17 +25,21 @@ namespace ClashZone.Services
         private readonly UserManager<ClashUser> _userManager;
         private readonly IEmailService _emailService;
         private readonly ApplicationDbContext _context;
+        private readonly ICoinWalletService _coinWalletService;
 
         public BracketService(
             ITournamentsRepository tournamentsRepository,
             UserManager<ClashUser> userManager,
             IEmailService emailService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            ICoinWalletService coinWalletService)
         {
             _tournamentsRepository = tournamentsRepository;
             _userManager = userManager;
             _emailService = emailService;
             _context = context;
+            _coinWalletService = coinWalletService;
+
         }
 
         /// <summary>
@@ -676,6 +680,9 @@ namespace ClashZone.Services
         /// </summary>
         private async Task SaveBracketStatsAsync(List<List<MatchInfo>> rounds, Tournament tournament, List<Team> teams)
         {
+            // Determine if there were any matches before persisting new ones.
+            bool hadExistingMatches = await _context.Matches.AnyAsync(m => m.TournamentId == tournament.Id);
+
             // Build dictionary from team display names to team objects
             var teamNameMap = new Dictionary<string, Team>(StringComparer.OrdinalIgnoreCase);
             foreach (var team in teams)
@@ -790,6 +797,53 @@ namespace ClashZone.Services
                         }
                     }
                     await _context.SaveChangesAsync();
+                }
+            }
+
+            // Award prizes after all matches have been persisted. Only award if
+            // there were no matches recorded prior to this invocation to avoid
+            // duplicating prizes on subsequent bracket updates.
+            if (!hadExistingMatches)
+            {
+                // Determine winner from the final match of the last round
+                if (rounds != null && rounds.Count > 0)
+                {
+                    var lastRound = rounds[rounds.Count - 1];
+                    if (lastRound.Count > 0)
+                    {
+                        var finalMatch = lastRound[0];
+                        string? winnerName = null;
+                        int finalScore1 = finalMatch.Team1Score ?? 0;
+                        int finalScore2 = finalMatch.Team2Score ?? 0;
+                        if (finalScore1 >= finalScore2)
+                        {
+                            winnerName = finalMatch.Team1Name;
+                        }
+                        else
+                        {
+                            winnerName = finalMatch.Team2Name;
+                        }
+                        if (!string.IsNullOrEmpty(winnerName) && teamNameMap.TryGetValue(winnerName, out var winningTeam))
+                        {
+                            string prize = tournament.Prize ?? string.Empty;
+                            var lowerPrize = prize.ToLowerInvariant();
+                            // Consider the prize as ClashCoins if it mentions "clash"
+                            if (lowerPrize.Contains("clash"))
+                            {
+                                var match = System.Text.RegularExpressions.Regex.Match(prize, @"\d+");
+                                if (match.Success && int.TryParse(match.Value, out int amount) && amount > 0)
+                                {
+                                    // Credit the parsed amount to each member of the winning team
+                                    var memberIdsPrize = await _tournamentsRepository.GetTeamMemberIdsAsync(winningTeam.Id);
+                                    var allIdsPrize = new HashSet<string>(memberIdsPrize) { winningTeam.CaptainId };
+                                    foreach (var userId in allIdsPrize)
+                                    {
+                                        await _coinWalletService.CreditAsync(userId, amount, $"Tournament:{tournament.Id}:1stPlace");
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

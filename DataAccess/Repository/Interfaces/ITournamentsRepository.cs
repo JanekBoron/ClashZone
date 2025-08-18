@@ -18,6 +18,31 @@ namespace ClashZone.DataAccess.Repository.Interfaces
 
         Task<Tournament?> GetTournamentByIdAsync(int id);
 
+        /// <summary>
+        /// Pobiera wiadomości z czatu zgłoszeń dla podanego turnieju.
+        /// Administratorzy mogą pobrać zgłoszenia dla wszystkich drużyn (teamId = null),
+        /// natomiast zwykli użytkownicy dostają zgłoszenia wyłącznie własnej drużyny.
+        /// </summary>
+        /// <param name="tournamentId">Identyfikator turnieju.</param>
+        /// <param name="teamId">Identyfikator drużyny lub null w przypadku administratora.</param>
+        /// <param name="isAdmin">Czy użytkownik jest administratorem.</param>
+        Task<List<ChatMessage>> GetReportChatMessagesAsync(
+            int tournamentId,
+            int? teamId,
+            bool isAdmin);
+
+        /// <summary>
+        /// Updates an existing tournament.  Persists the changes to the database.
+        /// </summary>
+        /// <param name="tournament">The tournament entity with updated values.</param>
+        Task UpdateTournamentAsync(Tournament tournament);
+
+        /// <summary>
+        /// Deletes the tournament with the given identifier.
+        /// </summary>
+        /// <param name="id">Identifier of the tournament to remove.</param>
+        Task DeleteTournamentAsync(int id);
+
         // ---------------------------------------------------------------------
         // Team management methods.  These methods encapsulate operations
         // related to creating and joining teams for tournaments.  They hide

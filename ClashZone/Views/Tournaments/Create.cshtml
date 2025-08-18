@@ -21,7 +21,10 @@
     </div>
     <div class="mb-3">
         <label asp-for="GameTitle" class="form-label"></label>
-        <input asp-for="GameTitle" class="form-control" />
+        <!-- Restrict game title to Counter Strike 2 only -->
+        <select asp-for="GameTitle" class="form-select">
+            <option value="Counter Strike 2">Counter Strike 2</option>
+        </select>
         <span asp-validation-for="GameTitle" class="text-danger"></span>
     </div>
     <div class="mb-3">
@@ -44,10 +47,56 @@
         </select>
         <span asp-validation-for="Format" class="text-danger"></span>
     </div>
+    <!-- Prize selection for first, second and third places.  Each block allows choosing between
+         a text description and a ClashCoins amount.  The values will be combined into the
+         tournament.Prize property separated by a pipe symbol. -->
     <div class="mb-3">
-        <label asp-for="Prize" class="form-label"></label>
-        <input asp-for="Prize" class="form-control" />
-        <span asp-validation-for="Prize" class="text-danger"></span>
+        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 1. miejsce</h5>
+        <label class="form-label">Rodzaj nagrody</label>
+        <select name="prizeOption1" class="form-select">
+            <option value="text">Opis</option>
+            <option value="coins">ClashCoins</option>
+        </select>
+        <div class="mt-2">
+            <label class="form-label">Opis nagrody</label>
+            <input name="prizeDescription1" class="form-control" />
+        </div>
+        <div class="mt-2">
+            <label class="form-label">Ilość ClashCoins</label>
+            <input name="prizeCoins1" type="number" min="0" class="form-control" />
+        </div>
+    </div>
+    <div class="mb-3">
+        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 2. miejsce</h5>
+        <label class="form-label">Rodzaj nagrody</label>
+        <select name="prizeOption2" class="form-select">
+            <option value="text">Opis</option>
+            <option value="coins">ClashCoins</option>
+        </select>
+        <div class="mt-2">
+            <label class="form-label">Opis nagrody</label>
+            <input name="prizeDescription2" class="form-control" />
+        </div>
+        <div class="mt-2">
+            <label class="form-label">Ilość ClashCoins</label>
+            <input name="prizeCoins2" type="number" min="0" class="form-control" />
+        </div>
+    </div>
+    <div class="mb-3">
+        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 3. miejsce</h5>
+        <label class="form-label">Rodzaj nagrody</label>
+        <select name="prizeOption3" class="form-select">
+            <option value="text">Opis</option>
+            <option value="coins">ClashCoins</option>
+        </select>
+        <div class="mt-2">
+            <label class="form-label">Opis nagrody</label>
+            <input name="prizeDescription3" class="form-control" />
+        </div>
+        <div class="mt-2">
+            <label class="form-label">Ilość ClashCoins</label>
+            <input name="prizeCoins3" type="number" min="0" class="form-control" />
+        </div>
     </div>
     <div class="form-check mb-3">
         <input asp-for="IsPublic" class="form-check-input" />

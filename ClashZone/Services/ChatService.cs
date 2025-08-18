@@ -11,13 +11,14 @@ namespace ClashZone.Services
     {
         private readonly ITournamentsRepository _tournamentsRepository;
         private readonly UserManager<ClashUser> _userManager;
+
         public ChatService(ITournamentsRepository tournamentsRepository, UserManager<ClashUser> userManager)
         {
             _tournamentsRepository = tournamentsRepository;
             _userManager = userManager;
         }
 
-        public async Task<ChatViewModel?> GetChatAsync(int tournamentId, string? userId)
+        public async Task<ChatViewModel?> GetChatAsync(int tournamentId, string? userId, bool isAdmin)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
             if (tournament == null)
@@ -30,19 +31,26 @@ namespace ClashZone.Services
             {
                 userTeam = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
             }
+
             var model = new ChatViewModel
             {
                 Tournament = tournament,
-                HasTeam = userTeam != null
+                HasTeam = userTeam != null,
+                UserTeamId = userTeam?.Id
             };
+            // Load all‑chat messages
             model.AllMessages = await _tournamentsRepository.GetAllChatMessagesAsync(tournamentId);
+            // Load team‑chat messages if user belongs to a team
             if (userTeam != null)
             {
                 model.TeamMessages = await _tournamentsRepository.GetTeamChatMessagesAsync(tournamentId, userTeam.Id);
             }
+            // Load problem report messages.  Administrators see all reports; players see only their own team's reports
+            model.ReportMessages = await _tournamentsRepository.GetReportChatMessagesAsync(tournamentId, userTeam?.Id, isAdmin);
             // Build a dictionary of user IDs to display names to avoid repeated lookups in the view
             var allUserIds = model.AllMessages.Select(m => m.UserId)
                 .Concat(model.TeamMessages.Select(m => m.UserId))
+                .Concat(model.ReportMessages.Select(m => m.UserId))
                 .Distinct()
                 .Where(id => id != null)
                 .ToList();
@@ -80,7 +88,50 @@ namespace ClashZone.Services
                 TeamId = teamId,
                 UserId = userId,
                 Message = message,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                IsReport = false
+            };
+            await _tournamentsRepository.AddChatMessageAsync(chatMessage);
+        }
+
+        public async Task PostReportMessageAsync(int tournamentId, string userId, string message, int? teamId, bool isAdmin)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+            int? finalTeamId = null;
+            if (isAdmin)
+            {
+                // Admin can specify a team id to post to.
+                if (teamId.HasValue)
+                {
+                    finalTeamId = teamId;
+                }
+                else
+                {
+                    // Without a team target the report cannot be routed
+                    return;
+                }
+            }
+            else
+            {
+                var team = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
+                if (team == null)
+                {
+                    // Only team members can post reports
+                    return;
+                }
+                finalTeamId = team.Id;
+            }
+            var chatMessage = new ChatMessage
+            {
+                TournamentId = tournamentId,
+                TeamId = finalTeamId,
+                UserId = userId,
+                Message = message,
+                SentAt = DateTime.UtcNow,
+                IsReport = true
             };
             await _tournamentsRepository.AddChatMessageAsync(chatMessage);
         }

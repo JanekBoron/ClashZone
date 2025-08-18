@@ -78,6 +78,25 @@ namespace ClashZone.DataAccess.Repository
         }
 
         /// <inheritdoc/>
+        public async Task UpdateTournamentAsync(Tournament tournament)
+        {
+            if (tournament == null) throw new ArgumentNullException(nameof(tournament));
+            _context.Tournaments.Update(tournament);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteTournamentAsync(int id)
+        {
+            var tournament = await _context.Tournaments.FindAsync(id);
+            if (tournament != null)
+            {
+                _context.Tournaments.Remove(tournament);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task<Team?> GetUserTeamAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) return null;
@@ -158,6 +177,33 @@ namespace ClashZone.DataAccess.Repository
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
         }
+
+
+        public async Task<List<ChatMessage>> GetReportChatMessagesAsync(
+        int tournamentId,
+        int? teamId,
+        bool isAdmin)
+        {
+            // Pobieramy wszystkie zgłoszenia dla turnieju
+            IQueryable<ChatMessage> query = _context.ChatMessages
+                .Where(cm => cm.TournamentId == tournamentId && cm.IsReport);
+
+            // Jeśli użytkownik nie jest administratorem, ograniczamy wyniki do jego drużyny
+            if (!isAdmin)
+            {
+                // Brak drużyny oznacza brak dostępu do zgłoszeń
+                if (teamId == null)
+                {
+                    return new List<ChatMessage>();
+                }
+
+                query = query.Where(cm => cm.TeamId == teamId);
+            }
+
+            // Sortujemy zgłoszenia chronologicznie
+            return await query.OrderBy(cm => cm.SentAt).ToListAsync();
+        }
+
 
         public async Task<List<Team>> GetTeamsForTournamentAsync(int tournamentId)
         {

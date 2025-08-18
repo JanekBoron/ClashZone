@@ -28,7 +28,13 @@ builder.Services.AddIdentity<ClashUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
-// Register repositories used in the application
+
+//Security
+builder.Services.AddScoped<SignInManager<ClashUser>, ClashZone.Security.BannedAwareSignInManager>();
+builder.Services.AddScoped<IUserAdminService, UserAdminService>();
+
+
+//Repositories
 builder.Services.AddScoped<ITournamentsRepository, TournamentsRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
@@ -36,7 +42,7 @@ builder.Services.AddScoped<IProductRedeemRepository, ProductRedeemRepository>();
 builder.Services.AddScoped<ICoinWalletRepository, CoinWalletRepository>();
 builder.Services.AddScoped<IMatchesRepository,MatchesRepository>();
 
-// Register business services
+// Business
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IBracketService, BracketService>();
 builder.Services.AddScoped<ITournamentService, TournamentService>();
@@ -44,8 +50,6 @@ builder.Services.AddScoped<IProductsService, ProductsService>();
 builder.Services.AddScoped<ICoinShopService, CoinShopService>();
 builder.Services.AddScoped<ICoinWalletService, CoinWalletService>();
 builder.Services.AddScoped<IMatchesService, MatchesService>();
-
-// Register custom email service used for account activation and notifications
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Stripe API configuration for payments (existing functionality)

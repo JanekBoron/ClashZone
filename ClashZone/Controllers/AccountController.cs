@@ -97,19 +97,23 @@ namespace ClashZone.Controllers
 
             if (user != null)
             {
-                /* // Ensure the user has confirmed their email before allowing login
+                // Ensure the user has confirmed their email before allowing login
                 if (!await _userManager.IsEmailConfirmedAsync(user))
                 {
                     ModelState.AddModelError(string.Empty, "Konto nie jest potwierdzone. Sprawdź skrzynkę e-mail.");
                     return View(model);
-                } */
+                } else if (user != null && user.IsBanned)
+                {
+                    ModelState.AddModelError(string.Empty, "Twoje konto zostało zbanowane. Skontaktuj się z administratorem.");
+                    return View(model);
+                }
 
                 // Uwaga: PasswordSignInAsync wymaga NAZWY UŻYTKOWNIKA, nie e-maila
                 var result = await _signInManager.PasswordSignInAsync(
-                    user.UserName,               // <- kluczowa zmiana (wcześniej było user.Email)
-                    model.Password,
-                    model.RememberMe,
-                    lockoutOnFailure: false);
+                        user.UserName,               // <- kluczowa zmiana (wcześniej było user.Email)
+                        model.Password,
+                        model.RememberMe,
+                        lockoutOnFailure: false);
 
                 if (result.Succeeded)
                     return RedirectToAction("Index", "Home");

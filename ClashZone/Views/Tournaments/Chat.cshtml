@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = $"Czat – {Model.Tournament.Name}";
 }
-
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -11,79 +10,108 @@
             <small class="text-muted">Turniej: @Model.Tournament.GameTitle</small>
         </div>
     </div>
-    <hr style="border-color:#444;" />
 
-    @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Chat"))
+<hr style="border-color:#444;" />
+@await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Chat"))
 
-    <!-- All Chat section -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <h4>All Chat</h4>
-            <div class="border p-3 mb-3" style="background-color:#1a1a1a; border-color:#444; border-radius:6px; max-height:300px; overflow-y:auto;">
-                @if (Model.AllMessages.Any())
-                {
-                    @foreach (var msg in Model.AllMessages)
-                    {
-                        <div class="mb-2">
-                            <strong style="color:#FF2B3E;">@Model.UserNames[msg.UserId]</strong>
-                            <small class="text-muted">(@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))</small><br />
-                            <span>@msg.Message</span>
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p class="text-muted">Brak wiadomości.</p>
-                }
+<!-- Global chat section -->
+<div class="chat-section my-4">
+    <h2>All Chat</h2>
+    @if (Model.AllMessages.Any())
+    {
+        foreach (var msg in Model.AllMessages)
+        {
+            <div class="chat-message">
+                <strong>@Model.UserNames[msg.UserId]</strong>
+                (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                @msg.Message
             </div>
-            <form asp-action="PostMessage" method="post" class="d-flex">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Tournament.Id" />
-                <input type="hidden" name="toTeam" value="false" />
-                <input type="text" name="message" class="form-control me-2" placeholder="Napisz wiadomość..." style="background-color:#222; border-color:#444; color:#fff;" />
-                <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Wyślij</button>
-            </form>
+        }
+    }
+    else
+    {
+        <p>Brak wiadomości.</p>
+    }
+    @using (Html.BeginForm("PostMessage", "Tournaments", new { id = Model.Tournament.Id }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="toTeam" value="false" />
+        <div class="input-group mt-2">
+            <input type="text" name="message" class="form-control" placeholder="Napisz wiadomość..." />
+            <button type="submit" class="btn btn-danger">Wyślij</button>
         </div>
-    </div>
+    }
+</div>
 
-    <!-- Team Chat section -->
-    <div class="row">
-        <div class="col-md-12">
-            <h4>Czat drużynowy</h4>
-            <div class="border p-3 mb-3" style="background-color:#1a1a1a; border-color:#444; border-radius:6px; max-height:300px; overflow-y:auto;">
-                @if (Model.HasTeam)
-                {
-                    @if (Model.TeamMessages.Any())
-                    {
-                        @foreach (var msg in Model.TeamMessages)
-                        {
-                            <div class="mb-2">
-                                <strong style="color:#FF2B3E;">@Model.UserNames[msg.UserId]</strong>
-                                <small class="text-muted">(@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))</small><br />
-                                <span>@msg.Message</span>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <p class="text-muted">Brak wiadomości w czacie drużynowym.</p>
-                    }
-                }
-                else
-                {
-                    <p class="text-muted">Musisz dołączyć do drużyny, aby korzystać z czatu drużynowego.</p>
-                }
-            </div>
-            @if (Model.HasTeam)
+<!-- Team chat section -->
+<div class="chat-section my-4">
+    <h2>Czat drużynowy</h2>
+    @if (Model.HasTeam)
+    {
+        if (Model.TeamMessages.Any())
+        {
+            foreach (var msg in Model.TeamMessages)
             {
-                <form asp-action="PostMessage" method="post" class="d-flex">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@Model.Tournament.Id" />
-                    <input type="hidden" name="toTeam" value="true" />
-                    <input type="text" name="message" class="form-control me-2" placeholder="Napisz wiadomość do drużyny..." style="background-color:#222; border-color:#444; color:#fff;" />
-                    <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Wyślij</button>
-                </form>
+                <div class="chat-message">
+                    <strong>@Model.UserNames[msg.UserId]</strong>
+                    (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                    @msg.Message
+                </div>
             }
-        </div>
-    </div>
+        }
+        else
+        {
+            <p>Brak wiadomości w czacie drużynowym.</p>
+        }
+        @using (Html.BeginForm("PostMessage", "Tournaments", new { id = Model.Tournament.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="toTeam" value="true" />
+            <div class="input-group mt-2">
+                <input type="text" name="message" class="form-control" placeholder="Napisz wiadomość do drużyny..." />
+                <button type="submit" class="btn btn-danger">Wyślij</button>
+            </div>
+        }
+    }
+    else
+    {
+        <p>Musisz dołączyć do drużyny, aby korzystać z czatu drużynowego.</p>
+    }
+</div>
+
+<!-- Problem report chat section -->
+<div class="chat-section my-4">
+    <h2>Zgłoszenia problemów</h2>
+    @if (Model.HasTeam || User.IsInRole("Admin"))
+    {
+        if (Model.ReportMessages.Any())
+        {
+            foreach (var msg in Model.ReportMessages)
+            {
+                <div class="chat-message">
+                    <strong>@Model.UserNames[msg.UserId]</strong>
+                    (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                    @msg.Message
+                </div>
+            }
+        }
+        else
+        {
+            <p>Brak wiadomości w czacie zgłoszeń.</p>
+        }
+        @using (Html.BeginForm("PostReportMessage", "Tournaments", new { id = Model.Tournament.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="teamId" value="@Model.UserTeamId" />
+            <div class="input-group mt-2">
+                <input type="text" name="message" class="form-control" placeholder="Opisz problem..." />
+                <button type="submit" class="btn btn-danger">Wyślij</button>
+            </div>
+        }
+    }
+    else
+    {
+        <p>Musisz dołączyć do drużyny, aby zgłosić problem.</p>
+    }
+</div>
 </div>

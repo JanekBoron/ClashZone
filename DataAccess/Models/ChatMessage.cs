@@ -43,5 +43,7 @@ namespace ClashZone.DataAccess.Models
         /// Timestamp when the message was sent (UTC).
         /// </summary>
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsReport { get; set; }
     }
 }

@@ -1,0 +1,145 @@
+﻿@model DataAccess.Models.Tournament
+
+@{
+    ViewData["Title"] = "Edytuj turniej";
+
+    // Parse Prize into three slots: 1st, 2nd, 3rd (separated by '|')
+    var parts = (Model.Prize ?? string.Empty).Split('|');
+    bool[] isCoinsPrize = new bool[3];
+    int[] prizeCoins = new int[3];
+    string[] prizeDesc = new string[3];
+
+    for (int i = 0; i < 3; i++)
+    {
+        var part = i < parts.Length ? parts[i]?.Trim() ?? string.Empty : string.Empty;
+        if (!string.IsNullOrWhiteSpace(part) && part.Contains("ClashCoins"))
+        {
+            isCoinsPrize[i] = true;
+            var p = part.Split(' ');
+            if (p.Length > 0 && int.TryParse(p[0], out var coins))
+            {
+                prizeCoins[i] = coins;
+            }
+        }
+        else
+        {
+            prizeDesc[i] = part;
+        }
+    }
+}
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 style="color:#FF2B3E;">Edytuj turniej</h2>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="GameTitle" class="form-label"></label>
+            <select asp-for="GameTitle" class="form-select">
+                <option value="Counter Strike 2">Counter Strike 2</option>
+            </select>
+            <span asp-validation-for="GameTitle" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" type="datetime-local" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-ddTHH:mm")" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Format" class="form-label">Format drużyn</label>
+            <select asp-for="Format" class="form-select">
+                <option value="1v1">1v1</option>
+                <option value="2v2">2v2</option>
+                <option value="5v5">5v5</option>
+            </select>
+            <span asp-validation-for="Format" class="text-danger"></span>
+        </div>
+
+        <!-- Nagrody -->
+        <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody</strong></div>
+
+        <!-- 1. miejsce -->
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>1. miejsce</strong></div>
+            @if (!isCoinsPrize[0])
+            {
+                <select name="prizeOption1" class="form-select mb-2">
+                    <option value="text" selected>Opis</option>
+                    <option value="coins">ClashCoins</option>
+                </select>
+            }
+            else
+            {
+                <select name="prizeOption1" class="form-select mb-2">
+                    <option value="text">Opis</option>
+                    <option value="coins" selected>ClashCoins</option>
+                </select>
+            }
+            <input name="prizeDescription1" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[0]" />
+            <input name="prizeCoins1" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[0]" />
+        </div>
+
+        <!-- 2. miejsce -->
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>2. miejsce</strong></div>
+            @if (!isCoinsPrize[1])
+            {
+                <select name="prizeOption2" class="form-select mb-2">
+                    <option value="text" selected>Opis</option>
+                    <option value="coins">ClashCoins</option>
+                </select>
+            }
+            else
+            {
+                <select name="prizeOption2" class="form-select mb-2">
+                    <option value="text">Opis</option>
+                    <option value="coins" selected>ClashCoins</option>
+                </select>
+            }
+            <input name="prizeDescription2" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[1]" />
+            <input name="prizeCoins2" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[1]" />
+        </div>
+
+        <!-- 3. miejsce -->
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>3. miejsce</strong></div>
+            @if (!isCoinsPrize[2])
+            {
+                <select name="prizeOption3" class="form-select mb-2">
+                    <option value="text" selected>Opis</option>
+                    <option value="coins">ClashCoins</option>
+                </select>
+            }
+            else
+            {
+                <select name="prizeOption3" class="form-select mb-2">
+                    <option value="text">Opis</option>
+                    <option value="coins" selected>ClashCoins</option>
+                </select>
+            }
+            <input name="prizeDescription3" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[2]" />
+            <input name="prizeCoins3" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[2]" />
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="IsPublic" class="form-check-input" />
+            <label asp-for="IsPublic" class="form-check-label">
+                Publiczny (widoczny dla wszystkich)
+            </label>
+        </div>
+
+        <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Zapisz zmiany</button>
+    </form>
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+    }
+</div>

@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
 
 namespace ClashZone.DataAccess.Models
 {
@@ -43,5 +44,8 @@ namespace ClashZone.DataAccess.Models
         /// user icon in the navigation bar and on the profile page.
         /// </summary>
         public string? ProfilePicturePath { get; set; }
+
+        [Required]
+        public bool IsBanned { get; set; } = false;
     }
 }

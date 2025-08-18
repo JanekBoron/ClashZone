@@ -10,6 +10,6 @@
 @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Organizer") || User.IsInRole("Admin")))
 {
     <li class="nav-item">
-        <a class="nav-link" asp-controller="Tournaments" asp-action="Create">Zarządzanie turniejami</a>
+        <a class="nav-link" asp-controller="Tournaments" asp-action="Manage">Zarządzanie turniejami</a>
     </li>
 }

@@ -20,7 +20,8 @@ namespace ClashZone.Controllers
 {
     /// <summary>
     /// Kontroler obsługujący wszystkie akcje związane z turniejami, w tym
-    /// wyświetlanie listy nadchodzących turniejów, tworzenie nowych turniejów,
+    /// wyświetlanie listy nadchodzących turniejów, tworzenie nowych 
+    /// turniejów,
     /// dołączanie do turniejów oraz prezentację drabinki.  Dodano obsługę
     /// subskrypcji, dzięki czemu turnieje oznaczone jako premium wymagają
     /// aktywnego planu Premium lub Ultra.  Zintegrowano również wysyłanie
@@ -217,7 +218,8 @@ namespace ClashZone.Controllers
         public async Task<IActionResult> Chat(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var model = await _chatService.GetChatAsync(id, userId);
+            var isAdmin = User.IsInRole("Admin");
+            var model = await _chatService.GetChatAsync(id, userId, isAdmin);
             if (model == null)
             {
                 return NotFound();
@@ -232,6 +234,23 @@ namespace ClashZone.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             await _chatService.PostMessageAsync(id, userId, message, toTeam);
+            return RedirectToAction(nameof(Chat), new { id });
+        }
+
+        /// <summary>
+        /// Posts a message to the dedicated problem report chat.  The teamId
+        /// should be provided by the form.  Non‑administrators will ignore
+        /// the provided teamId and automatically route the report to their
+        /// own team.  Administrators may specify a team to respond to.
+        /// </summary>
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PostReportMessage(int id, string message, int? teamId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+            await _chatService.PostReportMessageAsync(id, userId, message, teamId, isAdmin);
             return RedirectToAction(nameof(Chat), new { id });
         }
 
@@ -291,10 +310,49 @@ namespace ClashZone.Controllers
         [HttpPost]
         [Authorize(Roles = "Organizer,Admin")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateTournament(Tournament tournament)
+        public async Task<IActionResult> CreateTournament(
+            Tournament tournament,
+            // Prize parameters for 1st place
+            string prizeOption1,
+            string? prizeDescription1,
+            int? prizeCoins1,
+            // Prize parameters for 2nd place
+            string prizeOption2,
+            string? prizeDescription2,
+            int? prizeCoins2,
+            // Prize parameters for 3rd place
+            string prizeOption3,
+            string? prizeDescription3,
+            int? prizeCoins3)
         {
             if (ModelState.IsValid)
             {
+                // Always set game title to Counter Strike 2
+                tournament.GameTitle = "Counter Strike 2";
+
+                // Helper local function to compute a single prize string based on option
+                string ComputePrize(string option, string? desc, int? coins)
+                {
+                    if (option == "text")
+                    {
+                        return desc ?? string.Empty;
+                    }
+                    else if (option == "coins" && coins.HasValue)
+                    {
+                        return $"{coins.Value} ClashCoins";
+                    }
+                    return string.Empty;
+                }
+
+                // Build prizes for each place
+                string first = ComputePrize(prizeOption1, prizeDescription1, prizeCoins1);
+                string second = ComputePrize(prizeOption2, prizeDescription2, prizeCoins2);
+                string third = ComputePrize(prizeOption3, prizeDescription3, prizeCoins3);
+
+                // Combine into a single string separated by pipe symbol.  This format can be
+                // parsed later when displaying or editing the tournament.
+                tournament.Prize = string.Join("|", new[] { first, second, third });
+
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 await _tournamentService.CreateTournamentAsync(tournament, userId);
                 return RedirectToAction(nameof(Index));
@@ -365,6 +423,101 @@ namespace ClashZone.Controllers
                 return NotFound();
             }
             return RedirectToAction(nameof(Details), new { id = tournamentId.Value });
+        }
+
+        // ---------------- Admin/Organizer management actions ----------------
+
+        /// <summary>
+        /// Displays a list of upcoming tournaments for organizers and admins with options to edit or delete.
+        /// </summary>
+        [Authorize(Roles = "Organizer,Admin")]
+        public async Task<IActionResult> Manage()
+        {
+            var tournaments = await _tournamentService.GetUpcomingTournamentsAsync(null);
+            return View("Manage", tournaments);
+        }
+
+        /// <summary>
+        /// Shows the edit form for a specific tournament.
+        /// </summary>
+        /// <param name="id">Identifier of the tournament to edit.</param>
+        [Authorize(Roles = "Organizer,Admin")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(id);
+            if (tournament == null)
+            {
+                return NotFound();
+            }
+            return View(tournament);
+        }
+
+        /// <summary>
+        /// Processes the submission of the edit tournament form.
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Organizer,Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(
+            int id,
+            Tournament tournament,
+            // Prize parameters for 1st place
+            string prizeOption1,
+            string? prizeDescription1,
+            int? prizeCoins1,
+            // Prize parameters for 2nd place
+            string prizeOption2,
+            string? prizeDescription2,
+            int? prizeCoins2,
+            // Prize parameters for 3rd place
+            string prizeOption3,
+            string? prizeDescription3,
+            int? prizeCoins3)
+        {
+            if (id != tournament.Id)
+            {
+                return BadRequest();
+            }
+            if (ModelState.IsValid)
+            {
+                // Always set game title to Counter Strike 2
+                tournament.GameTitle = "Counter Strike 2";
+
+                string ComputePrize(string option, string? desc, int? coins)
+                {
+                    if (option == "text")
+                    {
+                        return desc ?? string.Empty;
+                    }
+                    else if (option == "coins" && coins.HasValue)
+                    {
+                        return $"{coins.Value} ClashCoins";
+                    }
+                    return string.Empty;
+                }
+                string first = ComputePrize(prizeOption1, prizeDescription1, prizeCoins1);
+                string second = ComputePrize(prizeOption2, prizeDescription2, prizeCoins2);
+                string third = ComputePrize(prizeOption3, prizeDescription3, prizeCoins3);
+                tournament.Prize = string.Join("|", new[] { first, second, third });
+
+                await _tournamentsRepository.UpdateTournamentAsync(tournament);
+                return RedirectToAction(nameof(Manage));
+            }
+            return View(tournament);
+        }
+
+        /// <summary>
+        /// Deletes the specified tournament and redirects back to the management view.
+        ///
+        /// Tylko administratorzy mogą usuwać turnieje.  Organizatorzy nie mają
+        /// takiej opcji, dzięki czemu ryzyko przypadkowego usunięcia danych
+        /// zostaje zminimalizowane.
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _tournamentsRepository.DeleteTournamentAsync(id);
+            return RedirectToAction(nameof(Manage));
         }
     }
 }

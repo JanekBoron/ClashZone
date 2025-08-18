@@ -4,20 +4,22 @@
     ViewData["Title"] = "Mecze turnieju";
 }
 
-<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
         <h2 class="mb-0">@Model.Tournament.Name – Mecze</h2>
     </div>
+
+    <hr style="border-color:#444;" />
 
     @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Matches"))
 
     @if (!Model.Matches.Any())
     {
-        <p>Brak rozegranych meczów w tym turnieju.</p>
+        <p class="text-muted">Brak rozegranych meczów w tym turnieju.</p>
     }
     else
     {
-        <table class="table table-dark table-hover">
+        <table class="table table-dark table-hover align-middle">
             <thead>
                 <tr>
                     <th>Drużyna 1</th>

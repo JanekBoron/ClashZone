@@ -4,32 +4,11 @@
     ViewData["Title"] = "Szczegóły meczu";
 }
 
-<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
-    <!-- Ujednolicony pasek nawigacyjny turnieju (aktywny: Mecze) -->
-    <ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Details" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Przegląd</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Chat" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Czat</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Bracket" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Drabinka</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="ParticipantsList" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Uczestnicy</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" asp-action="Matches" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Mecze</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" asp-action="Rules" asp-route-id="@Model.Match.TournamentId" style="color:#FF2B3E;">Reguły</a>
-        </li>
-    </ul>
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    @await Html.PartialAsync("_TournamentNav", (Model.Match.TournamentId, "Matches"))
 
-    <div class="mb-4">
-        <!-- Dodatkowy przycisk powrotu do listy meczów (opcjonalny) -->
-        <a asp-action="Matches" asp-route-id="@Model.Match.TournamentId" class="btn" style="background-color:#FF2B3E;color:#ffffff;">&larr; Powrót</a>
+    <div class="mb-3">
+        <a asp-action="Matches" asp-route-id="@Model.Match.TournamentId" class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;">&larr; Powrót</a>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">

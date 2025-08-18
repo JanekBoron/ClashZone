@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using ClashZone.DataAccess.Models;
-using DataAccess.Models;
 
 namespace DataAccess.Models
 {

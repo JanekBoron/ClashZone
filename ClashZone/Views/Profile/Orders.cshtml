@@ -1,0 +1,97 @@
+﻿@using ClashZone.DataAccess.Models
+@model IEnumerable<Product>
+
+@{
+    ViewData["Title"] = "Purchased Products";
+}
+
+<style>
+    body {
+        background-color: #0A0A0A;
+        color: white;
+        font-family: Arial, sans-serif;
+    }
+
+    .products-container {
+        max-width: 900px;
+        margin: 40px auto;
+    }
+
+    h1 {
+        color: #FF2B3E;
+        margin-bottom: 20px;
+    }
+
+    .product-card {
+        border: 1px solid #FF2B3E;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        background-color: #111;
+    }
+
+    .product-name {
+        font-size: 20px;
+        font-weight: bold;
+        color: #FF2B3E;
+    }
+
+    .product-description {
+        margin-top: 8px;
+        color: #ccc;
+    }
+
+    .product-meta {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #aaa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 8px;
+        background-color: #FF2B3E;
+        color: #0A0A0A;
+        font-weight: bold;
+    }
+</style>
+
+<div class="products-container">
+    <h1>Purchased Products</h1>
+
+    @if (!Model.Any())
+    {
+        <p>No purchased products found.</p>
+    }
+    else
+    {
+        foreach (var product in Model)
+        {
+            <div class="product-card">
+                <div class="product-name">
+                    @product.Name
+
+                    @if (product.LimitedEdition)
+                    {
+                        <span class="badge">Limited</span>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(product.ShortDescription))
+                {
+                    <div class="product-description">
+                        @product.ShortDescription
+                    </div>
+                }
+
+                <div class="product-meta">
+                    Price: <strong>@product.ClashCoins</strong> Clash Coins <br />
+                    Category: @(product.Category?.Name ?? "—")
+                </div>
+            </div>
+        }
+    }
+</div>

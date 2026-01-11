@@ -81,7 +81,9 @@
                 <dd class="col-sm-8">@Model.Tournament.StartDate.ToString("dd MMM yyyy, HH:mm") CEST</dd>
 
                 <dt class="col-sm-4">Pula nagród</dt>
-                <dd class="col-sm-8">@Model.Tournament.Prize</dd>
+                <dd class="col-sm-8">@Model.Tournament.FirstPlacePrize</dd>
+                <dd class="col-sm-8">@Model.Tournament.SecondPlacePrize</dd>
+                <dd class="col-sm-8">@Model.Tournament.ThirdPlacePrize</dd>
             </dl>
 
             <h4 class="mt-4">Informacje</h4>
@@ -121,7 +123,6 @@
                             <span class="text-muted ms-2">Zaproś co najmniej @(Model.Tournament.Format == "2v2" ? 1 : 4) graczy do Twojej drużyny.</span>
                         </div>
                         <div class="d-flex align-items-center gap-3">
-                            <span class="text-primary" style="cursor: pointer;">Zarządzaj drużyną</span>
                             <button type="button" class="btn" style="background-color:#FF2B3E; color:#fff;" data-bs-toggle="modal" data-bs-target="#inviteModal">Zaproś</button>
                         </div>
                     </div>
@@ -164,19 +165,21 @@
         </div>
         <div class="col-md-4">
             <h4 class="mb-3">Nagrody</h4>
-            <!-- Simple placeholder prize list.  Real values can be bound from a future Prize model or list -->
+
             <ol class="list-group list-group-numbered">
-                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
-                    1.
-                    <span>@Model.Tournament.Prize</span>
+                <li class="list-group-item d-flex justify-content-between align-items-center"
+                    style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@Model.Tournament.FirstPlacePrize</span>
                 </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
-                    2.
-                    <span>@Model.Tournament.Prize</span>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center"
+                    style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@Model.Tournament.SecondPlacePrize</span>
                 </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
-                    3.–4.
-                    <span>@Model.Tournament.Prize</span>
+
+                <li class="list-group-item d-flex justify-content-between align-items-center"
+                    style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@Model.Tournament.ThirdPlacePrize</span>
                 </li>
             </ol>
         </div>

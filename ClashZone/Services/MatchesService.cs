@@ -51,9 +51,44 @@ namespace ClashZone.Services
                 var team1 = match.Team1Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team1Id.Value) : null;
                 var team2 = match.Team2Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team2Id.Value) : null;
 
-                // Derive friendly names
-                string team1Name = team1?.Name ?? "BYE";
-                string team2Name = team2?.Name ?? "BYE";
+                string team1Name;
+                string team2Name;
+
+                if (!match.Team1Id.HasValue)
+                {
+                    team1Name = "BYE";
+                }
+                else if (team1 == null)
+                {
+                    team1Name = "[TEAM NOT FOUND]";
+                }
+                else if (!string.IsNullOrWhiteSpace(team1.Name))
+                {
+                    team1Name = team1.Name;
+                }
+                else
+                {
+                    var captain = await _userManager.FindByIdAsync(team1.CaptainId);
+                    team1Name = captain?.UserName ?? "[UNNAMED TEAM]";
+                }
+
+                if (!match.Team2Id.HasValue)
+                {
+                    team2Name = "BYE";
+                }
+                else if (team2 == null)
+                {
+                    team2Name = "[TEAM NOT FOUND]";
+                }
+                else if (!string.IsNullOrWhiteSpace(team2.Name))
+                {
+                    team2Name = team2.Name;
+                }
+                else
+                {
+                    var captain = await _userManager.FindByIdAsync(team2.CaptainId);
+                    team2Name = captain?.UserName ?? "[UNNAMED TEAM]";
+                }
 
                 // Resolve captain avatars
                 string team1Profile = string.Empty;
@@ -108,8 +143,44 @@ namespace ClashZone.Services
             var team1 = match.Team1Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team1Id.Value) : null;
             var team2 = match.Team2Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team2Id.Value) : null;
 
-            string team1Name = team1?.Name ?? "BYE";
-            string team2Name = team2?.Name ?? "BYE";
+            string team1Name;
+            string team2Name;
+
+            if (!match.Team1Id.HasValue)
+            {
+                team1Name = "BYE";
+            }
+            else if (team1 == null)
+            {
+                team1Name = "[TEAM NOT FOUND]";
+            }
+            else if (!string.IsNullOrWhiteSpace(team1.Name))
+            {
+                team1Name = team1.Name;
+            }
+            else
+            {
+                var captain = await _userManager.FindByIdAsync(team1.CaptainId);
+                team1Name = captain?.UserName ?? "[UNNAMED TEAM]";
+            }
+
+            if (!match.Team2Id.HasValue)
+            {
+                team2Name = "BYE";
+            }
+            else if (team2 == null)
+            {
+                team2Name = "[TEAM NOT FOUND]";
+            }
+            else if (!string.IsNullOrWhiteSpace(team2.Name))
+            {
+                team2Name = team2.Name;
+            }
+            else
+            {
+                var captain = await _userManager.FindByIdAsync(team2.CaptainId);
+                team2Name = captain?.UserName ?? "[UNNAMED TEAM]";
+            }
             string team1Profile = "/images/default-profile.png";
             string team2Profile = "/images/default-profile.png";
             if (team1 != null)

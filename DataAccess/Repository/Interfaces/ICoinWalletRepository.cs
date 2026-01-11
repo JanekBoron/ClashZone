@@ -13,5 +13,6 @@ namespace ClashZone.DataAccess.Repository.Interfaces
         Task AddTransactionAsync(CoinWalletTransaction tx);
         Task<int> GetBalanceAsync(string userId);
         Task SaveChangesAsync();
+        Task <List<Product>> GetPurchasedProductsAsync(string userId);
     }
 }

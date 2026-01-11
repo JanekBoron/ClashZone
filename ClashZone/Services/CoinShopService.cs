@@ -38,6 +38,7 @@ namespace ClashZone.Services
             await _wallets.AddTransactionAsync(new CoinWalletTransaction
             {
                 UserId = userId,
+                ProductId = product.Id,
                 Type = CoinWalletTransactionType.Spend,
                 Amount = product.ClashCoins,
                 Reference = $"Product:{product.Id}"

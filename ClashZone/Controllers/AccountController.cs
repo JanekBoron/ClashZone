@@ -48,31 +48,68 @@ namespace ClashZone.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Check if username already exists
+            var userByName = await _userManager.FindByNameAsync(model.UserName);
+            if (userByName != null)
             {
-                var user = new ClashUser { UserName = model.UserName, Email = model.Email };
-                var result = await _userManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    // Generate email confirmation token and send activation link
-                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    var callbackUrl = Url.Action(
-                        nameof(ConfirmEmail),
-                        nameof(AccountController).Replace("Controller", string.Empty),
-                        new { userId = user.Id, token },
-                        Request.Scheme) ?? string.Empty;
-                    var message = $"<p>Dziękujemy za rejestrację w ClashZone!</p><p>Aby aktywować konto, kliknij w link: <a href=\"{callbackUrl}\">Aktywuj konto</a></p>";
-                    await _emailService.SendEmailAsync(user.Email!, "Aktywacja konta ClashZone", message);
-                    TempData["SuccessMessage"] = "Na podany adres e-mail wysłano link aktywacyjny.";
-                    return RedirectToAction(nameof(Login));
-                }
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+                ModelState.AddModelError(nameof(model.UserName), "Ta nazwa jest już zajęta");
+                return View(model);
             }
+
+            // Check if email already exists
+            var userByEmail = await _userManager.FindByEmailAsync(model.Email);
+            if (userByEmail != null)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Ten email jest już zajęty");
+                return View(model);
+            }
+
+            var user = new ClashUser
+            {
+                UserName = model.UserName,
+                Email = model.Email,
+                EmailConfirmed = true
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (result.Succeeded)
+            {
+/*                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+                var callbackUrl = Url.Action(
+                    nameof(ConfirmEmail),
+                    nameof(AccountController).Replace("Controller", string.Empty),
+                    new { userId = user.Id, token },
+                    Request.Scheme) ?? string.Empty;
+
+                var message =
+                    $"<p>Dziękujemy za rejestrację w ClashZone!</p>" +
+                    $"<p>Aby aktywować konto, kliknij w link: " +
+                    $"<a href=\"{callbackUrl}\">Aktywuj konto</a></p>";
+
+                await _emailService.SendEmailAsync(
+                    user.Email!,
+                    "Aktywacja konta ClashZone",
+                    message);
+
+                TempData["SuccessMessage"] =
+                    "Na podany adres e-mail wysłano link aktywacyjny.";*/
+
+                return RedirectToAction(nameof(Login));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
             return View(model);
         }
+
 
         /// <summary>
         /// Displays the login form.

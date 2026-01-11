@@ -55,7 +55,7 @@ namespace DataAccess
         public DbSet<ProductImage> ProductImages { get; set; } = null!;
         public DbSet<CoinWallet> CoinWallets { get; set; } = null!;
         public DbSet<CoinWalletTransaction> CoinWalletTransactions { get; set; } = null!;
-        public DbSet<ProductRedeem> ProductRedeems { get; set; } = null!;
+        public DbSet<ProductRedeem> ProductRedeems { get; set; } = null !;
 
         // New entities for match results and statistics
         public DbSet<Match> Matches { get; set; } = null!;

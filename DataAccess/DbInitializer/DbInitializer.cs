@@ -44,7 +44,9 @@ namespace ClashZone.DataAccess.DbInitializer
                         StartDate = DateTime.UtcNow.AddMonths(1),
                         MaxParticipants = 16,
                         Format = "5v5",
-                        Prize = "500 EUR",
+                        FirstPlacePrize = "500 EUR",
+                        SecondPlacePrize = "250 EUR",
+                        ThirdPlacePrize = "100 EUR",
                         CreatedByUserId = null,
                         IsPublic = true,
                         IsPremium = false
@@ -56,7 +58,9 @@ namespace ClashZone.DataAccess.DbInitializer
                         StartDate = DateTime.UtcNow.AddMonths(2),
                         MaxParticipants = 32,
                         Format = "1v1",
-                        Prize = "100 EUR",
+                        FirstPlacePrize = "500 EUR",
+                        SecondPlacePrize = "250 EUR",
+                        ThirdPlacePrize = "100 EUR",
                         CreatedByUserId = null,
                         IsPublic = true,
                         IsPremium = false

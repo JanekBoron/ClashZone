@@ -23,7 +23,9 @@ namespace DataAccess.Models
         /// liczby graczy na drużynę.
         /// </summary>
         public string Format { get; set; } = string.Empty;
-        public string Prize { get; set; } = string.Empty;
+        public string FirstPlacePrize { get; set; } = string.Empty;
+        public string SecondPlacePrize { get; set; } = string.Empty;
+        public string ThirdPlacePrize { get; set; } = string.Empty;
         public string? CreatedByUserId { get; set; }
         /// <summary>
         /// Określa czy turniej jest publiczny (dostępny bez zaproszenia).  Jeśli false,

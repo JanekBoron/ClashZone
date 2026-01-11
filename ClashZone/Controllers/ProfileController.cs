@@ -29,19 +29,24 @@ namespace ClashZone.Controllers
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly ICoinWalletRepository _wallets;
+        private readonly IProductRedeemRepository _redemptions;
+        private readonly IProductsRepository _products;
 
         public ProfileController(
             UserManager<ClashUser> userManager,
             SignInManager<ClashUser> signInManager,
             ISubscriptionRepository subscriptionRepository,
             ApplicationDbContext context,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment, ICoinWalletRepository wallets, IProductRedeemRepository redemptions)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _subscriptionRepository = subscriptionRepository;
             _context = context;
             _environment = environment;
+            _wallets = wallets;
+            _redemptions = redemptions;
         }
 
         /// <summary>
@@ -81,6 +86,14 @@ namespace ClashZone.Controllers
                 DisplayName = user.DisplayName
             };
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Orders()
+        {
+            var order = await _wallets.GetPurchasedProductsAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            return View(order);
+
         }
 
         /// <summary>

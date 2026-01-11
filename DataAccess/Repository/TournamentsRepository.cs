@@ -173,7 +173,10 @@ namespace ClashZone.DataAccess.Repository
         public async Task<List<ChatMessage>> GetTeamChatMessagesAsync(int tournamentId, int teamId)
         {
             return await _context.ChatMessages
-                .Where(m => m.TournamentId == tournamentId && m.TeamId == teamId)
+                .Where(m =>
+                    m.TournamentId == tournamentId &&
+                    m.TeamId == teamId &&
+                    m.IsReport == false)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
         }

@@ -37,6 +37,20 @@ namespace ClashZone.DataAccess.Repository
         }
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
+
+        public async Task<List<Product>> GetPurchasedProductsAsync(string userId)
+        {
+            var productIds = await _db.CoinWalletTransactions
+                .Where(tx => tx.UserId == userId && tx.ProductId > 0)
+                .Select(tx => tx.ProductId)
+                .ToListAsync();
+
+            var products = await _db.Products
+                .Where(p => productIds.Contains(p.Id))
+                .ToListAsync();
+
+            return products;
+        }
     }
 }
 

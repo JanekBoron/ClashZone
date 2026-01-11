@@ -18,7 +18,9 @@ namespace ClashZone.DataAccess.Models
     {
         [Key]
         public int Id { get; set; }
-
+        [Required]
+        [ForeignKey(nameof(Product))]
+        public int ProductId { get; set; }
         [Required]
         [ForeignKey(nameof(Wallet))]
         public string UserId { get; set; } = default!;

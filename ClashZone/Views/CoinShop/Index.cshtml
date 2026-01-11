@@ -10,7 +10,7 @@
         <div class="text-secondary">Wydaj Clash Coins na limitowane itemy i nagrody cyfrowe.</div>
         @if (User.Identity?.IsAuthenticated ?? false)
         {
-            <div class="mt-2">Twój balans: <span class="cc-badge">F @((int)ViewBag.Balance)</span></div>
+            <div class="mt-2">Twój balans: <span class="cc-badge">C @((int)ViewBag.Balance)</span></div>
         }
     </div>
 </section>

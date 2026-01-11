@@ -48,6 +48,8 @@ namespace ClashZone.Services
         /// until matches are played.  Played match results stored in the
         /// database will populate the appropriate scores and winners.
         /// </summary>
+
+        /// in
         public async Task<BracketViewModel?> GetBracketAsync(int tournamentId)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -99,6 +101,8 @@ namespace ClashZone.Services
         /// participant names are propagated automatically through the rounds.
         /// Empty pairings (two byes) are omitted.
         /// </summary>
+
+        //in
         public async Task<BracketViewModel?> GetBracketWithResultsAsync(int tournamentId)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -127,9 +131,8 @@ namespace ClashZone.Services
                 };
             }
             var rounds = GenerateBracketWithResults(teamNames);
-            // Persist results and random player statistics for the simulated bracket.  This ensures
-            // that matches appear in the "Mecze" tab and per?player stats are available.
-            await SaveBracketStatsAsync(rounds, tournament, teams);
+            //zapisanie statystyk do bazy
+            //await SaveBracketStatsAsync(rounds, tournament, teams);
             return new BracketViewModel
             {
                 Tournament = tournament,
@@ -143,6 +146,9 @@ namespace ClashZone.Services
         /// GenerateBracketWithResults internally and then records the results
         /// in the persistence layer.
         /// </summary>
+        /// 
+
+        //Useless
         public async Task<BracketViewModel?> GetBracketWithStatsAsync(int tournamentId)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -187,6 +193,8 @@ namespace ClashZone.Services
         /// bracket reflecting the new result is returned.  If the match cannot be
         /// simulated (due to missing participants or existing scores) null is returned.
         /// </summary>
+
+        //in
         public async Task<BracketViewModel?> SimulateMatchAsync(int tournamentId, int roundNumber, int matchNumber)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
@@ -221,11 +229,13 @@ namespace ClashZone.Services
             var skeleton = GenerateBracketSkeleton(teamNames);
             var bracket = await BuildBracketWithDbAsync(tournamentId, teamNames, skeleton, teams);
             var annotated = AnnotateRounds(bracket);
+
             int rIdx = roundNumber - 1;
             if (rIdx < 0 || rIdx >= annotated.Count)
             {
                 return null;
             }
+            bool isFinalRound = rIdx == annotated.Count - 1;
             int mIdx = matchNumber - 1;
             if (mIdx < 0 || mIdx >= annotated[rIdx].Count)
             {
@@ -241,6 +251,7 @@ namespace ClashZone.Services
             {
                 return null;
             }
+           
             Team? team1 = nameToTeam.TryGetValue(matchInfo.Team1Name, out var t1) ? t1 : null;
             Team? team2 = nameToTeam.TryGetValue(matchInfo.Team2Name, out var t2) ? t2 : null;
             var rnd = new Random();
@@ -262,6 +273,10 @@ namespace ClashZone.Services
             // rebuild bracket to reflect new result
             bracket = await BuildBracketWithDbAsync(tournamentId, teamNames, skeleton, teams);
             annotated = AnnotateRounds(bracket);
+            if (isFinalRound)
+            {
+                await AwardTournamentPrizesAsync(tournament, annotated, nameToTeam);
+            }
             return new BracketViewModel
             {
                 Tournament = tournament,
@@ -269,10 +284,87 @@ namespace ClashZone.Services
             };
         }
 
+
+        private async Task AwardTournamentPrizesAsync(Tournament tournament,List<List<MatchInfo>> rounds,Dictionary<string, Team> teamNameMap)
+        {
+            // Avoid double awarding
+            bool alreadyAwarded = await _context.Matches
+                .Where(m => m.TournamentId == tournament.Id)
+                .CountAsync() > rounds.Sum(r => r.Count);
+
+            if (alreadyAwarded) return;
+
+            // FINAL
+            var finalMatch = rounds.Last().FirstOrDefault();
+            if (finalMatch == null) return;
+
+            Team? first = null;
+            Team? second = null;
+
+            if (finalMatch.Team1Score >= finalMatch.Team2Score)
+            {
+                teamNameMap.TryGetValue(finalMatch.Team1Name!, out first);
+                teamNameMap.TryGetValue(finalMatch.Team2Name!, out second);
+            }
+            else
+            {
+                teamNameMap.TryGetValue(finalMatch.Team2Name!, out first);
+                teamNameMap.TryGetValue(finalMatch.Team1Name!, out second);
+            }
+
+            // THIRD PLACE (losers of semifinals)
+            Team? third = null;
+            if (rounds.Count >= 2)
+            {
+                var semiFinals = rounds[^2];
+                var losers = semiFinals
+                    .Where(m => m.Team1Name != null && m.Team2Name != null)
+                    .Select(m =>
+                        m.Team1Score >= m.Team2Score
+                            ? m.Team2Name
+                            : m.Team1Name)
+                    .ToList();
+
+                if (losers.Count > 0 && teamNameMap.TryGetValue(losers[0]!, out var t))
+                    third = t;
+            }
+
+            await AwardPrizeAsync(first, tournament.FirstPlacePrize, tournament.Id, "1st");
+            await AwardPrizeAsync(second, tournament.SecondPlacePrize, tournament.Id, "2nd");
+            await AwardPrizeAsync(third, tournament.ThirdPlacePrize, tournament.Id, "3rd");
+        }
+
+        private async Task AwardPrizeAsync(Team? team, string prize, int tournamentId, string place)
+        {
+            if (team == null || string.IsNullOrWhiteSpace(prize)) return;
+
+            if (!prize.Contains("ClashCoins", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var match = System.Text.RegularExpressions.Regex.Match(prize, @"\d+");
+            if (!match.Success || !int.TryParse(match.Value, out int amount) || amount <= 0)
+                return;
+
+            var members = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+            var allIds = new HashSet<string>(members) { team.CaptainId };
+
+            foreach (var userId in allIds)
+            {
+                await _coinWalletService.CreditAsync(
+                    userId,
+                    amount,
+                    $"Tournament:{tournamentId}:{place}Place");
+            }
+        }
+
+
+
         /// <summary>
         /// Helper to generate random per?player statistics for a single match and
         /// update aggregated user stats.
         /// </summary>
+
+        //in
         private async Task GenerateStatsForMatchAsync(Match matchEntity, Team? team1, Team? team2)
         {
             var random = new Random();
@@ -356,6 +448,8 @@ namespace ClashZone.Services
         /// the winners list is maintained internally to compute the correct number
         /// of matches in later rounds.
         /// </summary>
+
+        //in
         private static List<List<MatchInfo>> GenerateBracketSkeleton(List<string> teamNames)
         {
             int n = teamNames.Count;
@@ -409,6 +503,8 @@ namespace ClashZone.Services
         /// Otherwise names remain null to hide upcoming pairings until they are
         /// determined by previous matches.
         /// </summary>
+
+        //in
         private async Task<List<List<MatchInfo>>> BuildBracketWithDbAsync(int tournamentId, List<string> teamNames, List<List<MatchInfo>> skeleton, List<Team> teams)
         {
             // mapping between team IDs and their display names
@@ -558,6 +654,8 @@ namespace ClashZone.Services
         /// pairings consisting of two byes are skipped.  Names propagate to later
         /// rounds automatically.
         /// </summary>
+        /// 
+        //in
         private static List<List<MatchInfo>> GenerateBracketWithResults(List<string> teamNames)
         {
             var random = new Random();
@@ -655,6 +753,8 @@ namespace ClashZone.Services
         /// Assigns round and match numbers to each match in the bracket.  This helper
         /// remains unchanged from the original implementation.
         /// </summary>
+
+        //in
         private static List<List<MatchInfo>> AnnotateRounds(List<List<MatchInfo>> rounds)
         {
             var annotated = new List<List<MatchInfo>>();
@@ -678,6 +778,8 @@ namespace ClashZone.Services
         /// provided bracket.  This logic is largely unchanged from the original
         /// implementation but now avoids persisting completely empty matches.
         /// </summary>
+
+        //in
         private async Task SaveBracketStatsAsync(List<List<MatchInfo>> rounds, Tournament tournament, List<Team> teams)
         {
             // Determine if there were any matches before persisting new ones.
@@ -825,7 +927,7 @@ namespace ClashZone.Services
                         }
                         if (!string.IsNullOrEmpty(winnerName) && teamNameMap.TryGetValue(winnerName, out var winningTeam))
                         {
-                            string prize = tournament.Prize ?? string.Empty;
+                           /* string prize = tournament.Prize ?? string.Empty;
                             var lowerPrize = prize.ToLowerInvariant();
                             // Consider the prize as ClashCoins if it mentions "clash"
                             if (lowerPrize.Contains("clash"))
@@ -841,7 +943,7 @@ namespace ClashZone.Services
                                         await _coinWalletService.CreditAsync(userId, amount, $"Tournament:{tournament.Id}:1stPlace");
                                     }
                                 }
-                            }
+                            }*/
                         }
                     }
                 }

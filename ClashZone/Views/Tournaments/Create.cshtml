@@ -5,22 +5,18 @@
     ViewData["Title"] = "Utwórz turniej";
 }
 
-<h2>Utwórz turniej</h2>
 
-<!--
-    Formularz tworzenia nowego turnieju.  Pole `asp-action` wskazuje na metodę
-    `CreateTournament` w kontrolerze `TournamentsController`, która obsługuje
-    żądania POST i dodaje turniej do bazy danych.  Zastosowano klasę Bootstrap
-    dla estetycznego wyświetlania pól formularza i walidacji po stronie klienta.
--->
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 style="color:#FF2B3E;">Utwórz turniej</h2>
 <form asp-action="CreateTournament" method="post">
     <div class="mb-3">
-        <label asp-for="Name" class="form-label"></label>
+        <label asp-for="Name" class="form-label">Nazwa</label>
         <input asp-for="Name" class="form-control" />
         <span asp-validation-for="Name" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="GameTitle" class="form-label"></label>
+        <label asp-for="GameTitle" class="form-label">Tytuł Gry</label>
         <!-- Restrict game title to Counter Strike 2 only -->
         <select asp-for="GameTitle" class="form-select">
             <option value="Counter Strike 2">Counter Strike 2</option>
@@ -28,13 +24,13 @@
         <span asp-validation-for="GameTitle" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="StartDate" class="form-label"></label>
+        <label asp-for="StartDate" class="form-label">Data startowa</label>
         <!-- `datetime-local` umożliwia wybór daty i godziny w jednym polu -->
         <input asp-for="StartDate" type="datetime-local" class="form-control" />
         <span asp-validation-for="StartDate" class="text-danger"></span>
     </div>
     <div class="mb-3">
-        <label asp-for="MaxParticipants" class="form-label"></label>
+        <label asp-for="MaxParticipants" class="form-label">Maksimum uczestników</label>
         <input asp-for="MaxParticipants" type="number" min="1" class="form-control" />
         <span asp-validation-for="MaxParticipants" class="text-danger"></span>
     </div>
@@ -50,8 +46,10 @@
     <!-- Prize selection for first, second and third places.  Each block allows choosing between
          a text description and a ClashCoins amount.  The values will be combined into the
          tournament.Prize property separated by a pipe symbol. -->
-    <div class="mb-3">
-        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 1. miejsce</h5>
+     <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody</strong></div>
+
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>1. miejsce</strong></div>
         <label class="form-label">Rodzaj nagrody</label>
         <select name="prizeOption1" class="form-select">
             <option value="text">Opis</option>
@@ -66,8 +64,8 @@
             <input name="prizeCoins1" type="number" min="0" class="form-control" />
         </div>
     </div>
-    <div class="mb-3">
-        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 2. miejsce</h5>
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>2. miejsce</strong></div>
         <label class="form-label">Rodzaj nagrody</label>
         <select name="prizeOption2" class="form-select">
             <option value="text">Opis</option>
@@ -82,8 +80,8 @@
             <input name="prizeCoins2" type="number" min="0" class="form-control" />
         </div>
     </div>
-    <div class="mb-3">
-        <h5 class="mt-3" style="color:#FF2B3E;">Nagroda za 3. miejsce</h5>
+        <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
+            <div class="mb-1"><strong>3. miejsce</strong></div>
         <label class="form-label">Rodzaj nagrody</label>
         <select name="prizeOption3" class="form-select">
             <option value="text">Opis</option>
@@ -113,3 +111,4 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
+</div>

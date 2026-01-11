@@ -8,11 +8,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">Profil użytkownika</h2>
         <a asp-action="Edit" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Edytuj profil</a>
+        <a asp-action="Orders" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Twoje zamówienia</a>
     </div>
     <div class="row">
         <div class="col-md-4 text-center">
             <img src="@(!string.IsNullOrEmpty(Model.User.ProfilePicturePath) ? Model.User.ProfilePicturePath : Url.Content("~/images/default-profile.png"))" class="img-fluid rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;" alt="Profilowe" />
-            <h4 class="mt-2">@Model.User.DisplayName ?? Model.User.UserName</h4>
+            <h4 class="mt-2">@((Model.User.DisplayName ?? Model.User.UserName))</h4>
         </div>
         <div class="col-md-8">
             <div class="mb-3">

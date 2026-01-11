@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ClashZone.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
@@ -36,16 +36,19 @@
             </div>
         </div>
     </nav>
-    <div class="container">
+    <div class="container flex-grow-1">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
-    <footer class="border-top footer text-muted align-middle">
-        <div class="container">
-            &copy; 2025 Clash Zone
-        </div>
-    </footer>
+    <div>
+        <footer class="border-top footer text-muted">
+            <div class="container">
+                &copy; 2025 Clash Zone
+            </div>
+        </footer>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

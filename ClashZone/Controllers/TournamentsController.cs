@@ -351,7 +351,9 @@ namespace ClashZone.Controllers
 
                 // Combine into a single string separated by pipe symbol.  This format can be
                 // parsed later when displaying or editing the tournament.
-                tournament.Prize = string.Join("|", new[] { first, second, third });
+                tournament.FirstPlacePrize = first;
+                tournament.SecondPlacePrize = second;
+                tournament.ThirdPlacePrize = third; 
 
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 await _tournamentService.CreateTournamentAsync(tournament, userId);
@@ -498,7 +500,9 @@ namespace ClashZone.Controllers
                 string first = ComputePrize(prizeOption1, prizeDescription1, prizeCoins1);
                 string second = ComputePrize(prizeOption2, prizeDescription2, prizeCoins2);
                 string third = ComputePrize(prizeOption3, prizeDescription3, prizeCoins3);
-                tournament.Prize = string.Join("|", new[] { first, second, third });
+                tournament.FirstPlacePrize = first;
+                tournament.SecondPlacePrize = second;
+                tournament.ThirdPlacePrize = third;
 
                 await _tournamentsRepository.UpdateTournamentAsync(tournament);
                 return RedirectToAction(nameof(Manage));

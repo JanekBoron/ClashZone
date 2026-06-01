@@ -1,4 +1,4 @@
-﻿@model IEnumerable<DataAccess.Models.Tournament>
+﻿@model IEnumerable<ClashZone.App.Domains.TournamentDomain>
 @{
     // Title for the manage tournaments page.
     ViewData["Title"] = "Zarządzaj turniejami";
@@ -15,7 +15,11 @@
     }
     else
     {
-        <table class="table table-dark table-striped">
+        <div class="mb-3">
+            <input type="search" class="form-control cc-table-search" data-table-search="tournamentsTable"
+                   placeholder="Szukaj turnieju..." aria-label="Szukaj turnieju" autocomplete="off" />
+        </div>
+        <table id="tournamentsTable" data-paginate data-page-size="10" class="table table-dark table-striped">
             <thead>
                 <tr>
                     <th>Nazwa</th>
@@ -44,3 +48,7 @@
         </table>
     }
 </div>
+
+@section Scripts {
+    <script src="~/js/table-pagination.js" asp-append-version="true"></script>
+}

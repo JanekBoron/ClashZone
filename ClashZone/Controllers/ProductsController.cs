@@ -1,5 +1,5 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.Services.Interfaces;
+using ClashZone.App.Domains;
+using ClashZone.App.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +10,11 @@ namespace ClashZone.Controllers
     public class ProductsController : Controller
     {
         private readonly IProductsService _service;
-        public ProductsController(IProductsService service) => _service = service;
+
+        public ProductsController(IProductsService service)
+        {
+            _service = service;
+        }
 
         [HttpGet("")]
         public async Task<IActionResult> Index()
@@ -22,12 +26,12 @@ namespace ClashZone.Controllers
         [HttpGet("create")]
         public IActionResult Create()
         {
-            return View(new Product { IsActive = true, ClashCoins = 100 });
+            return View(new ProductDomain { IsActive = true, ClashCoins = 100 });
         }
 
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Product model, string? primaryImageUrl)
+        public async Task<IActionResult> Create(ProductDomain model, string? primaryImageUrl)
         {
             if (!ModelState.IsValid) return View(model);
             await _service.CreateAsync(model, primaryImageUrl);
@@ -44,7 +48,7 @@ namespace ClashZone.Controllers
 
         [HttpPost("edit/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Product model, string? primaryImageUrl)
+        public async Task<IActionResult> Edit(int id, ProductDomain model, string? primaryImageUrl)
         {
             if (!ModelState.IsValid) return View(model);
             model.Id = id;
@@ -53,12 +57,7 @@ namespace ClashZone.Controllers
         }
 
         [HttpGet("delete/{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var p = await _service.GetAsync(id);
-            if (p == null) return NotFound();
-            return View(p);
-        }
+        public IActionResult Delete(int id) => RedirectToAction(nameof(Index));
 
         [HttpPost("delete/{id:int}")]
         [ValidateAntiForgeryToken]

@@ -2,13 +2,13 @@
 @using ClashZone.DataAccess.Models
 @inject SignInManager<ClashUser> SignInManager
 @inject UserManager<ClashUser> UserManager
-@inject ClashZone.DataAccess.Repository.Interfaces.ISubscriptionRepository SubscriptionRepository
+@inject ClashZone.App.Ports.DataAccess.ISubscriptionRepository SubscriptionRepository
 
 @* Wyświetla informację o aktualnym pakiecie użytkownika lub link do zakupu pakietu.
    Używany w nawigacji głównej (_Layout.cshtml).  Jeśli subskrypcja wygasa w ciągu
    kilku dni, prezentuje ostrzeżenie. *@
 @{
-    ClashZone.DataAccess.Models.UserSubscription? activeSub = null;
+    ClashZone.App.Domains.UserSubscriptionDomain? activeSub = null;
     if (SignInManager.IsSignedIn(User))
     {
         var uid = UserManager.GetUserId(User);

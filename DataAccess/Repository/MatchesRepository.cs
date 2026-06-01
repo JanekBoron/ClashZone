@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
 using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
 using DataAccess;
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
@@ -19,45 +18,82 @@ namespace ClashZone.DataAccess.Repository
     public class MatchesRepository : IMatchesRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MatchesRepository"/>
-        /// class with the specified database context.
-        /// </summary>
-        /// <param name="context">Database context used to execute queries.</param>
-        public MatchesRepository(ApplicationDbContext context)
+        public MatchesRepository(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        /// <inheritdoc />
-        public async Task<List<Match>> GetMatchesByTournamentAsync(int tournamentId)
+        public async Task<List<MatchDomain>> GetMatchesByTournamentAsync(int tournamentId)
         {
-            return await _context.Matches
+            var matches = await _context.Matches
                 .Where(m => m.TournamentId == tournamentId)
                 .OrderByDescending(m => m.PlayedAt)
                 .ToListAsync();
+
+            return _mapper.Map<List<MatchDomain>>(matches);
         }
 
-        /// <inheritdoc />
-        public async Task<Match?> GetMatchByIdAsync(int matchId, int tournamentId)
+        public async Task<MatchDomain?> GetMatchByIdAsync(int matchId, int tournamentId)
         {
-            return await _context.Matches
+            var match = await _context.Matches
                 .FirstOrDefaultAsync(m => m.Id == matchId && m.TournamentId == tournamentId);
+
+            return _mapper.Map<MatchDomain?>(match);
         }
 
-        /// <inheritdoc />
-        public async Task<List<PlayerMatchStat>> GetPlayerStatsForMatchAsync(int matchId)
+        public async Task<List<PlayerMatchStatDomain>> GetPlayerStatsForMatchAsync(int matchId)
         {
-            return await _context.PlayerMatchStats
+            var playerStatsForMatch = await _context.PlayerMatchStats
                 .Where(p => p.MatchId == matchId)
                 .ToListAsync();
+
+            return _mapper.Map<List<PlayerMatchStatDomain>>(playerStatsForMatch);
         }
 
-        /// <inheritdoc />
-        public async Task<Team?> GetTeamByIdAsync(int teamId)
+        public async Task<TeamDomain?> GetTeamByIdAsync(int teamId)
         {
-            return await _context.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+            var team = await _context.Teams
+                .FirstOrDefaultAsync(t => t.Id == teamId);
+
+            return _mapper.Map<TeamDomain?>(team);
+        }
+
+        public async Task AddMatchAsync(MatchDomain matchEntity)
+        {
+            var matchModel = _mapper.Map<Match>(matchEntity);
+
+            await _context.Matches.AddAsync(matchModel);
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsTournamentAlreadyAwardedAsync(
+            int tournamentId,
+            List<List<MatchInfoDomain>> rounds)
+        {
+            return await _context.Matches
+                .Where(m => m.TournamentId == tournamentId)
+                .CountAsync() > rounds.Sum(r => r.Count);
+        }
+
+        public async Task<List<MatchDomain>> GetMatchesByTournamentIdAsync(int tournamentId)
+        {
+            var matches = await _context.Matches
+                .Include(m => m.Team1)
+                .Include(m => m.Team2)
+                .Where(m => m.TournamentId == tournamentId)
+                .ToListAsync();
+
+            return _mapper.Map<List<MatchDomain>>(matches);
+        }
+
+        public async Task<bool> TournamentHasMatchesAsync(int tournamentId)
+        {
+            return await _context.Matches
+                .AnyAsync(m => m.TournamentId == tournamentId);
         }
     }
 }

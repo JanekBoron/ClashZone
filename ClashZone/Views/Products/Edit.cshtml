@@ -1,10 +1,10 @@
-﻿@model ClashZone.DataAccess.Models.Product
+﻿@model ClashZone.App.Domains.ProductDomain
 @{
     ViewData["Title"] = "Edytuj produkt";
-    var categories = ViewBag.Categories as List<ClashZone.DataAccess.Models.ProductCategory> ?? new();
+    var categories = ViewBag.Categories as List<ClashZone.App.Domains.ProductCategoryDomain> ?? new();
     var primary = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url;
 }
-@await Html.PartialAsync("~/Views/Shared/_ShopStyles.cshtml")
+@await Html.PartialAsync("~/Views/Shared/_CoinShopStyles.cshtml")
 
 <div class="container my-4 text-white">
     <h2>Edytuj produkt</h2>

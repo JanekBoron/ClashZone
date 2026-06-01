@@ -1,12 +1,9 @@
 ﻿using ClashZone.DataAccess.Models;
-using ClashZone.Services.Interfaces;
-using ClashZone.ViewModels;
+using ClashZone.App.Services.Interfaces;
+using ClashZone.App.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Threading.Tasks;
+
 
 namespace ClashZone.Controllers
 {
@@ -97,9 +94,9 @@ namespace ClashZone.Controllers
                     message);
 
                 TempData["SuccessMessage"] =
-                    "Na podany adres e-mail wysłano link aktywacyjny.";*/
+                    "Na podany adres e-mail wysłano link aktywacyjny.";
 
-                return RedirectToAction(nameof(Login));
+                return RedirectToAction(nameof(Login));*/
             }
 
             foreach (var error in result.Errors)

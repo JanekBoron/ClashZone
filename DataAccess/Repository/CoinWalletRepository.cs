@@ -1,44 +1,58 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace ClashZone.DataAccess.Repository
 {
     public class CoinWalletRepository : ICoinWalletRepository
     {
         private readonly ApplicationDbContext _db;
-        public CoinWalletRepository(ApplicationDbContext db) => _db = db;
-
-        public async Task<CoinWallet> GetOrCreateAsync(string userId)
+        private readonly IMapper _mapper;
+        public CoinWalletRepository(ApplicationDbContext db, IMapper mapper)
         {
-            var w = await _db.CoinWallets.Include(x => x.Transactions)
+            _db = db;
+            _mapper = mapper;
+        }
+
+        public async Task<CoinWalletDomain> GetOrCreateAsync(string userId)
+        {
+            var wallet = await GetOrCreateEntityAsync(userId);
+            return _mapper.Map<CoinWalletDomain>(wallet);
+        }
+
+        // Zwraca śledzoną przez EF encję portfela, dzięki czemu zmiany salda
+        // zostaną zapisane przy najbliższym SaveChangesAsync.
+        private async Task<CoinWallet> GetOrCreateEntityAsync(string userId)
+        {
+            var wallet = await _db.CoinWallets.Include(x => x.Transactions)
                                      .FirstOrDefaultAsync(x => x.UserId == userId);
-            if (w != null) return w;
-            w = new CoinWallet { UserId = userId, Balance = 0 };
-            _db.CoinWallets.Add(w);
-            await _db.SaveChangesAsync();
-            return w;
+            if (wallet == null)
+            {
+                wallet = new CoinWallet { UserId = userId, Balance = 0 };
+                _db.CoinWallets.Add(wallet);
+                await _db.SaveChangesAsync();
+            }
+            return wallet;
         }
 
         public Task<int> GetBalanceAsync(string userId) =>
             _db.CoinWallets.Where(w => w.UserId == userId).Select(w => w.Balance).FirstOrDefaultAsync();
 
-        public async Task AddTransactionAsync(CoinWalletTransaction tx)
+        public async Task AddTransactionAsync(CoinWalletTransactionDomain tx)
         {
-            var wallet = await GetOrCreateAsync(tx.UserId);
-            wallet.Balance += tx.Type == CoinWalletTransactionType.Earn ? tx.Amount : -tx.Amount;
-            await _db.CoinWalletTransactions.AddAsync(tx);
+            var transaction = _mapper.Map<CoinWalletTransaction>(tx);
+            var wallet = await GetOrCreateEntityAsync(tx.UserId);
+            wallet.Balance += tx.Type == App.Domains.CoinWalletTransactionType.Earn ? tx.Amount : -tx.Amount;
+            await _db.CoinWalletTransactions.AddAsync(transaction);
         }
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
 
-        public async Task<List<Product>> GetPurchasedProductsAsync(string userId)
+        public async Task<List<ProductDomain>> GetPurchasedProductsAsync(string userId)
         {
             var productIds = await _db.CoinWalletTransactions
                 .Where(tx => tx.UserId == userId && tx.ProductId > 0)
@@ -49,7 +63,7 @@ namespace ClashZone.DataAccess.Repository
                 .Where(p => productIds.Contains(p.Id))
                 .ToListAsync();
 
-            return products;
+            return _mapper.Map<List<ProductDomain>> (products);
         }
     }
 }

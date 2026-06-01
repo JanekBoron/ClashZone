@@ -1,4 +1,4 @@
-﻿@model ClashZone.DataAccess.Models.Product
+﻿@model ClashZone.App.Domains.ProductDomain
 @{
     var img = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url ?? Model.Images.FirstOrDefault()?.Url ?? "/images/placeholder.png";
 }

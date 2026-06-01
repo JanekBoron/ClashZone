@@ -168,3 +168,50 @@ a {
     font-size: .75rem;
 }
 
+/* Admin table search box */
+.cc-table-search {
+    max-width: 320px;
+    background: var(--cz-gray);
+    color: #fff;
+    border: 1px solid #2a2a2a;
+}
+
+    .cc-table-search::placeholder {
+        color: var(--cz-muted);
+    }
+
+    .cc-table-search:focus {
+        background: var(--cz-gray);
+        color: #fff;
+        border-color: var(--cz-red);
+        box-shadow: 0 0 0 .2rem rgba(255, 43, 62, .25);
+    }
+
+/* Admin table pagination */
+.cc-pagination {
+    margin-top: 1rem;
+}
+
+    .cc-pagination .page-link {
+        background: var(--cz-gray);
+        color: #fff;
+        border: 1px solid #2a2a2a;
+    }
+
+        .cc-pagination .page-link:hover {
+            background: #2a2a2a;
+            color: #fff;
+        }
+
+    .cc-pagination .page-item.active .page-link {
+        background: var(--cz-red);
+        border-color: var(--cz-red);
+        color: #fff;
+    }
+
+    .cc-pagination .page-item.disabled .page-link {
+        background: var(--cz-black);
+        color: var(--cz-muted);
+        border-color: #2a2a2a;
+    }
+

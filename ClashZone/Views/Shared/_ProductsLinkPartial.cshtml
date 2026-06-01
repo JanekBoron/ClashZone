@@ -3,7 +3,7 @@
 @using System.Security.Claims
 @inject SignInManager<ClashUser> SignInManager
 @inject UserManager<ClashUser> UserManager
-@inject ClashZone.Services.Interfaces.ICoinWalletService CoinWalletService
+@inject ClashZone.App.Services.Interfaces.ICoinWalletService CoinWalletService
 
 @{
     var isLoggedIn = SignInManager.IsSignedIn(User);

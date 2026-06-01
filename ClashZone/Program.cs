@@ -1,9 +1,9 @@
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.Services;
+using ClashZone.App.Services.Interfaces;
 using ClashZone.DataAccess.DbInitializer;
 using ClashZone.DataAccess.Models;
 using ClashZone.DataAccess.Repository;
-using ClashZone.DataAccess.Repository.Interfaces;
-using ClashZone.Services;
-using ClashZone.Services.Interfaces;
 using DataAccess;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
 
 // Configure database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -41,7 +43,9 @@ builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IProductsRepository, ProductsRepository>();
 builder.Services.AddScoped<IProductRedeemRepository, ProductRedeemRepository>();
 builder.Services.AddScoped<ICoinWalletRepository, CoinWalletRepository>();
-builder.Services.AddScoped<IMatchesRepository,MatchesRepository>();
+builder.Services.AddScoped<IMatchesRepository, MatchesRepository>();
+builder.Services.AddScoped<IPlayerStatsRepository, PlayerStatsRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Business
 builder.Services.AddScoped<IChatService, ChatService>();

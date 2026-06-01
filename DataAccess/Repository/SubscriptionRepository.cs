@@ -1,12 +1,9 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Repository
 {
@@ -17,30 +14,33 @@ namespace ClashZone.DataAccess.Repository
     /// </summary>
     public class SubscriptionRepository : ISubscriptionRepository
     {
-        private readonly ApplicationDbContext _context;
-        public SubscriptionRepository(ApplicationDbContext context)
+        private readonly ApplicationDbContext _db;
+        private readonly IMapper _mapper;
+        public SubscriptionRepository(ApplicationDbContext db, IMapper mapper)
         {
-            _context = context;
+            _db = db;
+            _mapper = mapper;
         }
 
-        public async Task<SubscriptionPlan[]> GetAllPlansAsync()
+        public async Task<SubscriptionPlanDomain[]> GetAllPlansAsync()
         {
-            return await _context.SubscriptionPlans.ToArrayAsync();
+            var plans = await _db.SubscriptionPlans.ToListAsync();
+            return _mapper.Map<SubscriptionPlanDomain[]>(plans);
         }
 
-        public async Task<UserSubscription?> GetActiveSubscriptionAsync(string userId)
+        public async Task<UserSubscriptionDomain?> GetActiveSubscriptionAsync(string userId)
         {
             var now = DateTime.UtcNow;
-            return await _context.UserSubscriptions
+            var subscription = await _db.UserSubscriptions
                 .Include(s => s.Plan)
                 .Where(s => s.UserId == userId && s.ExpiryDate >= now)
                 .OrderByDescending(s => s.ExpiryDate)
                 .FirstOrDefaultAsync();
+            return _mapper.Map<UserSubscriptionDomain?>(subscription);
         }
-
         public async Task CreateSubscriptionAsync(string userId, int planId)
         {
-            var plan = await _context.SubscriptionPlans.FindAsync(planId);
+            var plan = await _db.SubscriptionPlans.FindAsync(planId);
             if (plan == null)
             {
                 return;
@@ -54,8 +54,9 @@ namespace ClashZone.DataAccess.Repository
                 PurchaseDate = purchaseDate,
                 ExpiryDate = expiryDate
             };
-            _context.UserSubscriptions.Add(subscription);
-            await _context.SaveChangesAsync();
+            _db.UserSubscriptions.Add(subscription);
+            await _db.SaveChangesAsync();
         }
+      
     }
 }

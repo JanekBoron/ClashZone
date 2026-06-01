@@ -1,21 +1,26 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using DataAccess;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Repository
 {
     public class ProductRedeemRepository : IProductRedeemRepository
     {
         private readonly ApplicationDbContext _db;
-        public ProductRedeemRepository(ApplicationDbContext db) => _db = db;
+        private readonly IMapper _mapper;
+        public ProductRedeemRepository(ApplicationDbContext db, IMapper mapper)
+        {
+            _db= db;
+            _mapper= mapper;
+        }
 
-        public async Task AddAsync(ProductRedeem redemption)
-            => await _db.ProductRedeems.AddAsync(redemption);
+        public async Task AddAsync(ProductRedeemDomain redeem)
+        {
+            var addition = _mapper.Map<ProductRedeem>(redeem);
+            await _db.ProductRedeems.AddAsync(addition);
+        }
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();
     }

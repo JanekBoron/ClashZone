@@ -1,7 +1,7 @@
-﻿@model ClashZone.DataAccess.Models.Product
+﻿@model ClashZone.App.Domains.ProductDomain
 @{
     ViewData["Title"] = "Dodaj produkt";
-    var categories = ViewBag.Categories as List<ClashZone.DataAccess.Models.ProductCategory> ?? new();
+    var categories = ViewBag.Categories as List<ClashZone.App.Domains.ProductCategoryDomain> ?? new();
 }
 @await Html.PartialAsync("~/Views/Shared/_CoinShopStyles.cshtml")
 

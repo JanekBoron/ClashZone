@@ -10,8 +10,8 @@ namespace ClashZone.DataAccess.Models
 {
     public enum CoinWalletTransactionType
     {
-        Earn = 1,       // przyznane np. za wygrane turnieje
-        Spend = 2       // zakupy w sklepie
+        Earn = 1,       
+        Spend = 2      
     }
 
     public class CoinWalletTransaction

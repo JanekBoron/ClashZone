@@ -1,9 +1,8 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stripe.Checkout;
-using System;
 using System.Security.Claims;
 
 namespace ClashZone.Controllers

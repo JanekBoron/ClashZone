@@ -1,9 +1,7 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ClashZone.Services.Interfaces;
-using ClashZone.ViewModels;
-
+using ClashZone.App.Services.Interfaces;
+using ClashZone.App.ViewModels;
 namespace ClashZone.Controllers
 {
     /// <summary>

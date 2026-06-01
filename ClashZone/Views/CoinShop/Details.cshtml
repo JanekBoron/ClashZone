@@ -1,4 +1,6 @@
-﻿@model ClashZone.DataAccess.Models.Product
+﻿@* Change product to vm *@
+
+@model ClashZone.App.Domains.ProductDomain
 @{
     ViewData["Title"] = Model.Name;
     var img = Model.Images.FirstOrDefault(i => i.IsPrimary)?.Url ?? Model.Images.FirstOrDefault()?.Url ?? "/images/placeholder.png";

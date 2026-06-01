@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ClashZone.DataAccess.Models.Product>
+﻿@model IEnumerable<ClashZone.App.Domains.ProductDomain>
 @{
     ViewData["Title"] = "Produkty (Admin)";
 }
@@ -6,8 +6,12 @@
 
 <div class="container my-4 text-white">
     <h2>Produkty</h2>
-    <a class="btn-cc my-2 d-inline-block" href="@Url.Action("Create")">+ Dodaj</a>
-    <table class="table table-dark table-striped align-middle">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-2">
+        <a class="btn-cc d-inline-block" href="@Url.Action("Create")">+ Dodaj</a>
+        <input type="search" class="form-control cc-table-search" data-table-search="productsTable"
+               placeholder="Szukaj produktu..." aria-label="Szukaj produktu" autocomplete="off" />
+    </div>
+    <table id="productsTable" data-paginate data-page-size="10" class="table table-dark table-striped align-middle">
         <thead>
             <tr>
                 <th>ID</th>
@@ -31,10 +35,17 @@
                     <td>@p.Category?.Name</td>
                     <td class="text-end">
                         <a class="btn btn-sm btn-outline-light" href="@Url.Action("Edit", new { id = p.Id })">Edytuj</a>
-                        <a class="btn btn-sm btn-outline-danger" href="@Url.Action("Delete", new { id = p.Id })">Usuń</a>
+                        <form method="post" action="@Url.Action("ConfirmDelete", new { id = p.Id })" onsubmit="return confirm('Czy na pewno chcesz usunąć ten produkt?');" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Usuń</button>
+                        </form>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+@section Scripts {
+    <script src="~/js/table-pagination.js" asp-append-version="true"></script>
+}

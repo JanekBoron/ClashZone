@@ -1,13 +1,10 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using DataAccess;
 using DataAccess.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Repository
 {
@@ -18,45 +15,46 @@ namespace ClashZone.DataAccess.Repository
     /// </summary>
     public class TournamentsRepository : ITournamentsRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext _db;
+        private readonly IMapper _mapper;
 
-        public TournamentsRepository(ApplicationDbContext context)
+        public TournamentsRepository(ApplicationDbContext db, IMapper mapper)
         {
-            _context = context;
+            _db = db;
+            _mapper = mapper;
         }
 
-        /// <inheritdoc/>
-        public async Task<IEnumerable<Tournament>> GetUpcomingTournamentsAsync(string? format)
+        public async Task<IEnumerable<TournamentDomain>> GetUpcomingTournamentsAsync(string? format)
         {
-            var query = _context.Tournaments.AsQueryable();
-            // Only upcoming tournaments
+            var query = _db.Tournaments.AsQueryable();
             query = query.Where(t => t.StartDate > DateTime.UtcNow);
-            // Optional filter by format (team size)
             if (!string.IsNullOrEmpty(format))
             {
                 query = query.Where(t => t.Format == format);
             }
-            return await query.OrderBy(t => t.StartDate).ToListAsync();
+            var tournaments = await query.OrderBy(t => t.StartDate).ToListAsync();
+            return _mapper.Map<IEnumerable<TournamentDomain>>(tournaments);
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<Tournament>> GetUserTournamentsAsync(string userId)
+        public async Task<IEnumerable<TournamentDomain>> GetUserTournamentsAsync(string userId)
         {
             if (string.IsNullOrEmpty(userId))
             {
-                return Array.Empty<Tournament>();
+                return Array.Empty<TournamentDomain>();
             }
             // If you have a UserTournaments join table: return tournaments where the
             // user is a participant.  Otherwise fall back to tournaments created by
             // the user.
-            return await _context.Tournaments
+            var tournaments = await _db.Tournaments
                 .Where(t => t.CreatedByUserId == userId)
                 .OrderBy(t => t.StartDate)
                 .ToListAsync();
+            return _mapper.Map<IEnumerable<TournamentDomain>>(tournaments);
         }
 
         /// <inheritdoc/>
-        public async Task AddTournamentAsync(Tournament tournament)
+        public async Task AddTournamentAsync(TournamentDomain tournament)
         {
             if (tournament == null)
                 throw new ArgumentNullException(nameof(tournament));
@@ -66,58 +64,63 @@ namespace ClashZone.DataAccess.Repository
             {
                 tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
             }
-
-            _context.Tournaments.Add(tournament);
-            await _context.SaveChangesAsync();
+            var entity = _mapper.Map<Tournament>(tournament);
+            _db.Tournaments.Add(entity);
+            await _db.SaveChangesAsync();
         }
 
         /// <inheritdoc/>
-        public async Task<Tournament?> GetTournamentByIdAsync(int id)
+        public async Task<TournamentDomain?> GetTournamentByIdAsync(int id)
         {
-            return await _context.Tournaments.FirstOrDefaultAsync(t => t.Id == id);
+            var tournament = await _db.Tournaments.FirstOrDefaultAsync(t => t.Id == id);
+            return _mapper.Map<TournamentDomain?>(tournament);
         }
 
         /// <inheritdoc/>
-        public async Task UpdateTournamentAsync(Tournament tournament)
+        public async Task UpdateTournamentAsync(TournamentDomain tournament)
         {
             if (tournament == null) throw new ArgumentNullException(nameof(tournament));
-            _context.Tournaments.Update(tournament);
-            await _context.SaveChangesAsync();
+            var existing = await _db.Tournaments.FindAsync(tournament.Id);
+            if (existing == null) return;
+            _mapper.Map(tournament, existing);
+            await _db.SaveChangesAsync();
         }
 
         /// <inheritdoc/>
         public async Task DeleteTournamentAsync(int id)
         {
-            var tournament = await _context.Tournaments.FindAsync(id);
+            var tournament = await _db.Tournaments.FindAsync(id);
             if (tournament != null)
             {
-                _context.Tournaments.Remove(tournament);
-                await _context.SaveChangesAsync();
+                _db.Tournaments.Remove(tournament);
+                await _db.SaveChangesAsync();
             }
         }
 
         /// <inheritdoc/>
-        public async Task<Team?> GetUserTeamAsync(int tournamentId, string userId)
+        public async Task<TeamDomain?> GetUserTeamAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) return null;
             // find membership including team relation
-            var membership = await _context.TeamMembers
+            var membership = await _db.TeamMembers
                 .Include(tm => tm.Team)
                 .FirstOrDefaultAsync(tm => tm.UserId == userId && tm.Team.TournamentId == tournamentId);
-            return membership?.Team;
+            if (membership?.Team == null) return null;
+            TeamDomain? teamDomain = _mapper.Map<TeamDomain?>(membership.Team);
+            return teamDomain;
         }
 
         /// <inheritdoc/>
         public async Task<List<string>> GetTeamMemberIdsAsync(int teamId)
         {
-            return await _context.TeamMembers
+            return await _db.TeamMembers
                 .Where(tm => tm.TeamId == teamId)
                 .Select(tm => tm.UserId)
                 .ToListAsync();
         }
 
         /// <inheritdoc/>
-        public async Task<Team> CreateTeamWithCaptainAsync(int tournamentId, string userId)
+        public async Task<TeamDomain> CreateTeamWithCaptainAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
             // Create new team and generate join code
@@ -128,67 +131,66 @@ namespace ClashZone.DataAccess.Repository
                 JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
                 Name = null
             };
-            _context.Teams.Add(team);
-            await _context.SaveChangesAsync();
+            _db.Teams.Add(team);
+            await _db.SaveChangesAsync();
             // Add captain as the first member
             var member = new TeamMember { TeamId = team.Id, UserId = userId };
-            _context.TeamMembers.Add(member);
-            await _context.SaveChangesAsync();
-            return team;
+            _db.TeamMembers.Add(member);
+            await _db.SaveChangesAsync();
+            return _mapper.Map<TeamDomain>(team);
         }
 
         /// <inheritdoc/>
         public async Task<int?> AddUserToTeamAsync(int teamId, string userId, string code)
         {
-            var team = await _context.Teams.FindAsync(teamId);
+            var team = await _db.Teams.FindAsync(teamId);
             if (team == null || team.JoinCode != code) return null;
             // Check if user already a member
-            var existing = await _context.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId == userId && tm.TeamId == teamId);
+            var existing = await _db.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId == userId && tm.TeamId == teamId);
             if (existing == null)
             {
-                _context.TeamMembers.Add(new TeamMember { TeamId = teamId, UserId = userId });
-                await _context.SaveChangesAsync();
+                _db.TeamMembers.Add(new TeamMember { TeamId = teamId, UserId = userId });
+                await _db.SaveChangesAsync();
             }
             return team.TournamentId;
         }
 
         /// <inheritdoc/>
-        public async Task AddChatMessageAsync(ChatMessage message)
+        public async Task AddChatMessageAsync(ChatMessageDomain message)
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
-            _context.ChatMessages.Add(message);
-            await _context.SaveChangesAsync();
+            _db.ChatMessages.Add(_mapper.Map<ChatMessage>(message));
+            await _db.SaveChangesAsync();
         }
 
         /// <inheritdoc/>
-        public async Task<List<ChatMessage>> GetAllChatMessagesAsync(int tournamentId)
+        public async Task<List<ChatMessageDomain>> GetAllChatMessagesAsync(int tournamentId)
         {
-            return await _context.ChatMessages
-                .Where(m => m.TournamentId == tournamentId && m.TeamId == null)
+            var messages = await _db.ChatMessages
+                .Where(m => m.TournamentId == tournamentId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
+            return _mapper.Map<List<ChatMessageDomain>>(messages);
         }
 
         /// <inheritdoc/>
-        public async Task<List<ChatMessage>> GetTeamChatMessagesAsync(int tournamentId, int teamId)
+        public async Task<List<ChatMessageDomain>> GetTeamChatMessagesAsync(int tournamentId, int teamId)
         {
-            return await _context.ChatMessages
+            var messages = await _db.ChatMessages
                 .Where(m =>
                     m.TournamentId == tournamentId &&
                     m.TeamId == teamId &&
                     m.IsReport == false)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
+            return _mapper.Map<List<ChatMessageDomain>>(messages);
         }
 
 
-        public async Task<List<ChatMessage>> GetReportChatMessagesAsync(
-        int tournamentId,
-        int? teamId,
-        bool isAdmin)
+        public async Task<List<ChatMessageDomain>> GetReportChatMessagesAsync(int tournamentId, int? teamId, bool isAdmin)
         {
             // Pobieramy wszystkie zgłoszenia dla turnieju
-            IQueryable<ChatMessage> query = _context.ChatMessages
+            IQueryable<ChatMessage> query = _db.ChatMessages
                 .Where(cm => cm.TournamentId == tournamentId && cm.IsReport);
 
             // Jeśli użytkownik nie jest administratorem, ograniczamy wyniki do jego drużyny
@@ -196,25 +198,28 @@ namespace ClashZone.DataAccess.Repository
             {
                 // Brak drużyny oznacza brak dostępu do zgłoszeń
                 if (teamId == null)
-                {
-                    return new List<ChatMessage>();
+                {  
+                    return new List<ChatMessageDomain>();
                 }
 
                 query = query.Where(cm => cm.TeamId == teamId);
             }
 
             // Sortujemy zgłoszenia chronologicznie
-            return await query.OrderBy(cm => cm.SentAt).ToListAsync();
+            var chatMessages = await query.OrderBy(cm => cm.SentAt).ToListAsync();
+            return _mapper.Map<List<ChatMessageDomain>>(chatMessages);
         }
 
 
-        public async Task<List<Team>> GetTeamsForTournamentAsync(int tournamentId)
+        public async Task<List<TeamDomain>> GetTeamsForTournamentAsync(int tournamentId)
         {
-            return await _context.TeamMembers
+            var teams = await _db.TeamMembers
                 .Where(tm => tm.Team.TournamentId == tournamentId)
                 .Select(tm => tm.Team)
                 .Distinct()
                 .ToListAsync();
+            return _mapper.Map<List<TeamDomain>>(teams);
         }
+
     }
 }

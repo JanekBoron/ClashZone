@@ -1,48 +1,63 @@
-﻿using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
+﻿using AutoMapper;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.DataAccess.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Repository
 {
     public class ProductsRepository : IProductsRepository
     {
         private readonly ApplicationDbContext _db;
-        public ProductsRepository(ApplicationDbContext db) => _db = db;
-
-        public Task<Product?> GetAsync(int id) =>
-            _db.Products.Include(p => p.Images).Include(p => p.Category)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-        public Task<IReadOnlyList<Product>> GetAllAsync() =>
-            _db.Products.Include(p => p.Category).Include(p => p.Images)
-                .OrderByDescending(p => p.Id).ToListAsync()
-                .ContinueWith(t => (IReadOnlyList<Product>)t.Result);
-
-        public Task<IReadOnlyList<Product>> GetActiveAsync() =>
-            _db.Products.Include(p => p.Images).Include(p => p.Category)
-                .Where(p => p.IsActive)
-                .OrderByDescending(p => p.LimitedEdition).ThenBy(p => p.ClashCoins)
-                .ToListAsync().ContinueWith(t => (IReadOnlyList<Product>)t.Result);
-
-        public async Task AddAsync(Product product)
-            => await _db.Products.AddAsync(product);
-
-        public Task UpdateAsync(Product product)
+        private readonly IMapper _mapper;
+        public ProductsRepository(ApplicationDbContext db, IMapper mapper)
         {
-            _db.Products.Update(product);
-            return Task.CompletedTask;
+            _db = db;
+            _mapper = mapper;  
         }
 
-        public Task DeleteAsync(Product product)
+        public async Task<ProductDomain?> GetAsync(int id)
         {
-            _db.Products.Remove(product);
-            return Task.CompletedTask;
+            var product = await _db.Products.Include(p => p.Images).Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            return _mapper.Map<ProductDomain?>(product);
+        }
+
+        public async Task<IReadOnlyList<ProductDomain>> GetAllAsync()
+        {
+            var products = await _db.Products.Include(p => p.Category).Include(p => p.Images)
+                .OrderByDescending(p => p.Id).ToListAsync();
+            return _mapper.Map<IReadOnlyList<ProductDomain>>(products);
+        }
+
+        public async Task<IReadOnlyList<ProductDomain>> GetActiveAsync()
+        {
+            var activeProducts = await _db.Products.Include(p => p.Images).Include(p => p.Category)
+                .Where(p => p.IsActive)
+                .OrderByDescending(p => p.LimitedEdition).ThenBy(p => p.ClashCoins)
+                .ToListAsync();
+            return _mapper.Map<IReadOnlyList<ProductDomain>>(activeProducts);
+        }
+
+        public async Task AddAsync(ProductDomain product)
+        {
+            var productEntity = _mapper.Map<Product>(product);
+            await _db.Products.AddAsync(productEntity);
+        }
+
+        public async Task UpdateAsync(ProductDomain product)
+        {
+            var existing = await _db.Products.FindAsync(product.Id);
+            if (existing == null) return;
+            _mapper.Map(product, existing);
+        }
+
+        public async Task DeleteAsync(ProductDomain product)
+        {
+            var existing = await _db.Products.FindAsync(product.Id);
+            if (existing != null)
+                _db.Products.Remove(existing);
         }
 
         public Task SaveChangesAsync() => _db.SaveChangesAsync();

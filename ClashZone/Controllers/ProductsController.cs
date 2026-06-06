@@ -10,10 +10,31 @@ namespace ClashZone.Controllers
     public class ProductsController : Controller
     {
         private readonly IProductsService _service;
+        private readonly IWebHostEnvironment _environment;
 
-        public ProductsController(IProductsService service)
+        public ProductsController(IProductsService service, IWebHostEnvironment environment)
         {
             _service = service;
+            _environment = environment;
+        }
+
+        /// <summary>
+        /// Zapisuje przesłany plik zdjęcia do wwwroot/images/products i zwraca
+        /// publiczną ścieżkę (jak przy zdjęciach profilowych). Null gdy brak pliku.
+        /// </summary>
+        private async Task<string?> SaveImageAsync(IFormFile? image)
+        {
+            if (image == null || image.Length == 0) return null;
+            var uploadsRoot = Path.Combine(_environment.WebRootPath ?? "wwwroot", "images", "products");
+            if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
+            var ext = Path.GetExtension(image.FileName);
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var filePath = Path.Combine(uploadsRoot, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+            return $"/images/products/{fileName}";
         }
 
         [HttpGet("")]
@@ -31,10 +52,11 @@ namespace ClashZone.Controllers
 
         [HttpPost("create")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ProductDomain model, string? primaryImageUrl)
+        public async Task<IActionResult> Create(ProductDomain model, IFormFile? primaryImage)
         {
             if (!ModelState.IsValid) return View(model);
-            await _service.CreateAsync(model, primaryImageUrl);
+            var imagePath = await SaveImageAsync(primaryImage);
+            await _service.CreateAsync(model, imagePath);
             return RedirectToAction(nameof(Index));
         }
 
@@ -48,11 +70,12 @@ namespace ClashZone.Controllers
 
         [HttpPost("edit/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ProductDomain model, string? primaryImageUrl)
+        public async Task<IActionResult> Edit(int id, ProductDomain model, IFormFile? primaryImage)
         {
             if (!ModelState.IsValid) return View(model);
             model.Id = id;
-            await _service.UpdateAsync(model, primaryImageUrl);
+            var imagePath = await SaveImageAsync(primaryImage);
+            await _service.UpdateAsync(model, imagePath);
             return RedirectToAction(nameof(Index));
         }
 

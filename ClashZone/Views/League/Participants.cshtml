@@ -1,0 +1,46 @@
+@model ClashZone.App.ViewModels.LeagueParticipantsViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = $"Uczestnicy – {s.Name}";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 class="mb-1">@s.Name – Uczestnicy</h2>
+    <hr style="border-color:#444;" />
+
+    @await Html.PartialAsync("_LeagueNav", (s.Id, "Participants"))
+
+    @if (!Model.Teams.Any())
+    {
+        <p class="text-muted">Brak zgłoszonych drużyn.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var team in Model.Teams)
+            {
+                <li class="list-group-item mb-2" style="background-color:#1a1a1a; border-color:#444; color:#fff;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong style="color:#FF2B3E;">@team.Name</strong>
+                        <span class="badge" style="background-color:@(team.FeePaid ? "#28a745" : "#6c757d");color:#fff;">
+                            @(team.FeePaid ? "Wpisowe opłacone" : "Brak opłaty")
+                        </span>
+                    </div>
+                    @if (team.Members.Any())
+                    {
+                        <ul class="mt-2" style="padding-left:1rem;">
+                            @foreach (var member in team.Members)
+                            {
+                                <li style="list-style-type:disc;">@member</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">Brak członków w drużynie.</p>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</div>

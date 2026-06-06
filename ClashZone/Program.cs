@@ -1,5 +1,7 @@
 using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.Ports.Games;
 using ClashZone.App.Services;
+using ClashZone.App.Services.Games.Riot;
 using ClashZone.App.Services.Interfaces;
 using ClashZone.DataAccess.DbInitializer;
 using ClashZone.DataAccess.Models;
@@ -16,7 +18,9 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
+builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "",
+    typeof(Program),
+    typeof(ClashZone.DataAccess.Config.ClashUserProfile));
 
 // Configure database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -46,6 +50,8 @@ builder.Services.AddScoped<ICoinWalletRepository, CoinWalletRepository>();
 builder.Services.AddScoped<IMatchesRepository, MatchesRepository>();
 builder.Services.AddScoped<IPlayerStatsRepository, PlayerStatsRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ILeagueTeamsRepository, LeagueTeamsRepository>();
+builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
 
 // Business
 builder.Services.AddScoped<IChatService, ChatService>();
@@ -56,6 +62,23 @@ builder.Services.AddScoped<ICoinShopService, CoinShopService>();
 builder.Services.AddScoped<ICoinWalletService, CoinWalletService>();
 builder.Services.AddScoped<IMatchesService, MatchesService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ILeagueTeamService, LeagueTeamService>();
+builder.Services.AddScoped<ILeagueService, LeagueService>();
+
+// Riot Games API integration (real League of Legends match data).
+// Klucz konfigurujemy poza repo (user-secrets / zmienne środowiskowe);
+// gdy brak klucza, integracja jest wyłączona i LoL działa jak "brak danych".
+var riotOptions = builder.Configuration.GetSection("Riot").Get<RiotOptions>() ?? new RiotOptions();
+builder.Services.AddSingleton(riotOptions);
+builder.Services.AddHttpClient<IRiotApiClient, RiotApiClient>(client =>
+{
+    client.BaseAddress = new Uri(riotOptions.RegionalHost);
+    if (riotOptions.IsConfigured)
+    {
+        client.DefaultRequestHeaders.Add("X-Riot-Token", riotOptions.ApiKey);
+    }
+});
+builder.Services.AddScoped<IRiotMatchService, RiotMatchService>();
 
 // Stripe API configuration for payments (existing functionality)
 Stripe.StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];

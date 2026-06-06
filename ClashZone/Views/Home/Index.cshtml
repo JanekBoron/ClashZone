@@ -17,8 +17,44 @@
         </a>
     </div>
 
-    <div class="sponsor-section mt-4" style="background-color:#0A0A0A; border:2px solid #FF2B3E; border-radius:10px; padding:20px; text-align:center;">
-        <img src="~/images/sponsor-placeholder.png" alt="Sponsor logo" style="max-width:150px;" />
-        <div class="mt-2" style="color:#f8f9fa; font-size:1rem;">Clash Zone is powered by &lt;sponsor&gt;</div>
+    @* Rotating sponsor ad carousel — swap the img src / text for each real sponsor *@
+    <div class="sponsor-carousel" aria-label="Reklamy sponsorów">
+        <div class="sponsor-slide">
+            <div class="sponsor-slide__tag">Sponsor główny</div>
+            <img src="~/images/sponsor-placeholder.png" alt="Sponsor główny" />
+            <div class="sponsor-slide__text">ClashZone is powered by &lt;sponsor&gt;</div>
+        </div>
+        <div class="sponsor-slide">
+            <div class="sponsor-slide__tag">Partner sprzętowy</div>
+            <img src="~/images/sponsor-placeholder.png" alt="Partner sprzętowy" />
+            <div class="sponsor-slide__text">Graj na sprzęcie od &lt;sponsor&gt;</div>
+        </div>
+        <div class="sponsor-slide">
+            <div class="sponsor-slide__tag">Partner napojów</div>
+            <img src="~/images/sponsor-placeholder.png" alt="Partner napojów" />
+            <div class="sponsor-slide__text">Energia dostarczona przez &lt;sponsor&gt;</div>
+        </div>
+        <div class="sponsor-slide">
+            <div class="sponsor-slide__tag">Pula nagród</div>
+            <img src="~/images/sponsor-placeholder.png" alt="Partner nagród" />
+            <div class="sponsor-slide__text">Nagrody ufundowane przez &lt;sponsor&gt;</div>
+        </div>
+    </div>
+
+    @* Infinite scrolling logo strip — duplicate set keeps the loop seamless *@
+    <div class="sponsor-marquee" aria-label="Nasi sponsorzy">
+        <div class="sponsor-marquee__track">
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            @* duplicate set for seamless infinite scroll *@
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+            <div class="sponsor-marquee__item"><img src="~/images/sponsor-placeholder.png" alt="Sponsor" /></div>
+        </div>
     </div>
 </div>

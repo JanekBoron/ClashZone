@@ -1,0 +1,27 @@
+@model ClashZone.App.ViewModels.LeagueRulesViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = $"Reguły – {s.Name}";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 class="mb-1">@s.Name – Reguły</h2>
+    <small class="text-muted">Liga: @s.Game</small>
+    <hr style="border-color:#444;" />
+
+    @await Html.PartialAsync("_LeagueNav", (s.Id, "Rules"))
+
+    @if (Model.Rules.Any())
+    {
+        <ul class="list-group">
+            @foreach (var rule in Model.Rules)
+            {
+                <li class="list-group-item mb-2" style="background-color:#1a1a1a; border-color:#444; color:#fff;">@rule</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="text-muted">Brak zasad dla tego sezonu.</p>
+    }
+</div>

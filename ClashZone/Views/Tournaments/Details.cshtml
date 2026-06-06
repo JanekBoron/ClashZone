@@ -19,11 +19,16 @@
             <small class="text-muted">Zorganizowane przez @Model.Tournament.CreatedByUserId</small>
         </div>
         <div>
-            <!-- Form posts back to Join action to handle tournament enrolment -->
-            <form asp-action="Join" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Dołącz do turnieju</button>
-            </form>
+            @* Dołączyć można tylko, gdy nie ma się jeszcze drużyny w tym turnieju. *@
+            @if (Model.UserTeam == null)
+            {
+                <form asp-action="Join" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;" disabled="@Model.TournamentFull">
+                        @(Model.TournamentFull ? "Turniej pełny" : "Dołącz do turnieju")
+                    </button>
+                </form>
+            }
         </div>
     </div>
     @section Scripts {
@@ -59,7 +64,10 @@
             <h4 class="mb-3">Szczegóły</h4>
             <dl class="row">
                 <dt class="col-sm-4">Gra</dt>
-                <dd class="col-sm-8">@Model.Tournament.GameTitle</dd>
+                <dd class="col-sm-8">
+                    <span class="game-badge @(GameCatalog.IsLol(Model.Tournament.GameTitle) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(Model.Tournament.GameTitle)</span>
+                    <span class="ms-2">@Model.Tournament.GameTitle</span>
+                </dd>
 
                 <dt class="col-sm-4">Format drużyny</dt>
                 <dd class="col-sm-8">@Model.Tournament.Format</dd>
@@ -87,46 +95,115 @@
             </dl>
 
             <h4 class="mt-4">Informacje</h4>
-            <p>Prosimy upewnić się, że pobrałeś i zainstalowałeś wymagane oprogramowanie (np. klient anty‑cheat) przed rozpoczęciem wydarzenia. Jeśli nigdy nie został zainstalowany, może okazać się, że nie zdążysz dołączyć do serwera na czas.</p>
-            <p>Pamiętaj, aby uruchomić go podczas check‑in i sprawdzić, czy są dostępne aktualizacje gry.</p>
+            @if (GameCatalog.IsLol(Model.Tournament.GameTitle))
+            {
+                <p>Rozgrywka odbywa się na mapie Summoner's Rift w trybie Draft Pick. Każdy zawodnik wybiera inną postać (championa) — pamiętaj o przygotowaniu swojej puli postaci przed fazą draftu.</p>
+                <p>Mecze rozgrywane są w formacie Bo3 (do dwóch wygranych map). Upewnij się, że klient gry jest zaktualizowany i gotowy podczas check‑in.</p>
+            }
+            else
+            {
+                <p>Prosimy upewnić się, że pobrałeś i zainstalowałeś wymagane oprogramowanie (np. klient anty‑cheat) przed rozpoczęciem wydarzenia. Jeśli nigdy nie został zainstalowany, może okazać się, że nie zdążysz dołączyć do serwera na czas.</p>
+                <p>Mecze rozgrywane są w formacie rundowym. Pamiętaj, aby uruchomić anty‑cheat podczas check‑in i sprawdzić, czy są dostępne aktualizacje gry.</p>
+            }
         </div>
+
+        @* Komunikaty akcji drużyny (gotowość / potwierdzenie). *@
+        @if (TempData["TeamInfo"] != null)
+        {
+            <div class="alert alert-success mt-3">@TempData["TeamInfo"]</div>
+        }
+        @if (TempData["TeamError"] != null)
+        {
+            <div class="alert alert-danger mt-3">@TempData["TeamError"]</div>
+        }
 
         @* Display user's team if they have joined *@
         @if (Model.UserTeam != null)
         {
+            var missing = Model.RequiredRosterSize - Model.Members.Count;
             <div class="mt-4">
                 <h4>Twoja drużyna</h4>
                 <ul class="list-group">
-                    @foreach (var member in Model.TeamMembers)
+                    @foreach (var member in Model.Members)
                     {
-                        <li class="list-group-item" style="background-color:#111; color:#f8f9fa; border-color:#444;">
-                            @member
+                        <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                            <span>
+                                @member.Name
+                                @if (member.UserId == Model.UserTeam.CaptainId)
+                                {
+                                    <span class="badge ms-2" style="background-color:#FF2B3E;color:#fff;">Kapitan</span>
+                                }
+                            </span>
+                            <span class="d-flex align-items-center gap-2">
+                                @if (member.Ready)
+                                {
+                                    <span class="text-success">● Gotowy</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">○ Niegotowy</span>
+                                }
+                                @if (member.UserId == Model.CurrentUserId && !Model.IsTeamConfirmed)
+                                {
+                                    <form asp-action="ToggleReady" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-light">
+                                            @(member.Ready ? "Cofnij gotowość" : "Ustaw gotowość")
+                                        </button>
+                                    </form>
+                                }
+                            </span>
                         </li>
                     }
                 </ul>
-                <!-- If the tournament format is not 1v1, show an invitation prompt for additional players -->
-                @if (Model.Tournament.Format == "1v1")
-                {
-                    <div class="mt-3 d-flex justify-content-between align-items-center p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
-                        <div>
-                            <span class="text-success">Gotowy</span>
-                            <span class="text-muted ms-2">Drużyna gotowa do gry.</span>
+
+                <div class="mt-3 p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
+                    @if (Model.IsTeamConfirmed)
+                    {
+                        <span class="text-success">✔ Zatwierdzona</span>
+                        <span class="text-muted ms-2">Drużyna jest w drabince turnieju.</span>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                @if (!Model.RosterFull)
+                                {
+                                    <span class="text-danger">Niegotowa</span>
+                                    <span class="text-muted ms-2">Zaproś jeszcze @missing @(missing == 1 ? "gracza" : "graczy") do pełnego składu (@Model.RequiredRosterSize).</span>
+                                }
+                                else if (!Model.AllReady)
+                                {
+                                    <span class="text-warning">Skład pełny</span>
+                                    <span class="text-muted ms-2">Wszyscy gracze muszą oznaczyć gotowość.</span>
+                                }
+                                else if (Model.TournamentFull)
+                                {
+                                    <span class="text-danger">Turniej pełny</span>
+                                    <span class="text-muted ms-2">Brak wolnych slotów na potwierdzone drużyny.</span>
+                                }
+                                else
+                                {
+                                    <span class="text-success">Gotowa do potwierdzenia</span>
+                                    <span class="text-muted ms-2">Kapitan może potwierdzić udział drużyny.</span>
+                                }
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (!Model.RosterFull && Model.Tournament.Format != "1v1")
+                                {
+                                    <button type="button" class="btn" style="background-color:#FF2B3E; color:#fff;" data-bs-toggle="modal" data-bs-target="#inviteModal">Zaproś</button>
+                                }
+                                @if (Model.IsCaptain)
+                                {
+                                    <form asp-action="ConfirmTeam" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;" disabled="@(!Model.CanConfirm)">Potwierdź drużynę</button>
+                                    </form>
+                                }
+                            </div>
                         </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="mt-3 d-flex justify-content-between align-items-center p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
-                        <div>
-                            <span class="text-danger">Niegotowy</span>
-                            @* Determine how many additional players are needed: for 2v2, 1 more; for 5v5, 4 more *@
-                            <span class="text-muted ms-2">Zaproś co najmniej @(Model.Tournament.Format == "2v2" ? 1 : 4) graczy do Twojej drużyny.</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <button type="button" class="btn" style="background-color:#FF2B3E; color:#fff;" data-bs-toggle="modal" data-bs-target="#inviteModal">Zaproś</button>
-                        </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         }
 

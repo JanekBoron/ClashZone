@@ -11,9 +11,15 @@ namespace ClashZone.App.ViewModels
     public class RankingViewModel
     {
         /// <summary>
-        /// Collection of user statistics to be displayed on the current page.
+        /// Wiersze rankingu wyświetlane na bieżącej stronie (statystyki +
+        /// informacje zależne od gry).
         /// </summary>
-        public List<UserStatDomain> UserStats { get; set; } = new();
+        public List<RankingRowViewModel> Rows { get; set; } = new();
+
+        /// <summary>
+        /// Aktualnie wybrana gra (zakładka). Steruje zestawem kolumn.
+        /// </summary>
+        public string SelectedGame { get; set; } = string.Empty;
 
         /// <summary>
         /// The current page number (1‑indexed).
@@ -30,5 +36,11 @@ namespace ClashZone.App.ViewModels
         /// RankingsController and should remain constant across pages.
         /// </summary>
         public int PageSize { get; set; }
+
+        /// <summary>
+        /// Aktualna fraza wyszukiwania (filtr po nazwie gracza). Pusta lub null
+        /// oznacza brak filtra. Przenoszona między stronami i zakładkami gier.
+        /// </summary>
+        public string? SearchTerm { get; set; }
     }
 }

@@ -1,0 +1,31 @@
+@model (int SeasonId, string ActiveTab)
+<ul class="nav nav-tabs mb-4" style="border-color:#FF2B3E;">
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Details" ? "active" : "")"
+           asp-controller="League" asp-action="Details" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Przegląd</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Chat" ? "active" : "")"
+           asp-controller="League" asp-action="Chat" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Czat</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Standings" ? "active" : "")"
+           asp-controller="League" asp-action="Standings" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Tabela</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Matches" ? "active" : "")"
+           asp-controller="League" asp-action="Matches" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Mecze</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Bracket" ? "active" : "")"
+           asp-controller="League" asp-action="Bracket" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Drabinka</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Participants" ? "active" : "")"
+           asp-controller="League" asp-action="Participants" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Uczestnicy</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(Model.ActiveTab == "Rules" ? "active" : "")"
+           asp-controller="League" asp-action="Rules" asp-route-id="@Model.SeasonId" style="color:#FF2B3E;">Reguły</a>
+    </li>
+</ul>

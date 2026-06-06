@@ -1,0 +1,76 @@
+@model ClashZone.App.ViewModels.LeagueBracketViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = $"Play-off – {s.Name}";
+    bool isManager = User.IsInRole("Organizer") || User.IsInRole("Admin");
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="mb-1">Play-off – @s.Name</h2>
+        @if (isManager)
+        {
+            <div class="d-flex gap-2">
+                @if (Model.Rounds == null || Model.Rounds.Count == 0)
+                {
+                    <form asp-action="GeneratePlayoffs" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@s.Id" />
+                        <button type="submit" class="btn" style="background-color:#FF2B3E;color:#fff;">Generuj play-off</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="SimulatePlayoffMatch" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@s.Id" />
+                        <button type="submit" class="btn" style="background-color:#FF2B3E;color:#fff;">Symuluj następny mecz</button>
+                    </form>
+                }
+            </div>
+        }
+    </div>
+
+    <hr style="border-color:#444;" />
+
+    @await Html.PartialAsync("_LeagueNav", (s.Id, "Bracket"))
+
+    @if (Model.Rounds == null || Model.Rounds.Count == 0)
+    {
+        <p class="text-light mb-0">Drabinka play-off nie została jeszcze wygenerowana. Top @s.PlayoffSpots drużyn wg tabeli awansuje do play-off.</p>
+    }
+    else
+    {
+        <div class="row flex-nowrap" style="overflow-x:auto;">
+            @for (int r = 0; r < Model.Rounds.Count; r++)
+            {
+                <div class="col-auto me-4">
+                    <h5 class="text-light mb-3">Runda @(r + 1)</h5>
+                    @foreach (var match in Model.Rounds[r])
+                    {
+                        <div class="card mb-4" style="background-color:#0A0A0A; border:1px solid #FF2B3E; min-width:220px;">
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-light">@(!string.IsNullOrEmpty(match.Team1Name) ? match.Team1Name : "Bye")</span>
+                                    @if (match.Team1Score.HasValue)
+                                    {
+                                        bool win = match.Team2Score.HasValue && match.Team1Score.Value >= match.Team2Score.Value;
+                                        <span class="badge" style="background-color:@(win ? "#FF2B3E" : "#6c757d");color:#0A0A0A;">@match.Team1Score</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="text-light">@(!string.IsNullOrEmpty(match.Team2Name) ? match.Team2Name : "Bye")</span>
+                                    @if (match.Team2Score.HasValue)
+                                    {
+                                        bool win2 = match.Team1Score.HasValue && match.Team2Score.Value > match.Team1Score.Value;
+                                        <span class="badge" style="background-color:@(win2 ? "#FF2B3E" : "#6c757d");color:#0A0A0A;">@match.Team2Score</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

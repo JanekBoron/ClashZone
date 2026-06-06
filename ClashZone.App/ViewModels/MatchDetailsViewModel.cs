@@ -17,6 +17,12 @@ namespace ClashZone.App.ViewModels
         public MatchDomain Match { get; set; } = null!;
 
         /// <summary>
+        /// Tytuł gry turnieju, do którego należy mecz. Steruje sposobem
+        /// prezentacji statystyk (postać, etykieta wyniku).
+        /// </summary>
+        public string GameTitle { get; set; } = string.Empty;
+
+        /// <summary>
         /// List of player statistics for the first team.
         /// </summary>
         public List<PlayerStatViewModel> Team1Stats { get; set; } = new();

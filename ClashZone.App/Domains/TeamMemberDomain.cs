@@ -11,6 +11,9 @@ namespace ClashZone.App.Domains
         public int TeamId { get; set; }
         public string UserId { get; set; } = string.Empty;
 
+        /// <summary>Czy gracz oznaczył gotowość do gry.</summary>
+        public bool IsReady { get; set; } = false;
+
         /// <summary>
         /// Navigation property to the associated <see cref="Team"/>.  This
         /// allows Entity Framework to automatically load the team when

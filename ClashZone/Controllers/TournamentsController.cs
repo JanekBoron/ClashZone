@@ -86,7 +86,16 @@ namespace ClashZone.Controllers
                 return NotFound();
             }
 
-            var rules = GetRulesForGame(tournament.GameTitle);
+            // Preferuj reguły wpisane przez organizatora; w razie ich braku użyj
+            // domyślnych reguł właściwych dla danej gry.
+            var rules = !string.IsNullOrWhiteSpace(tournament.Rules)
+                ? tournament.Rules
+                    .Split('\n')
+                    .Select(r => r.Trim())
+                    .Where(r => r.Length > 0)
+                    .ToList()
+                : GameCatalog.DefaultRules(tournament.GameTitle);
+
             var model = new RulesViewModel
             {
                 Tournament = tournament,
@@ -94,40 +103,6 @@ namespace ClashZone.Controllers
             };
 
             return View(model);
-        }
-
-        private List<string> GetRulesForGame(string? gameTitle)
-        {
-            var rules = new List<string>();
-            if (string.IsNullOrWhiteSpace(gameTitle))
-            {
-                rules.Add("Obowiązują standardowe zasady fair play.");
-                rules.Add("Każdy mecz musi zostać rozegrany w ustalonym terminie.");
-                return rules;
-            }
-
-            var lower = gameTitle.Trim().ToLowerInvariant();
-            switch (lower)
-            {
-                case "counter strike 2":
-                case "counter-strike 2":
-                case "cs2":
-                    rules.Add("Każdy mecz rozgrywany jest w formacie best of 3 (do dwóch wygranych map).\n");
-                    rules.Add("Zabrania się wykorzystywania błędów gry oraz niedozwolonych skryptów.");
-                    rules.Add("Skład drużyny musi liczyć dokładnie 5 zawodników.");
-                    break;
-                case "league of legends":
-                case "lol":
-                    rules.Add("Mecze rozgrywane są na mapie Summoner's Rift w trybie Draft Pick.");
-                    rules.Add("Zakaz używania bohaterów spoza oficjalnej rotacji turniejowej.");
-                    rules.Add("Składy drużyn są zamrożone po zakończeniu zapisów.");
-                    break;
-                default:
-                    rules.Add("Obowiązują standardowe zasady fair play.");
-                    rules.Add("Każdy mecz musi zostać rozegrany w ustalonym terminie.");
-                    break;
-            }
-            return rules;
         }
 
         [HttpGet]
@@ -266,23 +241,23 @@ namespace ClashZone.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTournament(
             TournamentFormViewModel model,
-            string prizeOption1, string? prizeDescription1, int? prizeCoins1,
-            string prizeOption2, string? prizeDescription2, int? prizeCoins2,
-            string prizeOption3, string? prizeDescription3, int? prizeCoins3)
+            int? prizeCoins1, int? prizeCoins2, int? prizeCoins3)
         {
+            ValidateGameAndFormat(model);
             if (ModelState.IsValid)
             {
                 var tournament = _mapper.Map<TournamentDomain>(model);
-                tournament.GameTitle = "Counter Strike 2";
-                tournament.FirstPlacePrize = ComputePrize(prizeOption1, prizeDescription1, prizeCoins1);
-                tournament.SecondPlacePrize = ComputePrize(prizeOption2, prizeDescription2, prizeCoins2);
-                tournament.ThirdPlacePrize = ComputePrize(prizeOption3, prizeDescription3, prizeCoins3);
+                tournament.GameTitle = GameCatalog.Normalize(model.GameTitle)!;
+                tournament.FirstPlacePrize = ComputePrize(prizeCoins1);
+                tournament.SecondPlacePrize = ComputePrize(prizeCoins2);
+                tournament.ThirdPlacePrize = ComputePrize(prizeCoins3);
 
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 await _tournamentService.CreateTournamentAsync(tournament, userId);
                 return RedirectToAction(nameof(Index));
             }
-            return View(model);
+            // Akcja nazywa się CreateTournament, więc jawnie wskazujemy widok Create.
+            return View("Create", model);
         }
 
         [Authorize]
@@ -336,6 +311,28 @@ namespace ClashZone.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleReady(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var result = await _tournamentService.ToggleReadyAsync(id, userId);
+            TempData[result.IsError ? "TeamError" : "TeamInfo"] = result.Message;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmTeam(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var result = await _tournamentService.ConfirmTeamAsync(id, userId);
+            TempData[result.IsError ? "TeamError" : "TeamInfo"] = result.Message;
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         [Authorize]
         public async Task<IActionResult> JoinTeam(int teamId, string code)
         {
@@ -373,21 +370,20 @@ namespace ClashZone.Controllers
         public async Task<IActionResult> Edit(
             int id,
             TournamentFormViewModel model,
-            string prizeOption1, string? prizeDescription1, int? prizeCoins1,
-            string prizeOption2, string? prizeDescription2, int? prizeCoins2,
-            string prizeOption3, string? prizeDescription3, int? prizeCoins3)
+            int? prizeCoins1, int? prizeCoins2, int? prizeCoins3)
         {
             if (id != model.Id)
             {
                 return BadRequest();
             }
+            ValidateGameAndFormat(model);
             if (ModelState.IsValid)
             {
                 var tournament = _mapper.Map<TournamentDomain>(model);
-                tournament.GameTitle = "Counter Strike 2";
-                tournament.FirstPlacePrize = ComputePrize(prizeOption1, prizeDescription1, prizeCoins1);
-                tournament.SecondPlacePrize = ComputePrize(prizeOption2, prizeDescription2, prizeCoins2);
-                tournament.ThirdPlacePrize = ComputePrize(prizeOption3, prizeDescription3, prizeCoins3);
+                tournament.GameTitle = GameCatalog.Normalize(model.GameTitle)!;
+                tournament.FirstPlacePrize = ComputePrize(prizeCoins1);
+                tournament.SecondPlacePrize = ComputePrize(prizeCoins2);
+                tournament.ThirdPlacePrize = ComputePrize(prizeCoins3);
 
                 await _tournamentsRepository.UpdateTournamentAsync(tournament);
                 return RedirectToAction(nameof(Manage));
@@ -402,11 +398,30 @@ namespace ClashZone.Controllers
             return RedirectToAction(nameof(Manage));
         }
 
-        private static string ComputePrize(string option, string? desc, int? coins)
+        private static string ComputePrize(int? coins)
         {
-            if (option == "text") return desc ?? string.Empty;
-            if (option == "coins" && coins.HasValue) return $"{coins.Value} ClashCoins";
-            return string.Empty;
+            // Nagrody są wyłącznie w ClashCoins. Brak/0 oznacza brak nagrody.
+            return coins.HasValue && coins.Value > 0 ? $"{coins.Value} ClashCoins" : string.Empty;
+        }
+
+        /// <summary>
+        /// Waliduje wybrany tytuł gry oraz format drużyn (różne gry dopuszczają
+        /// różne formaty — np. League of Legends nie ma 2v2). Błędy trafiają do
+        /// ModelState, aby formularz wyświetlił komunikaty.
+        /// </summary>
+        private void ValidateGameAndFormat(TournamentFormViewModel model)
+        {
+            var game = GameCatalog.Normalize(model.GameTitle);
+            if (game == null)
+            {
+                ModelState.AddModelError(nameof(model.GameTitle), "Nieobsługiwany tytuł gry.");
+                return;
+            }
+            if (!GameCatalog.IsFormatAllowed(game, model.Format))
+            {
+                ModelState.AddModelError(nameof(model.Format),
+                    $"Format {model.Format} jest niedozwolony dla gry {game}.");
+            }
         }
     }
 }

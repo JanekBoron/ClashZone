@@ -102,6 +102,29 @@ namespace ClashZone.DataAccess.DbInitializer
                 context.AddRange(plans);
                 await context.SaveChangesAsync();
             }
+            // Seed przykładowego sezonu ligi (status 0 = rejestracja)
+            if (!context.Set<Season>().Any())
+            {
+                var season = new Season
+                {
+                    Name = "ClashZone League – Sezon 1",
+                    Game = "Counter Strike 2",
+                    Format = "5v5",
+                    RegistrationOpenDate = DateTime.UtcNow.AddDays(-1),
+                    RegistrationCloseDate = DateTime.UtcNow.AddDays(14),
+                    StartDate = DateTime.UtcNow.AddDays(16),
+                    RosterSize = 5,
+                    PlayoffSpots = 4,
+                    FirstPlacePrize = "1000 ClashCoins",
+                    SecondPlacePrize = "500 ClashCoins",
+                    ThirdPlacePrize = "250 ClashCoins",
+                    DefaultMatchDay = "Środa 20:00 CEST",
+                    Status = 0,
+                    CreatedByUserId = null
+                };
+                context.Add(season);
+                await context.SaveChangesAsync();
+            }
         }
     }
 

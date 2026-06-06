@@ -77,5 +77,15 @@ namespace ClashZone.DataAccess.Repository
             var res = await _userManager.UpdateAsync(user);
             return res.Succeeded;
         }
+
+        public async Task<bool> SetRiotAccountAsync(string userId, string riotId, string puuid)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return false;
+            user.RiotId = riotId;
+            user.RiotPuuid = puuid;
+            var res = await _userManager.UpdateAsync(user);
+            return res.Succeeded;
+        }
     }
 }

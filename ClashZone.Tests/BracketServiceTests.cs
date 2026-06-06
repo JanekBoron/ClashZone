@@ -1,127 +1,293 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using ClashZone.DataAccess.Models;
-using ClashZone.DataAccess.Repository.Interfaces;
-using ClashZone.Services;
-using ClashZone.Services.Interfaces;
-using ClashZone.ViewModels;
-using DataAccess;
-using DataAccess.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using ClashZone.App.Domains;
+using ClashZone.App.Domains.Riot;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.Ports.Games;
+using ClashZone.App.Services;
+using ClashZone.App.Services.Interfaces;
 using Moq;
 using Xunit;
 
 namespace ClashZone.Tests
 {
     /// <summary>
-    /// Unit tests for <see cref="BracketService"/>.  These tests focus on
-    /// the early exit conditions of the service: when a tournament cannot
-    /// be found or when there are fewer than two teams.  More complex
-    /// bracket generation is covered by integration tests elsewhere.
+    /// Testy <see cref="BracketService"/> skupione na deterministycznych
+    /// ścieżkach: brak turnieju oraz zbyt mała liczba drużyn.
     /// </summary>
     public class BracketServiceTests
     {
-        private static ApplicationDbContext CreateContext()
-        {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "BracketServiceTests")
-                .Options;
-            return new ApplicationDbContext(options);
-        }
+        private static BracketService CreateService(
+            Mock<ITournamentsRepository> tournaments,
+            Mock<IMatchesRepository>? matches = null,
+            Mock<IPlayerStatsRepository>? stats = null,
+            Mock<IRiotMatchService>? riot = null)
+            => new BracketService(
+                tournaments.Object,
+                new Mock<IUserRepository>().Object,
+                new Mock<IEmailService>().Object,
+                new Mock<ICoinWalletService>().Object,
+                (matches ?? new Mock<IMatchesRepository>()).Object,
+                (stats ?? new Mock<IPlayerStatsRepository>()).Object,
+                (riot ?? new Mock<IRiotMatchService>()).Object);
 
-        private static UserManager<ClashUser> CreateUserManager()
+        [Fact]
+        public async Task GetBracketAsync_ReturnsNull_WhenTournamentMissing()
         {
-            var store = new Mock<IUserStore<ClashUser>>();
-            return new UserManager<ClashUser>(store.Object,
-                null, null, new List<IUserValidator<ClashUser>>(), new List<IPasswordValidator<ClashUser>>(), null, null, null, null);
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync((TournamentDomain?)null);
+
+            Assert.Null(await CreateService(tournaments).GetBracketAsync(1));
         }
 
         [Fact]
-        public async Task GetBracketAsync_ReturnsNull_WhenTournamentNotFound()
+        public async Task GetBracketAsync_ReturnsEmptyRounds_WhenFewerThanTwoTeams()
         {
-            // Arrange
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync((Tournament?)null);
-            var service = new BracketService(repoMock.Object, CreateUserManager(), Mock.Of<IEmailService>(), CreateContext(), Mock.Of<ICoinWalletService>());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Cs2 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1))
+                .ReturnsAsync(new List<TeamDomain> { new() { Id = 1, Name = "Solo", CaptainId = "c1" } });
 
-            // Act
-            var result = await service.GetBracketAsync(1);
+            var model = await CreateService(tournaments).GetBracketAsync(1);
 
-            // Assert
-            Assert.Null(result);
+            Assert.NotNull(model);
+            Assert.Empty(model!.Rounds);
         }
 
         [Fact]
-        public async Task GetBracketAsync_ReturnsEmptyRounds_WhenNotEnoughTeams()
+        public async Task SimulateMatchAsync_ReturnsNull_WhenTournamentMissing()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1 };
-            var teams = new List<Team> { new Team { Id = 1, CaptainId = "u1" } };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(teams);
-            var userManager = CreateUserManager();
-            var service = new BracketService(repoMock.Object, userManager, Mock.Of<IEmailService>(), CreateContext(), Mock.Of<ICoinWalletService>());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync((TournamentDomain?)null);
 
-            // Act
-            var result = await service.GetBracketAsync(1);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(tournament, result!.Tournament);
-            Assert.Empty(result.Rounds);
+            Assert.Null(await CreateService(tournaments).SimulateMatchAsync(1, 1, 1));
         }
 
         [Fact]
-        public async Task GetBracketWithResultsAsync_ReturnsEmptyRounds_WhenNotEnoughTeams()
+        public async Task SimulateMatchAsync_ReturnsNull_WhenFewerThanTwoTeams()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1 };
-            var teams = new List<Team> { new Team { Id = 1, CaptainId = "u1" } };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(teams);
-            var userManager = CreateUserManager();
-            var context = CreateContext();
-            var service = new BracketService(repoMock.Object, userManager, Mock.Of<IEmailService>(), context, Mock.Of<ICoinWalletService>());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Cs2 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1))
+                .ReturnsAsync(new List<TeamDomain> { new() { Id = 1, Name = "Solo", CaptainId = "c1" } });
 
-            // Act
-            var result = await service.GetBracketWithResultsAsync(1);
+            Assert.Null(await CreateService(tournaments).SimulateMatchAsync(1, 1, 1));
+        }
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(tournament, result!.Tournament);
-            Assert.Empty(result.Rounds);
+        // Cztery nazwane drużyny dają deterministyczną strukturę drabinki:
+        // 2 mecze półfinałowe + 1 finał (brak bye'ów), niezależnie od losowania.
+        private static List<TeamDomain> FourTeams() => new()
+        {
+            new() { Id = 1, Name = "Alpha", CaptainId = "cap1" },
+            new() { Id = 2, Name = "Bravo", CaptainId = "cap2" },
+            new() { Id = 3, Name = "Charlie", CaptainId = "cap3" },
+            new() { Id = 4, Name = "Delta", CaptainId = "cap4" },
+        };
+
+        [Fact]
+        public async Task GetBracketWithResultsAsync_ReturnsNull_WhenTournamentMissing()
+        {
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync((TournamentDomain?)null);
+
+            Assert.Null(await CreateService(tournaments).GetBracketWithResultsAsync(1));
         }
 
         [Fact]
-        public async Task GetBracketWithStatsAsync_ReturnsEmptyRounds_WhenNotEnoughTeams()
+        public async Task GetBracketWithResultsAsync_GeneratesScoredBracket_WithoutPersisting()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1 };
-            var teams = new List<Team> { new Team { Id = 1, CaptainId = "u1" } };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(teams);
-            var userManager = CreateUserManager();
-            var context = CreateContext();
-            var service = new BracketService(repoMock.Object, userManager, Mock.Of<IEmailService>(), context, Mock.Of<ICoinWalletService>());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Cs2 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(FourTeams());
 
-            // Act
-            var result = await service.GetBracketWithStatsAsync(1);
+            var matches = new Mock<IMatchesRepository>();
+            var stats = new Mock<IPlayerStatsRepository>();
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(tournament, result!.Tournament);
-            Assert.Empty(result.Rounds);
+            var model = await CreateService(tournaments, matches, stats).GetBracketWithResultsAsync(1);
+
+            Assert.NotNull(model);
+            // 4 drużyny => półfinały (2 mecze) + finał (1 mecz)
+            Assert.Equal(2, model!.Rounds.Count);
+            Assert.Equal(2, model.Rounds[0].Count);
+            Assert.Single(model.Rounds[1]);
+            // Każdy mecz półfinału ma obu uczestników i wylosowany wynik.
+            Assert.All(model.Rounds[0], m =>
+            {
+                Assert.False(string.IsNullOrEmpty(m.Team1Name));
+                Assert.False(string.IsNullOrEmpty(m.Team2Name));
+                Assert.True(m.Team1Score.HasValue);
+                Assert.True(m.Team2Score.HasValue);
+            });
+            // Ta metoda jedynie symuluje w pamięci — nic nie zapisuje do bazy.
+            matches.Verify(r => r.AddMatchAsync(It.IsAny<MatchDomain>()), Times.Never);
+            stats.Verify(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetBracketWithStatsAsync_ReturnsNull_WhenTournamentMissing()
+        {
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync((TournamentDomain?)null);
+
+            Assert.Null(await CreateService(tournaments).GetBracketWithStatsAsync(1));
+        }
+
+        [Fact]
+        public async Task GetBracketWithStatsAsync_PersistsMatchesAndPlayerStats()
+        {
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Cs2 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(FourTeams());
+            // Brak dodatkowych członków — każda drużyna to sam kapitan.
+            tournaments.Setup(r => r.GetTeamMemberIdsAsync(It.IsAny<int>())).ReturnsAsync(new List<string>());
+
+            var matches = new Mock<IMatchesRepository>();
+            matches.Setup(r => r.TournamentHasMatchesAsync(1)).ReturnsAsync(false);
+            var addedMatches = new List<MatchDomain>();
+            matches.Setup(r => r.AddMatchAsync(It.IsAny<MatchDomain>()))
+                   .Callback<MatchDomain>(m => addedMatches.Add(m))
+                   .Returns(Task.CompletedTask);
+
+            var stats = new Mock<IPlayerStatsRepository>();
+            stats.Setup(r => r.GetUserStatsAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((UserStatDomain?)null);
+            var addedStats = new List<PlayerMatchStatDomain>();
+            stats.Setup(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()))
+                 .Callback<PlayerMatchStatDomain>(s => addedStats.Add(s))
+                 .Returns(Task.CompletedTask);
+
+            var model = await CreateService(tournaments, matches, stats).GetBracketWithStatsAsync(1);
+
+            Assert.NotNull(model);
+            Assert.Equal(2, model!.Rounds.Count);
+            // 2 półfinały + finał = 3 zapisane mecze.
+            Assert.Equal(3, addedMatches.Count);
+            Assert.All(addedMatches, m => Assert.Equal(1, m.TournamentId));
+            // Każdy mecz zapisuje statystyki obu kapitanów => 3 * 2 = 6 rekordów (CS2 bez championa).
+            Assert.Equal(6, addedStats.Count);
+            Assert.All(addedStats, s =>
+            {
+                Assert.Equal(GameCatalog.Cs2, s.Game);
+                Assert.Null(s.Champion);
+            });
+            // Skoro agregaty nie istniały (GetUserStatsAsync => null), dla każdego rekordu tworzony jest nowy.
+            stats.Verify(r => r.AddUserStatsAsync(It.IsAny<UserStatDomain>()), Times.Exactly(6));
+            stats.Verify(r => r.UpdateUserStats(It.IsAny<UserStatDomain>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetBracketWithStatsAsync_AssignsChampions_ForLeagueOfLegends()
+        {
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Lol });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(FourTeams());
+            tournaments.Setup(r => r.GetTeamMemberIdsAsync(It.IsAny<int>())).ReturnsAsync(new List<string>());
+
+            var matches = new Mock<IMatchesRepository>();
+            matches.Setup(r => r.TournamentHasMatchesAsync(1)).ReturnsAsync(false);
+
+            var stats = new Mock<IPlayerStatsRepository>();
+            stats.Setup(r => r.GetUserStatsAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((UserStatDomain?)null);
+            var addedStats = new List<PlayerMatchStatDomain>();
+            stats.Setup(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()))
+                 .Callback<PlayerMatchStatDomain>(s => addedStats.Add(s))
+                 .Returns(Task.CompletedTask);
+
+            var model = await CreateService(tournaments, matches, stats).GetBracketWithStatsAsync(1);
+
+            Assert.NotNull(model);
+            Assert.NotEmpty(addedStats);
+            // W LoL każdy gracz dostaje championa z katalogu gry.
+            Assert.All(addedStats, s =>
+            {
+                Assert.Equal(GameCatalog.Lol, s.Game);
+                Assert.False(string.IsNullOrEmpty(s.Champion));
+                Assert.Contains(s.Champion!, GameCatalog.Champions);
+            });
+        }
+
+        // Dwie nazwane drużyny LoL: drabinka = pojedynczy finał (runda 1, mecz 1).
+        private static Mock<ITournamentsRepository> TwoLolTeams()
+        {
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Lol });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(new List<TeamDomain>
+            {
+                new() { Id = 1, Name = "Alpha", CaptainId = "cap1" },
+                new() { Id = 2, Name = "Bravo", CaptainId = "cap2" },
+            });
+            tournaments.Setup(r => r.GetTeamMemberIdsAsync(It.IsAny<int>())).ReturnsAsync(new List<string>());
+            return tournaments;
+        }
+
+        [Fact]
+        public async Task SimulateMatchAsync_ForLol_PersistsRealRiotData()
+        {
+            var tournaments = TwoLolTeams();
+
+            var matches = new Mock<IMatchesRepository>();
+            matches.Setup(r => r.GetMatchesByTournamentAsync(1)).ReturnsAsync(new List<MatchDomain>());
+            // Finał => unikamy ścieżki przyznawania nagród.
+            matches.Setup(r => r.IsTournamentAlreadyAwardedAsync(It.IsAny<int>(), It.IsAny<List<List<MatchInfoDomain>>>())).ReturnsAsync(true);
+            var addedMatches = new List<MatchDomain>();
+            matches.Setup(r => r.AddMatchAsync(It.IsAny<MatchDomain>()))
+                   .Callback<MatchDomain>(m => addedMatches.Add(m))
+                   .Returns(Task.CompletedTask);
+
+            var stats = new Mock<IPlayerStatsRepository>();
+            var addedStats = new List<PlayerMatchStatDomain>();
+            stats.Setup(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()))
+                 .Callback<PlayerMatchStatDomain>(s => addedStats.Add(s))
+                 .Returns(Task.CompletedTask);
+
+            var riot = new Mock<IRiotMatchService>();
+            riot.Setup(r => r.ResolveMatchAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new RiotMatchOutcome
+                {
+                    Team1Score = 1,
+                    Team2Score = 0,
+                    Players = new List<RiotMatchPlayerStat>
+                    {
+                        new() { UserId = "cap1", Kills = 7, Deaths = 2, Assists = 10, Champion = "Ahri" },
+                        new() { UserId = "cap2", Kills = 3, Deaths = 8, Assists = 5, Champion = "Zed" },
+                    }
+                });
+
+            var model = await CreateService(tournaments, matches, stats, riot).SimulateMatchAsync(1, 1, 1);
+
+            Assert.NotNull(model);
+            // Wynik meczu pochodzi z danych Riota (1-0), a nie z losowania.
+            var persisted = Assert.Single(addedMatches);
+            Assert.Equal(1, persisted.Team1Score);
+            Assert.Equal(0, persisted.Team2Score);
+            // Statystyki graczy to dokładnie to, co zwrócił Riot.
+            Assert.Equal(2, addedStats.Count);
+            Assert.Contains(addedStats, s => s.UserId == "cap1" && s.Kills == 7 && s.Champion == "Ahri");
+            Assert.Contains(addedStats, s => s.UserId == "cap2" && s.Deaths == 8 && s.Champion == "Zed");
+            Assert.All(addedStats, s => Assert.Equal(GameCatalog.Lol, s.Game));
+            riot.Verify(r => r.ResolveMatchAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task SimulateMatchAsync_ForLol_ReturnsNull_AndPersistsNothing_WhenNoRiotData()
+        {
+            var tournaments = TwoLolTeams();
+
+            var matches = new Mock<IMatchesRepository>();
+            matches.Setup(r => r.GetMatchesByTournamentAsync(1)).ReturnsAsync(new List<MatchDomain>());
+
+            var stats = new Mock<IPlayerStatsRepository>();
+
+            var riot = new Mock<IRiotMatchService>();
+            riot.Setup(r => r.ResolveMatchAsync(It.IsAny<IReadOnlyList<string>>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((RiotMatchOutcome?)null);
+
+            var model = await CreateService(tournaments, matches, stats, riot).SimulateMatchAsync(1, 1, 1);
+
+            // Brak realnego meczu => nic nie zapisujemy i sygnalizujemy brak wyniku.
+            Assert.Null(model);
+            matches.Verify(r => r.AddMatchAsync(It.IsAny<MatchDomain>()), Times.Never);
+            stats.Verify(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()), Times.Never);
         }
     }
 }

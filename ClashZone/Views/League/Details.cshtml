@@ -1,0 +1,162 @@
+@model ClashZone.App.ViewModels.SeasonDetailsViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = s.Name;
+    bool isManager = User.IsInRole("Organizer") || User.IsInRole("Admin");
+    string StatusLabel(int st) => ((SeasonStatus)st) switch
+    {
+        SeasonStatus.Registration => "Rejestracja",
+        SeasonStatus.RegularSeason => "Sezon regularny",
+        SeasonStatus.Playoffs => "Play-off",
+        SeasonStatus.Completed => "Zakończony",
+        _ => "—"
+    };
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">@s.Name</h2>
+            <small class="text-muted">
+                <span class="game-badge @(GameCatalog.IsLol(s.Game) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(s.Game)</span>
+                <span class="ms-2">@s.Game • Format @s.Format</span>
+            </small>
+        </div>
+        <span class="badge" style="background-color:#FF2B3E;color:#fff; font-size:1rem;">@StatusLabel(s.Status)</span>
+    </div>
+
+    <hr style="border-color:#444;" />
+
+    @await Html.PartialAsync("_LeagueNav", (s.Id, "Details"))
+
+    @if (TempData["LeagueInfo"] != null)
+    {
+        <div class="alert alert-success">@TempData["LeagueInfo"]</div>
+    }
+    @if (TempData["LeagueError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["LeagueError"]</div>
+    }
+
+    <!-- Oś czasu sezonu (styl ESEA) -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4 mb-2">
+            <div class="p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px;">
+                <div class="text-muted">Otwarcie rejestracji</div>
+                <div style="color:#FF2B3E; font-weight:bold;">@s.RegistrationOpenDate.ToString("dd MMM yyyy, HH:mm")</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-2">
+            <div class="p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px;">
+                <div class="text-muted">Zamknięcie rejestracji</div>
+                <div style="color:#FF2B3E; font-weight:bold;">@s.RegistrationCloseDate.ToString("dd MMM yyyy, HH:mm")</div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-2">
+            <div class="p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px;">
+                <div class="text-muted">Start sezonu</div>
+                <div style="color:#FF2B3E; font-weight:bold;">@s.StartDate.ToString("dd MMM yyyy, HH:mm")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h4 class="mb-3">Informacje</h4>
+            <dl class="row">
+                <dt class="col-sm-4">Zarejestrowane drużyny</dt>
+                <dd class="col-sm-8">@Model.RegisteredTeamsCount</dd>
+                <dt class="col-sm-4">Wymagany roster</dt>
+                <dd class="col-sm-8">@s.RosterSize graczy</dd>
+                <dt class="col-sm-4">Miejsca w play-off</dt>
+                <dd class="col-sm-8">@s.PlayoffSpots</dd>
+                <dt class="col-sm-4">Domyślny termin meczów</dt>
+                <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(s.DefaultMatchDay) ? "—" : s.DefaultMatchDay)</dd>
+            </dl>
+
+            <!-- Rejestracja drużyny -->
+            @if (s.Status == (int)SeasonStatus.Registration)
+            {
+                <div class="mt-3 p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
+                    <h5>Zgłoś drużynę</h5>
+                    @if (Model.IsRegistered)
+                    {
+                        <p class="text-success mb-0">Twoja drużyna jest już zgłoszona do tego sezonu.</p>
+                    }
+                    else if (!Model.HasLeagueAccess)
+                    {
+                        <p class="text-muted">Rejestracja do ligi wymaga pakietu <strong>League</strong> lub <strong>Ultra</strong>.</p>
+                        <a class="btn" style="background-color:#FF2B3E;color:#fff;" asp-controller="Subscription" asp-action="Index">Zobacz pakiety</a>
+                    }
+                    else if (!Model.EligibleTeams.Any())
+                    {
+                        <p class="text-muted mb-0">Brak kwalifikujących się drużyn. Utwórz drużynę (gra: @s.Game) i skompletuj roster w sekcji „Zarządzanie drużyną".</p>
+                    }
+                    else
+                    {
+                        <form asp-action="Register" method="post" class="d-flex gap-2 align-items-center flex-wrap">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="seasonId" value="@s.Id" />
+                            <select name="leagueTeamId" class="form-select" style="max-width:280px; background-color:#222; color:#fff; border-color:#444;">
+                                @foreach (var t in Model.EligibleTeams)
+                                {
+                                    <option value="@t.Id">@(t.Name ?? $"Drużyna #{t.Id}")</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn" style="background-color:#FF2B3E;color:#fff;">Zgłoś drużynę</button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="col-md-4">
+            <h4 class="mb-3">Pula nagród</h4>
+            <ol class="list-group list-group-numbered">
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@(string.IsNullOrWhiteSpace(s.FirstPlacePrize) ? "—" : s.FirstPlacePrize)</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@(string.IsNullOrWhiteSpace(s.SecondPlacePrize) ? "—" : s.SecondPlacePrize)</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="background-color:#111; color:#f8f9fa; border-color:#444;">
+                    <span>@(string.IsNullOrWhiteSpace(s.ThirdPlacePrize) ? "—" : s.ThirdPlacePrize)</span>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    @if (isManager)
+    {
+        <hr style="border-color:#444;" />
+        <h4 class="mb-3">Panel organizatora</h4>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-light btn-sm" asp-action="Edit" asp-route-id="@s.Id">Edytuj sezon</a>
+            <form asp-action="CloseRegistration" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@s.Id" />
+                <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#fff;">Zamknij rejestrację</button>
+            </form>
+            <form asp-action="GenerateMatchups" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@s.Id" />
+                <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#fff;">Generuj mecze otwarcia</button>
+            </form>
+            <form asp-action="GenerateWeek" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@s.Id" />
+                <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#fff;">Generuj kolejny tydzień</button>
+            </form>
+            <form asp-action="GenerateResults" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@s.Id" />
+                <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#fff;">Symuluj wyniki</button>
+            </form>
+            <form asp-action="GeneratePlayoffs" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@s.Id" />
+                <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#fff;">Generuj play-off</button>
+            </form>
+        </div>
+    }
+</div>

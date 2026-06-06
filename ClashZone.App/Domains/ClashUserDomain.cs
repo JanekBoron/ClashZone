@@ -32,5 +32,16 @@ namespace ClashZone.App.Domains
         public string? ProfilePicturePath { get; set; }
 
         public bool IsBanned { get; set; } = false;
+
+        /// <summary>
+        /// Riot ID gracza w formacie "Nazwa#TAG" (np. "Faker#KR1").
+        /// </summary>
+        public string? RiotId { get; set; }
+
+        /// <summary>
+        /// Stały identyfikator konta Riot (PUUID), używany do mapowania uczestników
+        /// meczu League of Legends na użytkownika ClashZone.
+        /// </summary>
+        public string? RiotPuuid { get; set; }
     }
 }

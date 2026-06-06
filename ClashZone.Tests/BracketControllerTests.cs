@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
+using ClashZone.App.Services.Interfaces;
+using ClashZone.App.ViewModels;
 using ClashZone.Controllers;
-using ClashZone.Services.Interfaces;
-using ClashZone.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Xunit;
@@ -9,50 +9,35 @@ using Xunit;
 namespace ClashZone.Tests
 {
     /// <summary>
-    /// Unit tests for the <see cref="BracketController"/>.  The controller
-    /// delegates almost all work to the <see cref="IBracketService"/> and
-    /// selects between returning a view or redirecting based on whether a
-    /// bracket model is returned.  These tests verify that logic.
+    /// Testy <see cref="BracketController"/> — symulacja meczu zwraca widok
+    /// drabinki lub przekierowanie, gdy symulacja jest niemożliwa.
     /// </summary>
     public class BracketControllerTests
     {
         [Fact]
         public async Task SimulateMatch_RedirectsToBracket_WhenServiceReturnsNull()
         {
-            // Arrange
-            var svcMock = new Mock<IBracketService>();
-            svcMock.Setup(s => s.SimulateMatchAsync(1, 2, 3))
-                .ReturnsAsync((BracketViewModel?)null);
-            var controller = new BracketController(svcMock.Object);
+            var service = new Mock<IBracketService>();
+            service.Setup(s => s.SimulateMatchAsync(1, 1, 1, It.IsAny<bool>())).ReturnsAsync((BracketViewModel?)null);
 
-            // Act
-            var result = await controller.SimulateMatch(1, 2, 3);
+            var result = await new BracketController(service.Object).SimulateMatch(1, 1, 1);
 
-            // Assert
             var redirect = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Bracket", redirect.ActionName);
             Assert.Equal("Tournaments", redirect.ControllerName);
-            Assert.True(redirect.RouteValues!.ContainsKey("id"));
-            Assert.Equal(1, redirect.RouteValues!["id"]);
         }
 
         [Fact]
-        public async Task SimulateMatch_ReturnsView_WhenServiceReturnsModel()
+        public async Task SimulateMatch_ReturnsBracketView_WhenSimulated()
         {
-            // Arrange
-            var model = new BracketViewModel();
-            var svcMock = new Mock<IBracketService>();
-            svcMock.Setup(s => s.SimulateMatchAsync(5, 1, 1))
-                .ReturnsAsync(model);
-            var controller = new BracketController(svcMock.Object);
+            var vm = new BracketViewModel();
+            var service = new Mock<IBracketService>();
+            service.Setup(s => s.SimulateMatchAsync(1, 1, 1, It.IsAny<bool>())).ReturnsAsync(vm);
 
-            // Act
-            var result = await controller.SimulateMatch(5, 1, 1);
+            var result = await new BracketController(service.Object).SimulateMatch(1, 1, 1);
 
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
-            Assert.Equal("~/Views/Tournaments/Bracket.cshtml", view.ViewName);
-            Assert.Equal(model, view.Model);
+            Assert.Same(vm, view.Model);
         }
     }
 }

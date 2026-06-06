@@ -45,9 +45,24 @@ namespace ClashZone.App.Ports.DataAccess
 
         Task<List<string>> GetTeamMemberIdsAsync(int teamId);
 
+        /// <summary>Członkowie drużyny wraz z ich statusem gotowości (IsReady).</summary>
+        Task<List<TeamMemberDomain>> GetTeamMembersAsync(int teamId);
+
         Task<TeamDomain> CreateTeamWithCaptainAsync(int tournamentId, string userId);
 
         Task<int?> AddUserToTeamAsync(int teamId, string userId, string code);
+
+        /// <summary>Ustawia gotowość pojedynczego członka drużyny.</summary>
+        Task SetMemberReadyAsync(int teamId, string userId, bool ready);
+
+        /// <summary>Oznacza drużynę jako potwierdzoną (wchodzi do drabinki).</summary>
+        Task ConfirmTeamAsync(int teamId);
+
+        /// <summary>Liczba potwierdzonych drużyn w turnieju (= zajęte sloty).</summary>
+        Task<int> GetConfirmedTeamCountAsync(int tournamentId);
+
+        /// <summary>Drużyny turniejowe, których podany użytkownik jest kapitanem.</summary>
+        Task<List<TeamDomain>> GetCaptainTeamsAsync(string userId);
 
         // ---------------------------------------------------------------------
         // Chat related methods

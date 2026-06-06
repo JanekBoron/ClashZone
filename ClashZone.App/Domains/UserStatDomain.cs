@@ -16,6 +16,11 @@ namespace ClashZone.App.Domains
         public string UserId { get; set; } = null!;
 
         /// <summary>
+        /// Tytuł gry, której dotyczą zagregowane statystyki.
+        /// </summary>
+        public string Game { get; set; } = string.Empty;
+
+        /// <summary>
         /// Total number of kills recorded for this user across all matches.
         /// </summary>
         public int TotalKills { get; set; }
@@ -41,6 +46,13 @@ namespace ClashZone.App.Domains
         /// This property is not mapped to the database.
         /// </summary>
         public double AverageKD => TotalDeaths != 0 ? Math.Round((double)TotalKills / TotalDeaths, 2) : TotalKills;
+
+        /// <summary>
+        /// Średni wskaźnik KDA = (zabójstwa + asysty) / śmierci. Używany przede
+        /// wszystkim w rankingu League of Legends. Przy zerze śmierci dzielnik
+        /// wynosi 1, aby uniknąć dzielenia przez zero.
+        /// </summary>
+        public double AverageKDA => Math.Round((double)(TotalKills + TotalAssists) / (TotalDeaths != 0 ? TotalDeaths : 1), 2);
 
         public ClashUserDomain User { get; set; } = null!;
     }

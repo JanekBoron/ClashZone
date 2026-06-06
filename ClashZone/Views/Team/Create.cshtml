@@ -1,0 +1,38 @@
+@model ClashZone.App.ViewModels.LeagueTeamFormViewModel
+@{
+    ViewData["Title"] = "Utwórz drużynę";
+    var games = GameCatalog.AllGames;
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa; max-width:560px;">
+    <h2 class="mb-3" style="color:#FF2B3E;">Utwórz drużynę</h2>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Nazwa drużyny</label>
+            <input asp-for="Name" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Game" class="form-label">Gra</label>
+            <select asp-for="Game" class="form-select" style="background-color:#222; color:#fff; border-color:#444;">
+                <option value="">— wybierz —</option>
+                @foreach (var g in games)
+                {
+                    <option value="@g">@g</option>
+                }
+            </select>
+            <span asp-validation-for="Game" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn" style="background-color:#FF2B3E;color:#fff;">Utwórz</button>
+        <a asp-action="Index" class="btn btn-outline-light">Anuluj</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

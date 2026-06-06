@@ -120,6 +120,51 @@ namespace ClashZone.DataAccess.Repository
         }
 
         /// <inheritdoc/>
+        public async Task<List<TeamMemberDomain>> GetTeamMembersAsync(int teamId)
+        {
+            var members = await _db.TeamMembers
+                .Where(tm => tm.TeamId == teamId)
+                .ToListAsync();
+            return _mapper.Map<List<TeamMemberDomain>>(members);
+        }
+
+        /// <inheritdoc/>
+        public async Task SetMemberReadyAsync(int teamId, string userId, bool ready)
+        {
+            var member = await _db.TeamMembers
+                .FirstOrDefaultAsync(tm => tm.TeamId == teamId && tm.UserId == userId);
+            if (member == null) return;
+            member.IsReady = ready;
+            await _db.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task ConfirmTeamAsync(int teamId)
+        {
+            var team = await _db.Teams.FindAsync(teamId);
+            if (team == null) return;
+            team.IsConfirmed = true;
+            await _db.SaveChangesAsync();
+        }
+
+        /// <inheritdoc/>
+        public async Task<int> GetConfirmedTeamCountAsync(int tournamentId)
+        {
+            return await _db.Teams
+                .CountAsync(t => t.TournamentId == tournamentId && t.IsConfirmed);
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<TeamDomain>> GetCaptainTeamsAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId)) return new List<TeamDomain>();
+            var teams = await _db.Teams
+                .Where(t => t.CaptainId == userId)
+                .ToListAsync();
+            return _mapper.Map<List<TeamDomain>>(teams);
+        }
+
+        /// <inheritdoc/>
         public async Task<TeamDomain> CreateTeamWithCaptainAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
@@ -213,10 +258,11 @@ namespace ClashZone.DataAccess.Repository
 
         public async Task<List<TeamDomain>> GetTeamsForTournamentAsync(int tournamentId)
         {
-            var teams = await _db.TeamMembers
-                .Where(tm => tm.Team.TournamentId == tournamentId)
-                .Select(tm => tm.Team)
-                .Distinct()
+            // Uczestnicy turnieju = wyłącznie drużyny potwierdzone przez kapitana.
+            // Niepotwierdzone (niepełny skład / brak gotowości) nie liczą się do
+            // limitu i nie wchodzą do drabinki.
+            var teams = await _db.Teams
+                .Where(t => t.TournamentId == tournamentId && t.IsConfirmed)
                 .ToListAsync();
             return _mapper.Map<List<TeamDomain>>(teams);
         }

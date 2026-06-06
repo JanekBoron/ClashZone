@@ -1,5 +1,4 @@
 using ClashZone.App.Domains;
-using Microsoft.AspNetCore.Identity;
 
 namespace ClashZone.App.Ports.DataAccess
 {
@@ -12,5 +11,10 @@ namespace ClashZone.App.Ports.DataAccess
         Task<bool> RemoveFromRoleAsync(string userId, string roleName);
         Task<bool> BanAsync(string userId);
         Task<bool> UnbanAsync(string userId);
+
+        /// <summary>
+        /// Zapisuje powiązanie konta Riot użytkownika (Riot ID + rozwiązany PUUID).
+        /// </summary>
+        Task<bool> SetRiotAccountAsync(string userId, string riotId, string puuid);
     }
 }

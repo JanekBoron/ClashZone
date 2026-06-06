@@ -35,7 +35,8 @@ namespace ClashZone.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SimulateMatch(int id, int roundNumber, int matchNumber)
         {
-            var model = await _bracketService.SimulateMatchAsync(id, roundNumber, matchNumber);
+            // Admin wymusza ścieżkę deweloperską Riota (mecze LoL z konta-źródła).
+            var model = await _bracketService.SimulateMatchAsync(id, roundNumber, matchNumber, User?.IsInRole("Admin") ?? false);
             if (model == null)
             {
                 // Simulation could not be performed; redirect to the original bracket

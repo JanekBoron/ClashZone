@@ -22,6 +22,12 @@ namespace ClashZone.DataAccess.Models
         public string UserId { get; set; } = null!;
 
         /// <summary>
+        /// Tytuł gry, której dotyczą zagregowane statystyki. Statystyki są
+        /// przechowywane osobno dla każdej gry (jeden wiersz na parę UserId+Game).
+        /// </summary>
+        public string Game { get; set; } = string.Empty;
+
+        /// <summary>
         /// Total number of kills recorded for this user across all matches.
         /// </summary>
         public int TotalKills { get; set; }

@@ -215,3 +215,166 @@ a {
         border-color: #2a2a2a;
     }
 
+/* Game badges */
+.game-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .8rem;
+    letter-spacing: .3px;
+    color: #fff;
+    border: 1px solid transparent;
+}
+
+.game-badge--cs2 {
+    background: #d2812b;
+}
+
+.game-badge--lol {
+    background: #1f7a8c;
+}
+
+/* Sortable table headers */
+th.cc-sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+    th.cc-sortable::after {
+        content: " \2195";
+        opacity: .5;
+    }
+
+    th.cc-sortable.cc-sort-asc::after {
+        content: " \2191";
+        opacity: 1;
+    }
+
+    th.cc-sortable.cc-sort-desc::after {
+        content: " \2193";
+        opacity: 1;
+    }
+
+/* ===== Sponsor ad carousel ===== */
+.sponsor-carousel {
+    position: relative;
+    max-width: 800px;
+    margin: 40px auto 0;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--cz-red);
+    background: var(--cz-black);
+}
+
+.sponsor-slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    color: #fff;
+    animation: sponsor-fade 20s infinite;
+}
+
+    /* 4 slides, each visible for ~25% of the cycle with a crossfade */
+    .sponsor-slide:nth-child(1) { animation-delay: 0s; }
+    .sponsor-slide:nth-child(2) { animation-delay: 5s; }
+    .sponsor-slide:nth-child(3) { animation-delay: 10s; }
+    .sponsor-slide:nth-child(4) { animation-delay: 15s; }
+
+.sponsor-slide img {
+    max-width: 140px;
+    max-height: 80px;
+    object-fit: contain;
+}
+
+.sponsor-slide__text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.sponsor-slide__tag {
+    font-size: .8rem;
+    color: var(--cz-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@keyframes sponsor-fade {
+    0%   { opacity: 0; transform: scale(1.04); }
+    3%   { opacity: 1; transform: scale(1); }
+    22%  { opacity: 1; transform: scale(1); }
+    25%  { opacity: 0; transform: scale(1.04); }
+    100% { opacity: 0; }
+}
+
+/* ===== Infinite sponsor logo marquee ===== */
+.sponsor-marquee {
+    max-width: 800px;
+    margin: 20px auto 0;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--cz-gray);
+    padding: 14px 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.sponsor-marquee__track {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    width: max-content;
+    animation: sponsor-scroll 25s linear infinite;
+}
+
+.sponsor-marquee:hover .sponsor-marquee__track {
+    animation-play-state: paused;
+}
+
+.sponsor-marquee__item {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    opacity: .7;
+    transition: opacity .2s ease;
+}
+
+    .sponsor-marquee__item:hover {
+        opacity: 1;
+    }
+
+.sponsor-marquee__item img {
+    max-height: 50px;
+    max-width: 120px;
+    object-fit: contain;
+    filter: grayscale(100%);
+    transition: filter .2s ease;
+}
+
+.sponsor-marquee__item:hover img {
+    filter: grayscale(0);
+}
+
+@keyframes sponsor-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sponsor-slide,
+    .sponsor-marquee__track {
+        animation: none;
+    }
+
+    .sponsor-slide:nth-child(1) {
+        opacity: 1;
+    }
+}

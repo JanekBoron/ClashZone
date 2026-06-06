@@ -4,6 +4,7 @@ using ClashZone.App.Services.Interfaces;
 using ClashZone.App.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ClashZone.App.Services
@@ -51,25 +52,115 @@ namespace ClashZone.App.Services
             {
                 return null;
             }
-            var viewModel = new TournamentDetailsViewModel { Tournament = tournament };
+            var viewModel = new TournamentDetailsViewModel
+            {
+                Tournament = tournament,
+                CurrentUserId = userId,
+                RequiredRosterSize = GameCatalog.RosterSize(tournament.Format)
+            };
+
+            var confirmedCount = await _tournamentsRepository.GetConfirmedTeamCountAsync(id);
+            viewModel.TournamentFull = tournament.MaxParticipants > 0 && confirmedCount >= tournament.MaxParticipants;
+
             if (!string.IsNullOrEmpty(userId))
             {
                 var team = await _tournamentsRepository.GetUserTeamAsync(id, userId);
                 if (team != null)
                 {
                     viewModel.UserTeam = team;
-                    var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
-                    foreach (var uid in memberIds)
+                    viewModel.IsCaptain = team.CaptainId == userId;
+                    viewModel.IsTeamConfirmed = team.IsConfirmed;
+
+                    var members = await _tournamentsRepository.GetTeamMembersAsync(team.Id);
+                    foreach (var m in members)
                     {
-                        var user = await _userRepository.FindByIdAsync(uid);
-                        if (user != null)
+                        var user = await _userRepository.FindByIdAsync(m.UserId);
+                        viewModel.Members.Add(new TournamentTeamMemberView
                         {
-                            viewModel.TeamMembers.Add(user.UserName);
-                        }
+                            UserId = m.UserId,
+                            Name = user?.DisplayName ?? user?.UserName ?? m.UserId,
+                            Ready = m.IsReady
+                        });
                     }
+
+                    viewModel.CanConfirm = viewModel.IsCaptain
+                        && !viewModel.IsTeamConfirmed
+                        && !viewModel.TournamentFull
+                        && viewModel.Members.Count == viewModel.RequiredRosterSize
+                        && viewModel.Members.All(x => x.Ready);
                 }
             }
             return viewModel;
+        }
+
+        public async Task<TeamActionResult> ToggleReadyAsync(int tournamentId, string userId)
+        {
+            var team = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
+            if (team == null)
+            {
+                return new TeamActionResult { Success = false, Message = "Nie należysz do żadnej drużyny w tym turnieju." };
+            }
+
+            var members = await _tournamentsRepository.GetTeamMembersAsync(team.Id);
+            var me = members.FirstOrDefault(m => m.UserId == userId);
+            var newReady = !(me?.IsReady ?? false);
+
+            // Ustawienie gotowości ma sens tylko, gdy są jeszcze wolne sloty.
+            if (newReady && !team.IsConfirmed)
+            {
+                var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
+                var confirmedCount = await _tournamentsRepository.GetConfirmedTeamCountAsync(tournamentId);
+                if (tournament != null && tournament.MaxParticipants > 0 && confirmedCount >= tournament.MaxParticipants)
+                {
+                    return new TeamActionResult { Success = false, Message = "Turniej osiągnął limit drużyn — nie można ustawić gotowości." };
+                }
+            }
+
+            await _tournamentsRepository.SetMemberReadyAsync(team.Id, userId, newReady);
+            return new TeamActionResult { Success = true, Message = newReady ? "Oznaczono gotowość." : "Cofnięto gotowość." };
+        }
+
+        public async Task<TeamActionResult> ConfirmTeamAsync(int tournamentId, string userId)
+        {
+            var team = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
+            if (team == null)
+            {
+                return new TeamActionResult { Success = false, Message = "Nie należysz do żadnej drużyny w tym turnieju." };
+            }
+            if (team.CaptainId != userId)
+            {
+                return new TeamActionResult { Success = false, Message = "Tylko kapitan może potwierdzić drużynę." };
+            }
+            if (team.IsConfirmed)
+            {
+                return new TeamActionResult { Success = true, Message = "Drużyna jest już potwierdzona." };
+            }
+
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
+            if (tournament == null)
+            {
+                return new TeamActionResult { Success = false, Message = "Nie znaleziono turnieju." };
+            }
+
+            var confirmedCount = await _tournamentsRepository.GetConfirmedTeamCountAsync(tournamentId);
+            if (tournament.MaxParticipants > 0 && confirmedCount >= tournament.MaxParticipants)
+            {
+                return new TeamActionResult { Success = false, Message = "Turniej osiągnął limit potwierdzonych drużyn." };
+            }
+
+            var required = GameCatalog.RosterSize(tournament.Format);
+            var members = await _tournamentsRepository.GetTeamMembersAsync(team.Id);
+            if (members.Count != required)
+            {
+                return new TeamActionResult { Success = false, Message = $"Skład musi liczyć dokładnie {required} graczy (obecnie {members.Count})." };
+            }
+            if (!members.All(m => m.IsReady))
+            {
+                return new TeamActionResult { Success = false, Message = "Wszyscy gracze muszą być gotowi przed potwierdzeniem." };
+            }
+
+            await _tournamentsRepository.ConfirmTeamAsync(team.Id);
+            return new TeamActionResult { Success = true, Message = "Drużyna potwierdzona — wchodzi do drabinki." };
         }
 
         public async Task<JoinTournamentResult> JoinTournamentAsync(int id, string userId)

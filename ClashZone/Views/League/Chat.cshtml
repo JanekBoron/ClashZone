@@ -1,0 +1,116 @@
+@model ClashZone.App.ViewModels.LeagueChatViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = $"Czat – {s.Name}";
+
+    string NameOf(string userId) => Model.UserNames.TryGetValue(userId, out var n) ? n : userId;
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 class="mb-1">Czat – @s.Name</h2>
+    <small class="text-muted">Liga: @s.Game</small>
+    <hr style="border-color:#444;" />
+
+    @await Html.PartialAsync("_LeagueNav", (s.Id, "Chat"))
+
+    <!-- Czat ogólny -->
+    <div class="chat-section my-4">
+        <h2>Czat ogólny</h2>
+        @if (Model.AllMessages.Any())
+        {
+            foreach (var msg in Model.AllMessages)
+            {
+                <div class="chat-message">
+                    <strong>@NameOf(msg.UserId)</strong>
+                    (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                    @msg.Message
+                </div>
+            }
+        }
+        else
+        {
+            <p>Brak wiadomości.</p>
+        }
+        @using (Html.BeginForm("PostMessage", "League", new { id = s.Id }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="toTeam" value="false" />
+            <div class="input-group mt-2">
+                <input type="text" name="message" class="form-control" placeholder="Napisz wiadomość..." />
+                <button type="submit" class="btn btn-danger">Wyślij</button>
+            </div>
+        }
+    </div>
+
+    <!-- Czat drużynowy -->
+    <div class="chat-section my-4">
+        <h2>Czat drużynowy</h2>
+        @if (Model.HasTeam)
+        {
+            if (Model.TeamMessages.Any())
+            {
+                foreach (var msg in Model.TeamMessages)
+                {
+                    <div class="chat-message">
+                        <strong>@NameOf(msg.UserId)</strong>
+                        (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                        @msg.Message
+                    </div>
+                }
+            }
+            else
+            {
+                <p>Brak wiadomości w czacie drużynowym.</p>
+            }
+            @using (Html.BeginForm("PostMessage", "League", new { id = s.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="toTeam" value="true" />
+                <div class="input-group mt-2">
+                    <input type="text" name="message" class="form-control" placeholder="Napisz wiadomość do drużyny..." />
+                    <button type="submit" class="btn btn-danger">Wyślij</button>
+                </div>
+            }
+        }
+        else
+        {
+            <p>Musisz być w zgłoszonej drużynie, aby korzystać z czatu drużynowego.</p>
+        }
+    </div>
+
+    <!-- Zgłoszenia problemów -->
+    <div class="chat-section my-4">
+        <h2>Zgłoszenia problemów</h2>
+        @if (Model.HasTeam || User.IsInRole("Admin"))
+        {
+            if (Model.ReportMessages.Any())
+            {
+                foreach (var msg in Model.ReportMessages)
+                {
+                    <div class="chat-message">
+                        <strong>@NameOf(msg.UserId)</strong>
+                        (@msg.SentAt.ToLocalTime().ToString("dd MMM HH:mm"))<br />
+                        @msg.Message
+                    </div>
+                }
+            }
+            else
+            {
+                <p>Brak zgłoszeń.</p>
+            }
+            @using (Html.BeginForm("PostReportMessage", "League", new { id = s.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="teamId" value="@Model.UserTeamId" />
+                <div class="input-group mt-2">
+                    <input type="text" name="message" class="form-control" placeholder="Opisz problem..." />
+                    <button type="submit" class="btn btn-danger">Wyślij</button>
+                </div>
+            }
+        }
+        else
+        {
+            <p>Musisz być w zgłoszonej drużynie, aby zgłosić problem.</p>
+        }
+    </div>
+</div>

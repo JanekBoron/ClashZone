@@ -68,6 +68,10 @@ namespace ClashZone.DataAccess.Repository
             await _context.Matches.AddAsync(matchModel);
 
             await _context.SaveChangesAsync();
+
+            // Przepisujemy wygenerowane przez bazę Id z powrotem do domeny, aby
+            // wywołujący (np. zapisujący statystyki graczy z FK MatchId) miał poprawny klucz.
+            matchEntity.Id = matchModel.Id;
         }
 
         public async Task<bool> IsTournamentAlreadyAwardedAsync(

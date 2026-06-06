@@ -1,3 +1,4 @@
+using ClashZone.App.Domains;
 using ClashZone.App.Ports.DataAccess;
 using ClashZone.App.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -14,18 +15,34 @@ namespace ClashZone.Controllers
             _playerStatsRepository = playerStatsRepository;
         }
 
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(string? game = null, int page = 1, string? search = null)
         {
+            // Domyślnie pokazujemy ranking Counter-Strike 2; nieznana gra również
+            // sprowadzana jest do wartości domyślnej.
+            var selectedGame = GameCatalog.Normalize(game) ?? GameCatalog.Cs2;
+
             if (page < 1)
             {
                 page = 1;
             }
 
-            var allStats = await _playerStatsRepository.GetAllUserStatsAsync();
+            var allStats = await _playerStatsRepository.GetAllUserStatsAsync(selectedGame);
 
             var orderedStats = allStats
-                .OrderByDescending(us => us.AverageKD)
+                .OrderByDescending(us => GameCatalog.IsLol(selectedGame) ? us.AverageKDA : us.AverageKD)
                 .ToList();
+
+            // Filtr wyszukiwania po nazwie gracza (DisplayName lub UserName).
+            // Stosowany przed paginacją, aby liczba stron odpowiadała wynikom.
+            var searchTerm = search?.Trim();
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                orderedStats = orderedStats
+                    .Where(us =>
+                        (us.User.DisplayName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (us.User.UserName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
+                    .ToList();
+            }
 
             int totalCount = orderedStats.Count;
             int totalPages = (int)Math.Ceiling(totalCount / (double)DefaultPageSize);
@@ -35,17 +52,30 @@ namespace ClashZone.Controllers
                 page = totalPages;
             }
 
-            var stats = orderedStats
+            var pageStats = orderedStats
                 .Skip((page - 1) * DefaultPageSize)
                 .Take(DefaultPageSize)
                 .ToList();
 
+            var rows = new List<RankingRowViewModel>();
+            foreach (var stat in pageStats)
+            {
+                string? favoriteChampion = null;
+                if (GameCatalog.IsLol(selectedGame))
+                {
+                    favoriteChampion = await _playerStatsRepository.GetMostPlayedChampionAsync(stat.UserId, selectedGame);
+                }
+                rows.Add(new RankingRowViewModel { Stat = stat, FavoriteChampion = favoriteChampion });
+            }
+
             var model = new RankingViewModel
             {
-                UserStats = stats,
+                Rows = rows,
+                SelectedGame = selectedGame,
                 CurrentPage = page,
                 TotalPages = totalPages,
-                PageSize = DefaultPageSize
+                PageSize = DefaultPageSize,
+                SearchTerm = searchTerm
             };
 
             return View(model);

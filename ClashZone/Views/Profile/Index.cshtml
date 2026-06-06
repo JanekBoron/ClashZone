@@ -4,52 +4,121 @@
     ViewData["Title"] = "Profil użytkownika";
 }
 
-<div class="container py-4" style="color:#ffffff;background-color:#0A0A0A;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Profil użytkownika</h2>
-        <a asp-action="Edit" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Edytuj profil</a>
-        <a asp-action="Orders" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Twoje zamówienia</a>
-    </div>
-    <div class="row">
-        <div class="col-md-4 text-center">
-            <img src="@(!string.IsNullOrEmpty(Model.User.ProfilePicturePath) ? Model.User.ProfilePicturePath : Url.Content("~/images/default-profile.png"))" class="img-fluid rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;" alt="Profilowe" />
-            <h4 class="mt-2">@((Model.User.DisplayName ?? Model.User.UserName))</h4>
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+        <h2 class="mb-0" style="color:#FF2B3E;">Profil użytkownika</h2>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" class="btn" style="background-color:#FF2B3E;color:#ffffff;">Edytuj profil</a>
+            <a asp-action="Orders" class="btn btn-outline-light">Twoje zamówienia</a>
         </div>
-        <div class="col-md-8">
-            <div class="mb-3">
-                <strong>Username:</strong> @Model.User.UserName
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-profile" data-bs-toggle="tab" data-bs-target="#pane-profile"
+                    type="button" role="tab" aria-controls="pane-profile" aria-selected="true">Profil</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-stats" data-bs-toggle="tab" data-bs-target="#pane-stats"
+                    type="button" role="tab" aria-controls="pane-stats" aria-selected="false">Statystyki</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Zakładka: Profil -->
+        <div class="tab-pane fade show active" id="pane-profile" role="tabpanel" aria-labelledby="tab-profile">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <img src="@(!string.IsNullOrEmpty(Model.User.ProfilePicturePath) ? Model.User.ProfilePicturePath : Url.Content("~/images/default-profile.png"))" class="img-fluid rounded-circle mb-3" style="width:200px;height:200px;object-fit:cover;" alt="Profilowe" />
+                    <h4 class="mt-2">@((Model.User.DisplayName ?? Model.User.UserName))</h4>
+                </div>
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <strong>Username:</strong> @Model.User.UserName
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email:</strong> @Model.User.Email
+                    </div>
+                    <div class="mb-3">
+                        <strong>Pakiet:</strong>
+                        @if (Model.Subscription != null)
+                        {
+                            <span>@Model.Subscription.Plan.Name (do @Model.Subscription.ExpiryDate.ToString("dd.MM.yyyy"))</span>
+                        }
+                        else
+                        {
+                            <span>Brak aktywnego pakietu</span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <strong>Konto Riot (League of Legends):</strong>
+                        @if (!string.IsNullOrEmpty(Model.User.RiotId))
+                        {
+                            <span class="ms-1">@Model.User.RiotId ✔</span>
+                        }
+                        else
+                        {
+                            <span class="ms-1 text-muted">niepowiązane</span>
+                        }
+
+                        @if (TempData["RiotLinkSuccess"] != null)
+                        {
+                            <div class="mt-2" style="color:#4caf50;">@TempData["RiotLinkSuccess"]</div>
+                        }
+                        @if (TempData["RiotLinkError"] != null)
+                        {
+                            <div class="mt-2" style="color:#FF2B3E;">@TempData["RiotLinkError"]</div>
+                        }
+
+                        <form asp-action="LinkRiot" asp-controller="Profile" method="post" class="mt-2 d-flex" style="max-width:360px;gap:8px;">
+                            @Html.AntiForgeryToken()
+                            <input type="text" name="riotId" class="form-control form-control-sm" placeholder="Nazwa#TAG (np. Faker#KR1)" value="@Model.User.RiotId" />
+                            <button type="submit" class="btn btn-sm" style="background-color:#FF2B3E;color:#0A0A0A;white-space:nowrap;">Powiąż</button>
+                        </form>
+                        <small class="text-muted">Wymagane, aby Twoje mecze LoL były pobierane z prawdziwego API.</small>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <strong>Email:</strong> @Model.User.Email
-            </div>
-            <div class="mb-3">
-                <strong>Pakiet:</strong>
-                @if (Model.Subscription != null)
+        </div>
+
+        <!-- Zakładka: Statystyki -->
+        <div class="tab-pane fade" id="pane-stats" role="tabpanel" aria-labelledby="tab-stats">
+            @if (Model.Cs2Statistics == null && Model.LolStatistics == null)
+            {
+                <p>Brak danych statystycznych.</p>
+            }
+            else
+            {
+                @if (Model.Cs2Statistics != null)
                 {
-                    <span>@Model.Subscription.Plan.Name (do @Model.Subscription.ExpiryDate.ToString("dd.MM.yyyy"))</span>
+                    <div class="mb-4">
+                        <span class="game-badge game-badge--cs2">CS2</span>
+                        <strong class="ms-2">Counter-Strike 2</strong>
+                        <ul class="list-unstyled mt-2">
+                            <li>Mecze: @Model.Cs2Statistics.MatchesPlayed</li>
+                            <li>Łącznie zabójstw: @Model.Cs2Statistics.TotalKills</li>
+                            <li>Łącznie zgonów: @Model.Cs2Statistics.TotalDeaths</li>
+                            <li>Łącznie asyst: @Model.Cs2Statistics.TotalAssists</li>
+                            <li>Średni K/D: @Model.Cs2Statistics.AverageKD.ToString("0.00")</li>
+                        </ul>
+                    </div>
                 }
-                else
+                @if (Model.LolStatistics != null)
                 {
-                    <span>Brak aktywnego pakietu</span>
+                    <div class="mb-2">
+                        <span class="game-badge game-badge--lol">LoL</span>
+                        <strong class="ms-2">League of Legends</strong>
+                        <ul class="list-unstyled mt-2">
+                            <li>Mecze: @Model.LolStatistics.MatchesPlayed</li>
+                            <li>Ulubiona postać: @(Model.LolFavoriteChampion ?? "—")</li>
+                            <li>Łącznie zabójstw: @Model.LolStatistics.TotalKills</li>
+                            <li>Łącznie zgonów: @Model.LolStatistics.TotalDeaths</li>
+                            <li>Łącznie asyst: @Model.LolStatistics.TotalAssists</li>
+                            <li>Średnie KDA: @Model.LolStatistics.AverageKDA.ToString("0.00")</li>
+                        </ul>
+                    </div>
                 }
-            </div>
-            <div>
-                <strong>Statystyki:</strong>
-                @if (Model.Statistics != null)
-                {
-                    <ul class="list-unstyled mt-2">
-                        <li>Mecze: @Model.Statistics.MatchesPlayed</li>
-                        <li>Łącznie zabójstw: @Model.Statistics.TotalKills</li>
-                        <li>Łącznie zgonów: @Model.Statistics.TotalDeaths</li>
-                        <li>Łącznie asyst: @Model.Statistics.TotalAssists</li>
-                        <li>Średni K/D: @Model.Statistics.AverageKD.ToString("0.00")</li>
-                    </ul>
-                }
-                else
-                {
-                    <p class="mt-2">Brak danych statystycznych.</p>
-                }
-            </div>
+            }
         </div>
     </div>
 </div>

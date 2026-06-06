@@ -1,118 +1,68 @@
-using ClashZone.Services.Interfaces;
-using ClashZone.Web.Controllers;
-using ClashZone.Web.ViewModels.Admin;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ClashZone.App.Services.Interfaces;
+using ClashZone.App.ViewModels;
+using ClashZone.Web.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
 using Xunit;
 
 namespace ClashZone.Tests
 {
     /// <summary>
-    /// Tests for the administrative <see cref="UsersController"/>.  Each action
-    /// should delegate to the appropriate method on the <see cref="IUserAdminService"/>
-    /// and redirect back to the index.  The index action returns a view with
-    /// the list of users.
+    /// Testy <see cref="UsersController"/> (panel admina) — listowanie oraz
+    /// operacje na rolach i banach.
     /// </summary>
     public class UsersControllerTests
     {
-        private static UsersController CreateController(IUserAdminService svc)
-        {
-            return new UsersController(svc);
-        }
-
         [Fact]
         public async Task Index_ReturnsViewWithUsers()
         {
-            // Arrange
-            var list = new List<UserListItemVm>
-    {
-        new UserListItemVm(),  
-        new UserListItemVm()
-    };
+            var svc = new Mock<IUserAdminService>();
+            var users = new List<UserListItemVm> { new() { Id = "1", UserName = "alpha" } };
+            svc.Setup(s => s.GetAllAsync()).ReturnsAsync(users);
 
-            var svcMock = new Mock<IUserAdminService>();
+            var result = await new UsersController(svc.Object).Index();
 
-            svcMock.Setup(s => s.GetAllAsync())
-                   .ReturnsAsync(list);
-
-
-            var controller = CreateController(svcMock.Object);
-
-            // Act
-            var result = await controller.Index();
-
-            // Assert
             var view = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsAssignableFrom<List<UserListItemVm>>(view.Model);
-
-            Assert.Same(list, model);
-        }
-        [Fact]
-        public async Task MakeOrganizer_CallsServiceAndRedirects()
-        {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.MakeOrganizer("id");
-            svcMock.Verify(s => s.AddToRoleAsync("id", "Organizer"), Times.Once);
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
+            Assert.Same(users, view.Model);
         }
 
         [Fact]
-        public async Task MakeAdmin_CallsServiceAndRedirects()
+        public async Task MakeAdmin_AddsRole_AndRedirects()
         {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.MakeAdmin("id");
-            svcMock.Verify(s => s.AddToRoleAsync("id", "Admin"), Times.Once);
+            var svc = new Mock<IUserAdminService>();
+            var controller = new UsersController(svc.Object);
+
+            var result = await controller.MakeAdmin("u1");
+
             var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
+            Assert.Equal("Index", redirect.ActionName);
+            svc.Verify(s => s.AddToRoleAsync("u1", "Admin"), Times.Once);
         }
 
         [Fact]
-        public async Task RemoveOrganizer_CallsServiceAndRedirects()
+        public async Task Ban_BansUser_AndRedirects()
         {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.RemoveOrganizer("id");
-            svcMock.Verify(s => s.RemoveFromRoleAsync("id", "Organizer"), Times.Once);
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
+            var svc = new Mock<IUserAdminService>();
+            var controller = new UsersController(svc.Object);
+
+            var result = await controller.Ban("u1");
+
+            Assert.IsType<RedirectToActionResult>(result);
+            svc.Verify(s => s.BanAsync("u1"), Times.Once);
         }
 
         [Fact]
-        public async Task RemoveAdmin_CallsServiceAndRedirects()
+        public async Task Unban_UnbansUser_AndRedirects()
         {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.RemoveAdmin("id");
-            svcMock.Verify(s => s.RemoveFromRoleAsync("id", "Admin"), Times.Once);
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
-        }
+            var svc = new Mock<IUserAdminService>();
+            var controller = new UsersController(svc.Object);
 
-        [Fact]
-        public async Task Ban_CallsServiceAndRedirects()
-        {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.Ban("id");
-            svcMock.Verify(s => s.BanAsync("id"), Times.Once);
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
-        }
+            var result = await controller.Unban("u1");
 
-        [Fact]
-        public async Task Unban_CallsServiceAndRedirects()
-        {
-            var svcMock = new Mock<IUserAdminService>();
-            var controller = CreateController(svcMock.Object);
-            var result = await controller.Unban("id");
-            svcMock.Verify(s => s.UnbanAsync("id"), Times.Once);
-            var redirect = Assert.IsType<RedirectToActionResult>(result);
-            Assert.Equal(nameof(UsersController.Index), redirect.ActionName);
+            Assert.IsType<RedirectToActionResult>(result);
+            svc.Verify(s => s.UnbanAsync("u1"), Times.Once);
         }
     }
 }

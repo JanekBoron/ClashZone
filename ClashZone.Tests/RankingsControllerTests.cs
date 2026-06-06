@@ -2,85 +2,116 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.ViewModels;
 using ClashZone.Controllers;
-using ClashZone.DataAccess.Models;
-using ClashZone.ViewModels;
-using DataAccess;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace ClashZone.Tests
 {
     /// <summary>
-    /// Tests for <see cref="RankingsController"/>.  The controller orders
-    /// players by their average kill/death ratio and paginates the results.
-    /// These tests verify ordering and page calculations using an in-memory
-    /// database context.
+    /// Testy <see cref="RankingsController"/> — sortowanie per gra, zakładki,
+    /// paginacja oraz ulubiona postać dla League of Legends.
     /// </summary>
     public class RankingsControllerTests
     {
-        private static ApplicationDbContext CreateContext(IEnumerable<UserStat> stats)
+        private static UserStatDomain Stat(string id, int kills, int deaths, int assists = 0)
+            => new UserStatDomain
+            {
+                UserId = id,
+                TotalKills = kills,
+                TotalDeaths = deaths,
+                TotalAssists = assists,
+                User = new ClashUserDomain { Id = id, UserName = id }
+            };
+
+        [Fact]
+        public async Task Index_DefaultsToCs2_AndOrdersByAverageKdDescending()
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
-            var context = new ApplicationDbContext(options);
-            context.UserStats.AddRange(stats);
-            context.SaveChanges();
-            return context;
+            var repo = new Mock<IPlayerStatsRepository>();
+            repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Cs2)).ReturnsAsync(new List<UserStatDomain>
+            {
+                Stat("u3", 8, 4),   // KD 2.0
+                Stat("u1", 10, 2),  // KD 5.0
+                Stat("u2", 3, 1)    // KD 3.0
+            });
+
+            var result = await new RankingsController(repo.Object).Index();
+
+            var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
+            Assert.Equal(GameCatalog.Cs2, model.SelectedGame);
+            Assert.Equal(new[] { "u1", "u2", "u3" }, model.Rows.Select(r => r.Stat.UserId).ToArray());
         }
 
         [Fact]
-        public async Task Index_OrdersStatsDescending_ByAverageKd()
+        public async Task Index_Lol_PopulatesFavoriteChampion()
         {
-            // Arrange: three players with different AverageKD values
-            var stats = new[]
-            {
-                new UserStat { UserId = "1", TotalKills = 10, TotalDeaths = 2, User = new ClashUser { Id = "1", UserName = "A" } }, // KD=5
-                new UserStat { UserId = "2", TotalKills = 3, TotalDeaths = 1, User = new ClashUser { Id = "2", UserName = "B" } },   // KD=3
-                new UserStat { UserId = "3", TotalKills = 8, TotalDeaths = 4, User = new ClashUser { Id = "3", UserName = "C" } }    // KD=2
-            };
-            using var context = CreateContext(stats);
-            var controller = new RankingsController(context);
+            var repo = new Mock<IPlayerStatsRepository>();
+            repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Lol))
+                .ReturnsAsync(new List<UserStatDomain> { Stat("u1", 10, 2, 5) });
+            repo.Setup(r => r.GetMostPlayedChampionAsync("u1", GameCatalog.Lol)).ReturnsAsync("Ahri");
 
-            // Act
-            var result = await controller.Index();
+            var result = await new RankingsController(repo.Object).Index(GameCatalog.Lol);
 
-            // Assert
-            var view = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsType<RankingViewModel>(view.Model);
-            Assert.Equal(3, model.UserStats.Count);
-            // Validate ordering descending by AverageKD
-            var ordered = model.UserStats.Select(s => s.UserId).ToList();
-            Assert.Equal(new[] { "1", "2", "3" }, ordered);
-            Assert.Equal(1, model.CurrentPage);
-            Assert.Equal(1, model.TotalPages);
-            Assert.Equal(10, model.PageSize);
+            var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
+            Assert.Equal(GameCatalog.Lol, model.SelectedGame);
+            Assert.Equal("Ahri", Assert.Single(model.Rows).FavoriteChampion);
         }
 
         [Fact]
         public async Task Index_ClampsPage_ToValidRange()
         {
-            // Arrange: create 15 stats to have two pages (page size 10)
-            var list = new List<UserStat>();
-            for (int i = 0; i < 15; i++)
-            {
-                list.Add(new UserStat { UserId = i.ToString(), TotalKills = i + 1, TotalDeaths = 1, User = new ClashUser { Id = i.ToString(), UserName = $"User{i}" } });
-            }
-            using var context = CreateContext(list);
-            var controller = new RankingsController(context);
+            var stats = Enumerable.Range(0, 15)
+                .Select(i => Stat(i.ToString(), i + 1, 1))
+                .ToList();
+            var repo = new Mock<IPlayerStatsRepository>();
+            repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Cs2)).ReturnsAsync(stats);
 
-            // Act: request page beyond total pages
-            var result = await controller.Index(page: 5);
+            var result = await new RankingsController(repo.Object).Index(page: 5);
 
-            // Assert
-            var view = Assert.IsType<ViewResult>(result);
-            var model = Assert.IsType<RankingViewModel>(view.Model);
-            // Only two pages exist; request for page 5 should clamp to page 2
+            var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
             Assert.Equal(2, model.CurrentPage);
             Assert.Equal(2, model.TotalPages);
-            Assert.Equal(5, model.UserStats.Count); // second page has 5 items
+            Assert.Equal(5, model.Rows.Count);
+        }
+
+        [Fact]
+        public async Task Index_Search_FiltersByPlayerName_CaseInsensitive()
+        {
+            var repo = new Mock<IPlayerStatsRepository>();
+            repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Cs2)).ReturnsAsync(new List<UserStatDomain>
+            {
+                Stat("alice", 10, 2),
+                Stat("bob", 8, 4),
+                Stat("alina", 6, 3)
+            });
+
+            var result = await new RankingsController(repo.Object).Index(search: "ALI");
+
+            var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
+            Assert.Equal("ALI", model.SearchTerm);
+            Assert.Equal(new[] { "alice", "alina" }, model.Rows.Select(r => r.Stat.UserId).OrderBy(x => x).ToArray());
+        }
+
+        [Fact]
+        public async Task Index_Search_RecomputesPagination_OverFilteredResults()
+        {
+            // 15 graczy "playerNN", ale tylko 3 zawierają "1x" (player1, player10..14).
+            var stats = Enumerable.Range(0, 15)
+                .Select(i => Stat($"player{i}", i + 1, 1))
+                .ToList();
+            var repo = new Mock<IPlayerStatsRepository>();
+            repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Cs2)).ReturnsAsync(stats);
+
+            var result = await new RankingsController(repo.Object).Index(search: "player1");
+
+            var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
+            // player1, player10, player11, player12, player13, player14 = 6 trafień -> 1 strona.
+            Assert.Equal(6, model.Rows.Count);
+            Assert.Equal(1, model.TotalPages);
         }
     }
 }

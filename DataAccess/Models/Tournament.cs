@@ -26,6 +26,11 @@ namespace DataAccess.Models
         public string FirstPlacePrize { get; set; } = string.Empty;
         public string SecondPlacePrize { get; set; } = string.Empty;
         public string ThirdPlacePrize { get; set; } = string.Empty;
+        /// <summary>
+        /// Reguły turnieju, każda w osobnej linii. Ustawiane przez organizatora
+        /// przy tworzeniu/edycji turnieju. Gdy puste, używane są domyślne reguły gry.
+        /// </summary>
+        public string? Rules { get; set; }
         public string? CreatedByUserId { get; set; }
         /// <summary>
         /// Określa czy turniej jest publiczny (dostępny bez zaproszenia).  Jeśli false,

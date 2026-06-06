@@ -11,7 +11,22 @@ namespace ClashZone.App.ViewModels
     public class ProfileViewModel
     {
         public ClashUserDomain User { get; set; } = null!;
-        public UserStatDomain? Statistics { get; set; }
+
+        /// <summary>
+        /// Zagregowane statystyki gracza dla Counter-Strike 2.
+        /// </summary>
+        public UserStatDomain? Cs2Statistics { get; set; }
+
+        /// <summary>
+        /// Zagregowane statystyki gracza dla League of Legends.
+        /// </summary>
+        public UserStatDomain? LolStatistics { get; set; }
+
+        /// <summary>
+        /// Najczęściej grana postać w League of Legends (jeśli dostępna).
+        /// </summary>
+        public string? LolFavoriteChampion { get; set; }
+
         public UserSubscriptionDomain? Subscription { get; set; }
     }
 }

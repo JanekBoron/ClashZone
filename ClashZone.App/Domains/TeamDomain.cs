@@ -13,5 +13,11 @@ namespace ClashZone.App.Domains
         public string CaptainId { get; set; } = string.Empty;
         public string? Name { get; set; }
         public string JoinCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Czy drużyna została potwierdzona przez kapitana. Tylko potwierdzone
+        /// drużyny liczą się do limitu turnieju i wchodzą do drabinki.
+        /// </summary>
+        public bool IsConfirmed { get; set; } = false;
     }
 }

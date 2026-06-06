@@ -1,0 +1,87 @@
+@model IEnumerable<ClashZone.App.ViewModels.OrderListItemViewModel>
+@{
+    ViewData["Title"] = "Zamówienia (Admin)";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 class="mb-3" style="color:#FF2B3E;">Zamówienia</h2>
+
+    @if (TempData["OrderOk"] != null)
+    {
+        <div class="alert alert-success">@TempData["OrderOk"]</div>
+    }
+    @if (TempData["OrderError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["OrderError"]</div>
+    }
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted">Brak zamówień.</p>
+    }
+    else
+    {
+        <div class="d-flex flex-wrap gap-2 my-2">
+            <input type="search" class="form-control cc-table-search" data-table-search="ordersTable"
+                   placeholder="Szukaj zamówienia..." aria-label="Szukaj zamówienia" autocomplete="off" />
+            <select class="form-select cc-table-search" data-table-filter="ordersTable" data-filter-col="4" aria-label="Filtruj po statusie">
+                <option value="">Wszystkie statusy</option>
+                @foreach (var s in OrderStatus.All)
+                {
+                    <option value="@OrderStatus.Label(s)">@OrderStatus.Label(s)</option>
+                }
+            </select>
+        </div>
+
+        <table id="ordersTable" data-paginate data-page-size="10" class="table table-dark table-striped align-middle">
+            <thead>
+                <tr>
+                    <th data-sort-col="0">Użytkownik</th>
+                    <th data-sort-col="1">Produkt</th>
+                    <th data-sort-col="2">Koszt</th>
+                    <th data-sort-col="3">Data</th>
+                    <th data-sort-col="4">Status</th>
+                    <th>Zmień status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td>@o.UserName</td>
+                        <td>@o.ProductName</td>
+                        <td>@o.ClashCoins</td>
+                        <td>@o.RedeemedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            <span class="badge @OrderStatus.BadgeClass(o.Status)">@OrderStatus.Label(o.Status)</span>
+                        </td>
+                        <td>
+                            <form asp-controller="Orders" asp-action="UpdateStatus" method="post" class="d-flex gap-2 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@o.Id" />
+                                <select name="status" class="form-select form-select-sm" style="width:auto;">
+                                    @foreach (var s in OrderStatus.All)
+                                    {
+                                        if (s == o.Status)
+                                        {
+                                            <option value="@s" selected>@OrderStatus.Label(s)</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@s">@OrderStatus.Label(s)</option>
+                                        }
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-light">Zapisz</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/table-pagination.js" asp-append-version="true"></script>
+}

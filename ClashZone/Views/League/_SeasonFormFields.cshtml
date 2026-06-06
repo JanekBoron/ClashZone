@@ -1,0 +1,78 @@
+@model ClashZone.App.ViewModels.SeasonFormViewModel
+@{
+    var games = GameCatalog.AllGames;
+}
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="Name" class="form-label">Nazwa sezonu</label>
+        <input asp-for="Name" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Game" class="form-label">Gra</label>
+        <select asp-for="Game" class="form-select" style="background-color:#222; color:#fff; border-color:#444;">
+            <option value="">— wybierz —</option>
+            @foreach (var g in games)
+            {
+                <option value="@g">@g</option>
+            }
+        </select>
+        <span asp-validation-for="Game" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Format" class="form-label">Format</label>
+        <select asp-for="Format" class="form-select" style="background-color:#222; color:#fff; border-color:#444;">
+            <option value="1v1">1v1</option>
+            <option value="2v2">2v2</option>
+            <option value="5v5">5v5</option>
+        </select>
+        <span asp-validation-for="Format" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="RegistrationOpenDate" class="form-label">Otwarcie rejestracji</label>
+        <input asp-for="RegistrationOpenDate" type="datetime-local" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="RegistrationCloseDate" class="form-label">Zamknięcie rejestracji</label>
+        <input asp-for="RegistrationCloseDate" type="datetime-local" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="StartDate" class="form-label">Start sezonu</label>
+        <input asp-for="StartDate" type="datetime-local" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="RosterSize" class="form-label">Rozmiar rosteru</label>
+        <input asp-for="RosterSize" type="number" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+        <span asp-validation-for="RosterSize" class="text-danger"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="PlayoffSpots" class="form-label">Miejsca w play-off</label>
+        <input asp-for="PlayoffSpots" type="number" class="form-control" style="background-color:#222; color:#fff; border-color:#444;" />
+        <span asp-validation-for="PlayoffSpots" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="DefaultMatchDay" class="form-label">Domyślny termin meczów</label>
+        <input asp-for="DefaultMatchDay" class="form-control" placeholder="np. Środa 20:00 CEST" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="FirstPlacePrize" class="form-label">Nagroda za 1. miejsce</label>
+        <input asp-for="FirstPlacePrize" class="form-control" placeholder="np. 1000 ClashCoins" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="SecondPlacePrize" class="form-label">Nagroda za 2. miejsce</label>
+        <input asp-for="SecondPlacePrize" class="form-control" placeholder="np. 500 ClashCoins" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ThirdPlacePrize" class="form-label">Nagroda za 3. miejsce</label>
+        <input asp-for="ThirdPlacePrize" class="form-control" placeholder="np. 250 ClashCoins" style="background-color:#222; color:#fff; border-color:#444;" />
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Rules" class="form-label">Reguły (każda w nowej linii; puste = domyślne dla gry)</label>
+        <textarea asp-for="Rules" rows="4" class="form-control" style="background-color:#222; color:#fff; border-color:#444;"></textarea>
+    </div>
+</div>

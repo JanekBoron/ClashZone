@@ -33,9 +33,21 @@ namespace ClashZone.App.ViewModels
         public int Assists { get; set; }
 
         /// <summary>
+        /// Postać (champion) zagrana przez gracza w meczu. Wypełniane tylko dla
+        /// gier korzystających z postaci (League of Legends).
+        /// </summary>
+        public string? Champion { get; set; }
+
+        /// <summary>
         /// Computed kill/death ratio.  Returns zero when no deaths
         /// occurred to avoid division by zero.
         /// </summary>
         public double KDRatio => Deaths == 0 ? Kills : (double)Kills / Deaths;
+
+        /// <summary>
+        /// Wskaźnik KDA = (zabójstwa + asysty) / śmierci. Używany dla League of
+        /// Legends. Przy zerze śmierci dzielnik wynosi 1.
+        /// </summary>
+        public double KDA => (double)(Kills + Assists) / (Deaths == 0 ? 1 : Deaths);
     }
 }

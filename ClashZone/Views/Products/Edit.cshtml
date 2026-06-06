@@ -8,7 +8,7 @@
 
 <div class="container my-4 text-white">
     <h2>Edytuj produkt</h2>
-    <form asp-action="Edit" method="post">
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="Id" />
         <div class="row g-3">
             <div class="col-md-6">
@@ -50,8 +50,15 @@
                 <label class="form-check-label">Aktywny</label>
             </div>
             <div class="col-md-12">
-                <label class="form-label">Główne zdjęcie (URL)</label>
-                <input name="primaryImageUrl" class="form-control" value="@primary" />
+                <label class="form-label">Główne zdjęcie</label>
+                @if (!string.IsNullOrEmpty(primary))
+                {
+                    <div class="mb-2">
+                        <img src="@primary" alt="Obecne zdjęcie" style="max-height:120px;border-radius:8px;" />
+                    </div>
+                }
+                <input type="file" name="primaryImage" accept="image/*" class="form-control" />
+                <small class="text-muted">Zostaw puste, aby zachować obecne zdjęcie.</small>
             </div>
         </div>
         <button class="btn-cc mt-3">Zapisz</button>

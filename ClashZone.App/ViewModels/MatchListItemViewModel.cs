@@ -19,6 +19,11 @@ namespace ClashZone.App.ViewModels
         public MatchDomain Match { get; set; } = null!;
 
         /// <summary>
+        /// Tytuł gry turnieju, do którego należy mecz. Steruje etykietą wyniku.
+        /// </summary>
+        public string GameTitle { get; set; } = string.Empty;
+
+        /// <summary>
         /// Display name for the first team.  Derived from the team's Name
         /// property or generated from the captain's username when no
         /// explicit name has been assigned.

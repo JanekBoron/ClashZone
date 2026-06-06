@@ -1,7 +1,10 @@
-// Reusable client-side search + pagination for admin tables.
+// Reusable client-side search + filter + sort + pagination for admin tables.
 // Opt-in via markup:
-//   <input data-table-search="myTableId" ...>            (optional search box)
-//   <table id="myTableId" data-paginate data-page-size="10"> ... </table>
+//   <input data-table-search="myTableId" ...>                         (optional search box)
+//   <select data-table-filter="myTableId" data-filter-col="4">...      (optional column filter; option value matches cell text, empty = all)
+//   <table id="myTableId" data-paginate data-page-size="10">
+//     <thead><tr><th data-sort-col="0">...</th> ...                    (optional sortable headers)
+//   </table>
 // A pagination control is generated automatically right after the table.
 (function () {
     'use strict';
@@ -14,9 +17,9 @@
         var allRows = Array.prototype.slice.call(tbody.rows);
         var columnCount = (table.tHead && table.tHead.rows[0]) ? table.tHead.rows[0].cells.length : 1;
 
-        var state = { page: 1, query: '' };
+        var state = { page: 1, query: '', filterValue: '', filterCol: -1, sortCol: -1, sortDir: 'asc' };
 
-        // "Brak wyników" row shown when the search matches nothing.
+        // "Brak wyników" row shown when the search/filter matches nothing.
         var emptyRow = document.createElement('tr');
         var emptyCell = document.createElement('td');
         emptyCell.colSpan = columnCount;
@@ -31,11 +34,17 @@
         pager.className = 'cc-pagination';
         table.parentNode.insertBefore(pager, table.nextSibling);
 
+        function cellText(row, idx) {
+            return (idx >= 0 && row.cells[idx]) ? row.cells[idx].textContent.trim() : '';
+        }
+
         function filteredRows() {
-            if (!state.query) return allRows;
-            var q = state.query;
             return allRows.filter(function (row) {
-                return row.textContent.toLowerCase().indexOf(q) !== -1;
+                if (state.query && row.textContent.toLowerCase().indexOf(state.query) === -1) return false;
+                if (state.filterValue && state.filterCol >= 0) {
+                    if (cellText(row, state.filterCol).toLowerCase() !== state.filterValue.toLowerCase()) return false;
+                }
+                return true;
             });
         }
 
@@ -88,6 +97,35 @@
             pager.appendChild(ul);
         }
 
+        function sortRows(headers) {
+            var col = state.sortCol;
+            var dir = state.sortDir === 'desc' ? -1 : 1;
+            allRows.sort(function (a, b) {
+                var ta = cellText(a, col).toLowerCase();
+                var tb = cellText(b, col).toLowerCase();
+                var na = parseFloat(ta.replace(',', '.'));
+                var nb = parseFloat(tb.replace(',', '.'));
+                var cmp;
+                if (!isNaN(na) && !isNaN(nb) && ta !== '' && tb !== '') {
+                    cmp = na - nb;
+                } else {
+                    cmp = ta < tb ? -1 : (ta > tb ? 1 : 0);
+                }
+                return cmp * dir;
+            });
+            // Reorder DOM to match the sorted array; keep the empty row last.
+            allRows.forEach(function (r) { tbody.appendChild(r); });
+            tbody.appendChild(emptyRow);
+
+            Array.prototype.forEach.call(headers, function (th) {
+                th.classList.remove('cc-sort-asc', 'cc-sort-desc');
+                if (parseInt(th.getAttribute('data-sort-col'), 10) === col) {
+                    th.classList.add(state.sortDir === 'desc' ? 'cc-sort-desc' : 'cc-sort-asc');
+                }
+            });
+        }
+
+        // Search box.
         var search = document.querySelector('[data-table-search="' + table.id + '"]');
         if (search) {
             search.addEventListener('input', function () {
@@ -96,6 +134,36 @@
                 render();
             });
         }
+
+        // Column filter (e.g. by game).
+        var filterSelect = document.querySelector('select[data-table-filter="' + table.id + '"]');
+        if (filterSelect) {
+            state.filterCol = parseInt(filterSelect.getAttribute('data-filter-col'), 10);
+            state.filterValue = filterSelect.value;
+            filterSelect.addEventListener('change', function () {
+                state.filterValue = filterSelect.value;
+                state.page = 1;
+                render();
+            });
+        }
+
+        // Sortable headers.
+        var headers = table.tHead ? table.tHead.querySelectorAll('th[data-sort-col]') : [];
+        Array.prototype.forEach.call(headers, function (th) {
+            th.classList.add('cc-sortable');
+            th.addEventListener('click', function () {
+                var col = parseInt(th.getAttribute('data-sort-col'), 10);
+                if (state.sortCol === col) {
+                    state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    state.sortCol = col;
+                    state.sortDir = 'asc';
+                }
+                sortRows(headers);
+                state.page = 1;
+                render();
+            });
+        });
 
         render();
     }

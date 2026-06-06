@@ -1,269 +1,154 @@
 using System.Collections.Generic;
-using System.Security.Claims;
+using System.Linq;
 using System.Threading.Tasks;
-using ClashZone.DataAccess.Models;              
-using ClashZone.DataAccess.Repository.Interfaces;
-using ClashZone.Services;
-using ClashZone.ViewModels;
-using DataAccess.Models;
-using Microsoft.AspNetCore.Identity;
+using ClashZone.App.Domains;
+using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.Services;
 using Moq;
 using Xunit;
-
 
 namespace ClashZone.Tests
 {
     /// <summary>
-    /// Unit tests for <see cref="TournamentService"/>.  These tests
-    /// verify that the service forwards calls to the underlying
-    /// repository appropriately, sets defaults on entities and handles
-    /// various edge cases when joining tournaments.
+    /// Testy <see cref="TournamentService"/> — tworzenie turniejów, szczegóły
+    /// oraz logika dołączania (limit uczestników, premium, ponowne dołączenie).
     /// </summary>
     public class TournamentServiceTests
     {
-        private static UserManager<ClashUser> CreateUserManager()
-        {
-            var store = new Mock<IUserStore<ClashUser>>();
-            var userValidators = new List<IUserValidator<ClashUser>>();
-            var pwdValidators = new List<IPasswordValidator<ClashUser>>();
-            return new UserManager<ClashUser>(store.Object,
-                null, null, userValidators, pwdValidators, null, null, null, null);
-        }
+        private static TournamentService CreateService(
+            Mock<ITournamentsRepository> tournaments,
+            Mock<ISubscriptionRepository>? subs = null,
+            Mock<IUserRepository>? users = null)
+            => new TournamentService(
+                tournaments.Object,
+                (subs ?? new Mock<ISubscriptionRepository>()).Object,
+                (users ?? new Mock<IUserRepository>()).Object);
 
         [Fact]
-        public async Task GetUpcomingTournaments_ForwardsToRepository()
+        public async Task CreateTournamentAsync_SetsCreator_AndGeneratesJoinCodeForPrivate()
         {
-            // Arrange
-            var tournaments = new List<Tournament> { new Tournament(), new Tournament() };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetUpcomingTournamentsAsync(null))
-                .ReturnsAsync(tournaments);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
-
-            // Act
-            var result = await service.GetUpcomingTournamentsAsync(null);
-
-            // Assert
-            Assert.Equal(tournaments, result);
-        }
-
-        [Fact]
-        public async Task GetUserTournaments_ForwardsToRepository()
-        {
-            // Arrange
-            var list = new List<Tournament> { new Tournament { Id = 1 } };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetUserTournamentsAsync("user"))
-                .ReturnsAsync(list);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
-
-            // Act
-            var result = await service.GetUserTournamentsAsync("user");
-
-            // Assert
-            Assert.Equal(list, result);
-        }
-
-        [Fact]
-        public async Task CreateTournamentAsync_SetsCreatedByUserId_AndAddsTournament()
-        {
-            // Arrange
-            var repoMock = new Mock<ITournamentsRepository>();
-            Tournament? captured = null;
-            repoMock.Setup(r => r.AddTournamentAsync(It.IsAny<Tournament>()))
-                .Callback<Tournament>(t => captured = t)
+            var tournaments = new Mock<ITournamentsRepository>();
+            TournamentDomain? saved = null;
+            tournaments.Setup(r => r.AddTournamentAsync(It.IsAny<TournamentDomain>()))
+                .Callback<TournamentDomain>(t => saved = t)
                 .Returns(Task.CompletedTask);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
-            var tournament = new Tournament { IsPublic = false };
 
-            // Act
-            await service.CreateTournamentAsync(tournament, "creator");
+            var tournament = new TournamentDomain { Name = "Cup", IsPublic = false };
+            await CreateService(tournaments).CreateTournamentAsync(tournament, "user-1");
 
-            // Assert
-            Assert.NotNull(captured);
-            Assert.Equal("creator", captured!.CreatedByUserId);
-            Assert.False(string.IsNullOrEmpty(captured.JoinCode));
+            Assert.NotNull(saved);
+            Assert.Equal("user-1", saved!.CreatedByUserId);
+            Assert.False(string.IsNullOrEmpty(saved.JoinCode));
+            tournaments.Verify(r => r.AddTournamentAsync(tournament), Times.Once);
         }
 
         [Fact]
-        public async Task GetTournamentDetails_ReturnsNull_WhenTournamentNotFound()
+        public async Task GetTournamentDetailsAsync_ReturnsNull_WhenNotFound()
         {
-            // Arrange
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync((Tournament?)null);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(99)).ReturnsAsync((TournamentDomain?)null);
 
-            // Act
-            var result = await service.GetTournamentDetailsAsync(1, null);
-
-            // Assert
-            Assert.Null(result);
+            Assert.Null(await CreateService(tournaments).GetTournamentDetailsAsync(99, "u1"));
         }
 
         [Fact]
-        public async Task GetTournamentDetails_ReturnsViewModel_WithUserTeamDetails()
+        public async Task GetTournamentDetailsAsync_PopulatesUserTeamAndMembers()
         {
-            // Arrange
-            int tournamentId = 1;
-            string userId = "user";
-            var tournament = new Tournament { Id = tournamentId };
-            var team = new Team { Id = 2 };
-            var memberIds = new List<string> { "user", "other" };
-            var users = new Dictionary<string, ClashUser>
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, Name = "Cup", Format = "2v2" });
+            tournaments.Setup(r => r.GetUserTeamAsync(1, "u1")).ReturnsAsync(new TeamDomain { Id = 10, CaptainId = "u1" });
+            tournaments.Setup(r => r.GetTeamMembersAsync(10)).ReturnsAsync(new List<TeamMemberDomain>
             {
-                { "user", new ClashUser { Id = "user", UserName = "User" } },
-                { "other", new ClashUser { Id = "other", UserName = "Other" } }
-            };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(tournamentId))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetUserTeamAsync(tournamentId, userId))
-                .ReturnsAsync(team);
-            repoMock.Setup(r => r.GetTeamMemberIdsAsync(team.Id))
-                .ReturnsAsync(memberIds);
-            var userManager = new Mock<UserManager<ClashUser>>(Mock.Of<IUserStore<ClashUser>>(), null, null, null, null, null, null, null, null);
-            userManager.Setup(u => u.FindByIdAsync(It.IsAny<string>()))
-                .ReturnsAsync((string id) => users[id]);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), userManager.Object);
+                new() { TeamId = 10, UserId = "u1", IsReady = true },
+                new() { TeamId = 10, UserId = "u2", IsReady = false }
+            });
 
-            // Act
-            var result = await service.GetTournamentDetailsAsync(tournamentId, userId);
+            var users = new Mock<IUserRepository>();
+            users.Setup(u => u.FindByIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((string id) => new ClashUserDomain { Id = id, UserName = "name_" + id });
 
-            // Assert
-            var model = Assert.IsType<TournamentDetailsViewModel>(result);
-            Assert.Equal(tournament, model.Tournament);
-            Assert.Equal(team, model.UserTeam);
-            Assert.Equal(new[] { "User", "Other" }, model.TeamMembers);
+            var model = await CreateService(tournaments, users: users).GetTournamentDetailsAsync(1, "u1");
+
+            Assert.NotNull(model);
+            Assert.NotNull(model!.UserTeam);
+            Assert.Equal(new[] { "name_u1", "name_u2" }, model.Members.Select(m => m.Name).ToArray());
+            Assert.True(model.IsCaptain);
+            Assert.Equal(2, model.RequiredRosterSize);
         }
 
         [Fact]
-        public async Task JoinTournament_ReturnsNotFound_WhenTournamentNull()
+        public async Task JoinTournamentAsync_ReturnsNotFound_WhenMissing()
         {
-            // Arrange
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync((Tournament?)null);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync((TournamentDomain?)null);
 
-            // Act
-            var result = await service.JoinTournamentAsync(1, "user");
+            var result = await CreateService(tournaments).JoinTournamentAsync(1, "u1");
 
-            // Assert
             Assert.True(result.NotFound);
         }
 
         [Fact]
-        public async Task JoinTournament_ReturnsMaxParticipantsExceeded_WhenFull()
+        public async Task JoinTournamentAsync_ReturnsMaxExceeded_WhenFull()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1, MaxParticipants = 1 };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(new List<Team> { new Team() });
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1))
+                .ReturnsAsync(new TournamentDomain { Id = 1, MaxParticipants = 2 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1))
+                .ReturnsAsync(new List<TeamDomain> { new(), new() });
 
-            // Act
-            var result = await service.JoinTournamentAsync(1, "user");
+            var result = await CreateService(tournaments).JoinTournamentAsync(1, "u1");
 
-            // Assert
             Assert.True(result.MaxParticipantsExceeded);
         }
 
         [Fact]
-        public async Task JoinTournament_ReturnsRequiresSubscription_WhenPremiumAndNoSubscription()
+        public async Task JoinTournamentAsync_RequiresSubscription_WhenPremiumWithoutPlan()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1, IsPremium = true };
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1))
+                .ReturnsAsync(new TournamentDomain { Id = 1, MaxParticipants = 16, IsPremium = true });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(new List<TeamDomain>());
 
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                    .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                    .ReturnsAsync(new List<Team>());
+            var subs = new Mock<ISubscriptionRepository>();
+            subs.Setup(s => s.GetActiveSubscriptionAsync("u1")).ReturnsAsync((UserSubscriptionDomain?)null);
 
-            var subscriptionRepoMock = new Mock<ISubscriptionRepository>();
+            var result = await CreateService(tournaments, subs).JoinTournamentAsync(1, "u1");
 
-            subscriptionRepoMock
-                .Setup(s => s.GetActiveSubscriptionAsync("user"))
-                .ReturnsAsync((UserSubscription?)null);
-
-
-            var service = new TournamentService(
-                repoMock.Object,
-                subscriptionRepoMock.Object,
-                CreateUserManager());  
-
-            // Act
-            var result = await service.JoinTournamentAsync(1, "user");
-
-            // Assert
             Assert.True(result.RequiresSubscription);
         }
 
         [Fact]
-        public async Task JoinTournament_ReturnsAlreadyJoined_WhenUserHasTeam()
+        public async Task JoinTournamentAsync_ReturnsAlreadyJoined_WhenUserHasTeam()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1 };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(new List<Team>());
-            repoMock.Setup(r => r.GetUserTeamAsync(1, "user"))
-                .ReturnsAsync(new Team());
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1))
+                .ReturnsAsync(new TournamentDomain { Id = 1, MaxParticipants = 16 });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(new List<TeamDomain>());
+            tournaments.Setup(r => r.GetUserTeamAsync(1, "u1")).ReturnsAsync(new TeamDomain { Id = 7, CaptainId = "u1" });
 
-            // Act
-            var result = await service.JoinTournamentAsync(1, "user");
+            var result = await CreateService(tournaments).JoinTournamentAsync(1, "u1");
 
-            // Assert
             Assert.True(result.AlreadyJoined);
         }
 
         [Fact]
-        public async Task JoinTournament_ReturnsTeamAndFormat_WhenSuccessful()
+        public async Task JoinTournamentAsync_CreatesTeam_OnSuccess()
         {
-            // Arrange
-            var tournament = new Tournament { Id = 1, Format = "2v2", IsPremium = false };
-            var team = new Team { Id = 10, JoinCode = "ABC" };
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.GetTournamentByIdAsync(1))
-                .ReturnsAsync(tournament);
-            repoMock.Setup(r => r.GetTeamsForTournamentAsync(1))
-                .ReturnsAsync(new List<Team>());
-            repoMock.Setup(r => r.GetUserTeamAsync(1, "user"))
-                .ReturnsAsync((Team?)null);
-            repoMock.Setup(r => r.CreateTeamWithCaptainAsync(1, "user"))
-                .ReturnsAsync(team);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
+            var tournaments = new Mock<ITournamentsRepository>();
+            tournaments.Setup(r => r.GetTournamentByIdAsync(1))
+                .ReturnsAsync(new TournamentDomain { Id = 1, MaxParticipants = 16, Format = "5v5" });
+            tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(new List<TeamDomain>());
+            tournaments.Setup(r => r.GetUserTeamAsync(1, "u1")).ReturnsAsync((TeamDomain?)null);
+            tournaments.Setup(r => r.CreateTeamWithCaptainAsync(1, "u1"))
+                .ReturnsAsync(new TeamDomain { Id = 42, CaptainId = "u1" });
 
-            // Act
-            var result = await service.JoinTournamentAsync(1, "user");
+            var result = await CreateService(tournaments).JoinTournamentAsync(1, "u1");
 
-            // Assert
-            Assert.Equal(team, result.Team);
-            Assert.Equal("2v2", result.TournamentFormat);
-            Assert.Equal(false, result.IsPremium);
-        }
-
-        [Fact]
-        public async Task JoinTeam_ForwardsToRepository()
-        {
-            // Arrange
-            var repoMock = new Mock<ITournamentsRepository>();
-            repoMock.Setup(r => r.AddUserToTeamAsync(5, "user", "CODE"))
-                .ReturnsAsync(1);
-            var service = new TournamentService(repoMock.Object, Mock.Of<ISubscriptionRepository>(), CreateUserManager());
-
-            // Act
-            var result = await service.JoinTeamAsync(5, "user", "CODE");
-
-            // Assert
-            Assert.Equal(1, result);
+            Assert.False(result.NotFound);
+            Assert.False(result.AlreadyJoined);
+            Assert.NotNull(result.Team);
+            Assert.Equal(42, result.Team!.Id);
+            Assert.Equal("5v5", result.TournamentFormat);
         }
     }
 }

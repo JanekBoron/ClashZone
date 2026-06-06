@@ -25,6 +25,8 @@ namespace ClashZone.App.Services
         public async Task<List<MatchListItemViewModel>> GetMatchesForTournamentAsync(int tournamentId)
         {
             var matches = await _matchesRepository.GetMatchesByTournamentAsync(tournamentId);
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
+            var gameTitle = tournament?.GameTitle ?? string.Empty;
             var items = new List<MatchListItemViewModel>();
             foreach (var match in matches)
             {
@@ -103,6 +105,7 @@ namespace ClashZone.App.Services
                 items.Add(new MatchListItemViewModel
                 {
                     Match = match,
+                    GameTitle = gameTitle,
                     Team1Name = team1Name,
                     Team2Name = team2Name,
                     Team1ProfileUrl = team1Profile,
@@ -120,6 +123,8 @@ namespace ClashZone.App.Services
             {
                 return null;
             }
+            var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
+            var gameTitle = tournament?.GameTitle ?? string.Empty;
             // Load teams
             var team1 = match.Team1Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team1Id.Value) : null;
             var team2 = match.Team2Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team2Id.Value) : null;
@@ -201,7 +206,8 @@ namespace ClashZone.App.Services
                     Player = user,
                     Kills = stat.Kills,
                     Deaths = stat.Deaths,
-                    Assists = stat.Assists
+                    Assists = stat.Assists,
+                    Champion = stat.Champion
                 };
                 // Assign to appropriate team based on membership; if membership cannot be resolved, default to team2
                 if (team1MemberIds.Contains(user.Id))
@@ -216,6 +222,7 @@ namespace ClashZone.App.Services
             var model = new MatchDetailsViewModel
             {
                 Match = match,
+                GameTitle = gameTitle,
                 Team1Stats = team1Stats,
                 Team2Stats = team2Stats,
                 Team1Name = team1Name,

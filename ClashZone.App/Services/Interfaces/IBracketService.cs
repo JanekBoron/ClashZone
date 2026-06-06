@@ -49,7 +49,12 @@ namespace ClashZone.App.Services.Interfaces
         /// <param name="tournamentId">The tournament whose bracket should be updated.</param>
         /// <param name="roundNumber">The one?based round index of the match to simulate.</param>
         /// <param name="matchNumber">The one?based index of the match within the round.</param>
+        /// <param name="isAdmin">
+        /// When true (admin triggered the simulation), the League of Legends path forces
+        /// Riot developer mode — the result is built from the seed account's latest real match
+        /// regardless of the global <c>Riot:DevMode</c> flag.
+        /// </param>
         /// <returns>The updated bracket view model with the new result applied, or null if the simulation could not be performed.</returns>
-        Task<BracketViewModel?> SimulateMatchAsync(int tournamentId, int roundNumber, int matchNumber);
+        Task<BracketViewModel?> SimulateMatchAsync(int tournamentId, int roundNumber, int matchNumber, bool isAdmin = false);
     }
 }

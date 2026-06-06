@@ -1,0 +1,59 @@
+@model ClashZone.App.ViewModels.LeagueScheduleViewModel
+@{
+    var s = Model.Season;
+    ViewData["Title"] = "Ustal termin meczu";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <h2 class="mb-1">Ustal termin meczu</h2>
+    <small class="text-muted">@s.Name • @Model.Team1Name vs @Model.Team2Name</small>
+    <hr style="border-color:#444;" />
+
+    <div class="mb-3">
+        <a asp-action="Matches" asp-route-id="@s.Id" class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;">&larr; Powrót do meczów</a>
+    </div>
+
+    <dl class="row">
+        <dt class="col-sm-3">Aktualny termin</dt>
+        <dd class="col-sm-9">@Model.Match.ScheduledTime.ToString("dd MMM yyyy, HH:mm")</dd>
+        <dt class="col-sm-3">Domyślny termin ligi</dt>
+        <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(s.DefaultMatchDay) ? "—" : s.DefaultMatchDay)</dd>
+        @if (!string.IsNullOrWhiteSpace(Model.Match.Server))
+        {
+            <dt class="col-sm-3">Serwer</dt>
+            <dd class="col-sm-9">@Model.Match.Server</dd>
+        }
+    </dl>
+
+    @if (Model.CanPropose)
+    {
+        <div class="p-3" style="background-color:#1a1a1a; border-radius:6px; border:1px solid #444;">
+            <h5>Zaproponuj nowy termin</h5>
+            <p class="text-muted">W sezonie regularnym drużyny mogą swobodnie przesunąć mecz. Brak porozumienia oznacza grę w domyślnym terminie ligi.</p>
+            <form asp-action="Schedule" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="matchId" value="@Model.Match.Id" />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label">Termin</label>
+                        <input type="datetime-local" name="proposedTime" class="form-control"
+                               value="@Model.Match.ScheduledTime.ToString("yyyy-MM-ddTHH:mm")"
+                               style="background-color:#222; color:#fff; border-color:#444;" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Serwer</label>
+                        <input type="text" name="server" class="form-control" placeholder="np. Frankfurt"
+                               value="@Model.Match.Server" style="background-color:#222; color:#fff; border-color:#444;" />
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn w-100" style="background-color:#FF2B3E;color:#fff;">Zapisz termin</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">Tylko zawodnicy biorących udział drużyn mogą zmieniać termin nierozegranego meczu.</p>
+    }
+</div>

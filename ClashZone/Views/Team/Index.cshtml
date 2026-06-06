@@ -1,0 +1,77 @@
+@model ClashZone.App.ViewModels.TeamManagementViewModel
+@{
+    ViewData["Title"] = "Zarządzanie drużyną";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0" style="color:#FF2B3E;">Moje drużyny</h2>
+        <a class="btn" style="background-color:#FF2B3E;color:#fff;" asp-action="Create">Utwórz drużynę</a>
+    </div>
+
+    @if (TempData["TeamInfo"] != null)
+    {
+        <div class="alert alert-success">@TempData["TeamInfo"]</div>
+    }
+    @if (TempData["TeamError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["TeamError"]</div>
+    }
+
+    <h4 class="mt-2 mb-3" style="color:#FF2B3E;">Drużyny ligowe</h4>
+    @if (!Model.Teams.Any())
+    {
+        <p class="text-muted">Nie masz jeszcze żadnej drużyny ligowej. Utwórz drużynę, aby rywalizować w lidze.</p>
+    }
+    else
+    {
+        <div>
+            @foreach (var t in Model.Teams)
+            {
+                <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h5 class="mb-1" style="color:#FF2B3E;">@(t.Name ?? $"Drużyna #{t.Id}")</h5>
+                        <small class="text-muted">
+                            <span class="game-badge @(GameCatalog.IsLol(t.Game) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(t.Game)</span>
+                            <span class="ms-2">@t.Game</span>
+                        </small>
+                    </div>
+                    <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;" asp-action="Details" asp-route-id="@t.Id">Zarządzaj</a>
+                </div>
+            }
+        </div>
+    }
+
+    <hr style="border-color:#444;" />
+    <h4 class="mt-4 mb-3" style="color:#FF2B3E;">Drużyny turniejowe</h4>
+    @if (!Model.TournamentTeams.Any())
+    {
+        <p class="text-muted">Nie założyłeś jeszcze żadnej drużyny turniejowej. Dołącz do turnieju, aby utworzyć drużynę.</p>
+    }
+    else
+    {
+        <div>
+            @foreach (var t in Model.TournamentTeams)
+            {
+                <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #444; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h5 class="mb-1" style="color:#FF2B3E;">@t.TeamName</h5>
+                        <small class="text-muted">
+                            <span class="game-badge @(GameCatalog.IsLol(t.Game) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(t.Game)</span>
+                            <span class="ms-2">@t.TournamentName</span>
+                            @if (t.IsConfirmed)
+                            {
+                                <span class="badge ms-2" style="background-color:#198754;color:#fff;">W drabince</span>
+                            }
+                            else
+                            {
+                                <span class="badge ms-2" style="background-color:#6c757d;color:#fff;">Niepotwierdzona</span>
+                            }
+                        </small>
+                    </div>
+                    <a class="btn btn-sm" style="background-color:#FF2B3E; color:#fff;" asp-controller="Tournaments" asp-action="Details" asp-route-id="@t.TournamentId">Otwórz turniej</a>
+                </div>
+            }
+        </div>
+    }
+</div>

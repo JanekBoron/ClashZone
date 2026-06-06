@@ -7,7 +7,7 @@
 
 <div class="container my-4 text-white">
     <h2>Dodaj produkt</h2>
-    <form asp-action="Create" method="post">
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="form-label">Nazwa</label>
@@ -49,8 +49,8 @@
                 <label class="form-check-label">Aktywny</label>
             </div>
             <div class="col-md-12">
-                <label class="form-label">Główne zdjęcie (URL)</label>
-                <input name="primaryImageUrl" class="form-control" />
+                <label class="form-label">Główne zdjęcie</label>
+                <input type="file" name="primaryImage" accept="image/*" class="form-control" />
             </div>
         </div>
         <button class="btn-cc mt-3">Zapisz</button>

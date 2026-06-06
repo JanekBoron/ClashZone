@@ -1,8 +1,6 @@
 
 
 using ClashZone.App.Domains;
-using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace ClashZone.App.Ports.DataAccess
 {

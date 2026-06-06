@@ -15,16 +15,24 @@
     }
     else
     {
-        <div class="mb-3">
+        <div class="d-flex flex-wrap gap-2 mb-3">
             <input type="search" class="form-control cc-table-search" data-table-search="tournamentsTable"
                    placeholder="Szukaj turnieju..." aria-label="Szukaj turnieju" autocomplete="off" />
+            <select class="form-select cc-table-search" data-table-filter="tournamentsTable" data-filter-col="1" aria-label="Filtruj po grze">
+                <option value="">Wszystkie gry</option>
+                @foreach (var g in GameCatalog.AllGames)
+                {
+                    <option value="@GameCatalog.ShortBadge(g)">@g</option>
+                }
+            </select>
         </div>
         <table id="tournamentsTable" data-paginate data-page-size="10" class="table table-dark table-striped">
             <thead>
                 <tr>
-                    <th>Nazwa</th>
-                    <th>Data rozpoczęcia</th>
-                    <th>Format</th>
+                    <th data-sort-col="0">Nazwa</th>
+                    <th data-sort-col="1">Gra</th>
+                    <th data-sort-col="2">Data rozpoczęcia</th>
+                    <th data-sort-col="3">Format</th>
                     <th></th>
                 </tr>
             </thead>
@@ -33,6 +41,9 @@
                 {
                     <tr>
                         <td>@t.Name</td>
+                        <td>
+                            <span class="game-badge @(GameCatalog.IsLol(t.GameTitle) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(t.GameTitle)</span>
+                        </td>
                         <td>@t.StartDate.ToString("dd.MM.yyyy HH:mm")</td>
                         <td>@t.Format</td>
                         <td class="text-end">

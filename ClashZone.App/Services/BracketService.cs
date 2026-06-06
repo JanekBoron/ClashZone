@@ -1,8 +1,9 @@
 using ClashZone.App.Domains;
+using ClashZone.App.Domains.Riot;
 using ClashZone.App.Ports.DataAccess;
+using ClashZone.App.Ports.Games;
 using ClashZone.App.Services.Interfaces;
 using ClashZone.App.ViewModels;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.App.Services
 {
@@ -20,13 +21,15 @@ namespace ClashZone.App.Services
         private readonly ICoinWalletService _coinWalletService;
         private readonly IMatchesRepository _matchesRepository;
         private readonly IPlayerStatsRepository _playerStatsRepository;
+        private readonly IRiotMatchService _riotMatchService;
         public BracketService(
             ITournamentsRepository tournamentsRepository,
             IUserRepository userRepository,
             IEmailService emailService,
             ICoinWalletService coinWalletService,
             IMatchesRepository matchesRepository,
-            IPlayerStatsRepository playerStatsRepository)
+            IPlayerStatsRepository playerStatsRepository,
+            IRiotMatchService riotMatchService)
         {
             _tournamentsRepository = tournamentsRepository;
             _userRepository = userRepository;
@@ -34,6 +37,7 @@ namespace ClashZone.App.Services
             _coinWalletService = coinWalletService;
             _matchesRepository = matchesRepository;
             _playerStatsRepository = playerStatsRepository;
+            _riotMatchService = riotMatchService;
         }
 
         /// <summary>
@@ -124,7 +128,7 @@ namespace ClashZone.App.Services
                     Rounds = new List<List<MatchInfoDomain>>()
                 };
             }
-            var rounds = GenerateBracketWithResults(teamNames);
+            var rounds = GenerateBracketWithResults(teamNames, tournament.GameTitle);
             //zapisanie statystyk do bazy
             //await SaveBracketStatsAsync(rounds, tournament, teams);
             return new BracketViewModel
@@ -170,7 +174,7 @@ namespace ClashZone.App.Services
                     Rounds = new List<List<MatchInfoDomain>>()
                 };
             }
-            var rounds = GenerateBracketWithResults(teamNames);
+            var rounds = GenerateBracketWithResults(teamNames, tournament.GameTitle);
             // Persist match results and generate random stats
             await SaveBracketStatsAsync(rounds, tournament, teams);
             return new BracketViewModel
@@ -189,7 +193,7 @@ namespace ClashZone.App.Services
         /// </summary>
 
         //in
-        public async Task<BracketViewModel?> SimulateMatchAsync(int tournamentId, int roundNumber, int matchNumber)
+        public async Task<BracketViewModel?> SimulateMatchAsync(int tournamentId, int roundNumber, int matchNumber, bool isAdmin = false)
         {
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
             if (tournament == null)
@@ -248,21 +252,51 @@ namespace ClashZone.App.Services
            
             TeamDomain? team1 = nameToTeam.TryGetValue(matchInfo.Team1Name, out var t1) ? t1 : null;
             TeamDomain? team2 = nameToTeam.TryGetValue(matchInfo.Team2Name, out var t2) ? t2 : null;
-            var rnd = new Random();
-            int score1 = rnd.Next(0, 16);
-            int score2 = rnd.Next(0, 16);
-            var matchEntity = new MatchDomain
+
+            MatchDomain matchEntity;
+            if (GameCatalog.IsLol(tournament.GameTitle))
             {
-                TournamentId = tournamentId,
-                Team1Id = team1?.Id,
-                Team2Id = team2?.Id,
-                Team1Score = score1,
-                Team2Score = score2,
-                PlayedAt = DateTime.UtcNow
-            };
-            await _matchesRepository.AddMatchAsync(matchEntity);
-            // generate player stats for the single match
-            await GenerateStatsForMatchAsync(matchEntity, team1, team2);
+                // League of Legends: wynik i statystyki pochodzą z prawdziwego meczu
+                // pobranego z Riot API (a nie z losowania jak w CS2).
+                var team1Members = await GetAllMemberIdsAsync(team1);
+                var team2Members = await GetAllMemberIdsAsync(team2);
+                // Gdy symulację odpala admin, wymuszamy ścieżkę deweloperską Riota.
+                var outcome = await _riotMatchService.ResolveMatchAsync(team1Members, team2Members, forceDevMode: isAdmin);
+                if (outcome == null)
+                {
+                    // Nie udało się ustalić rozegranego meczu (brak powiązanych kont
+                    // Riot, brak wspólnej gry lub wyłączona integracja) – nic nie zapisujemy.
+                    return null;
+                }
+                matchEntity = new MatchDomain
+                {
+                    TournamentId = tournamentId,
+                    Team1Id = team1?.Id,
+                    Team2Id = team2?.Id,
+                    Team1Score = outcome.Team1Score,
+                    Team2Score = outcome.Team2Score,
+                    PlayedAt = DateTime.UtcNow
+                };
+                await _matchesRepository.AddMatchAsync(matchEntity);
+                await PersistRiotPlayerStatsAsync(matchEntity, outcome, tournament.GameTitle);
+            }
+            else
+            {
+                // Counter-Strike 2 (i inne gry): losowy wynik + losowe statystyki.
+                var (score1, score2) = GenerateMatchScores(tournament.GameTitle, new Random());
+                matchEntity = new MatchDomain
+                {
+                    TournamentId = tournamentId,
+                    Team1Id = team1?.Id,
+                    Team2Id = team2?.Id,
+                    Team1Score = score1,
+                    Team2Score = score2,
+                    PlayedAt = DateTime.UtcNow
+                };
+                await _matchesRepository.AddMatchAsync(matchEntity);
+                // generate player stats for the single match
+                await GenerateStatsForMatchAsync(matchEntity, team1, team2, tournament.GameTitle);
+            }
             // rebuild bracket to reflect new result
             bracket = await BuildBracketWithDbAsync(tournamentId, teamNames, skeleton, teams);
             annotated = AnnotateRounds(bracket);
@@ -277,6 +311,71 @@ namespace ClashZone.App.Services
             };
         }
 
+
+        /// <summary>
+        /// Zwraca identyfikatory wszystkich graczy drużyny (członkowie + kapitan).
+        /// Używane do zmapowania składu na konta Riot przy pobieraniu meczu LoL.
+        /// </summary>
+        private async Task<List<string>> GetAllMemberIdsAsync(TeamDomain? team)
+        {
+            if (team == null)
+            {
+                return new List<string>();
+            }
+            var members = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+            var all = new HashSet<string>(members);
+            if (!string.IsNullOrEmpty(team.CaptainId))
+            {
+                all.Add(team.CaptainId);
+            }
+            return all.ToList();
+        }
+
+        /// <summary>
+        /// Zapisuje statystyki graczy pochodzące z prawdziwego meczu Riota oraz
+        /// aktualizuje agregaty użytkownika. Odpowiednik <see cref="GenerateTeamStatsAsync"/>,
+        /// ale dane pochodzą z API, a nie z losowania.
+        /// </summary>
+        private async Task PersistRiotPlayerStatsAsync(MatchDomain matchEntity, RiotMatchOutcome outcome, string game)
+        {
+            foreach (var player in outcome.Players)
+            {
+                var playerStat = new PlayerMatchStatDomain
+                {
+                    MatchId = matchEntity.Id,
+                    UserId = player.UserId,
+                    Kills = player.Kills,
+                    Deaths = player.Deaths,
+                    Assists = player.Assists,
+                    Game = game,
+                    Champion = player.Champion
+                };
+                await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
+
+                var agg = await _playerStatsRepository.GetUserStatsAsync(player.UserId, game);
+                if (agg == null)
+                {
+                    agg = new UserStatDomain
+                    {
+                        UserId = player.UserId,
+                        Game = game,
+                        TotalKills = player.Kills,
+                        TotalDeaths = player.Deaths,
+                        TotalAssists = player.Assists,
+                        MatchesPlayed = 1
+                    };
+                    await _playerStatsRepository.AddUserStatsAsync(agg);
+                }
+                else
+                {
+                    agg.TotalKills += player.Kills;
+                    agg.TotalDeaths += player.Deaths;
+                    agg.TotalAssists += player.Assists;
+                    agg.MatchesPlayed += 1;
+                    await _playerStatsRepository.UpdateUserStats(agg);
+                }
+            }
+        }
 
         private async Task AwardTournamentPrizesAsync(TournamentDomain tournament,List<List<MatchInfoDomain>> rounds,Dictionary<string, TeamDomain> teamNameMap)
         {
@@ -356,79 +455,102 @@ namespace ClashZone.App.Services
         /// </summary>
 
         //in
-        private async Task GenerateStatsForMatchAsync(MatchDomain matchEntity, TeamDomain? team1, TeamDomain? team2)
+        private async Task GenerateStatsForMatchAsync(MatchDomain matchEntity, TeamDomain? team1, TeamDomain? team2, string game)
         {
             var random = new Random();
-            // team1 stats
-            if (team1 != null)
+            // Postacie (championy) są unikalne w obrębie jednego meczu (tylko LoL).
+            var usedChampions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await GenerateTeamStatsAsync(matchEntity, team1, game, random, usedChampions);
+            await GenerateTeamStatsAsync(matchEntity, team2, game, random, usedChampions);
+        }
+
+        /// <summary>
+        /// Generuje i zapisuje losowe statystyki dla jednej drużyny w meczu,
+        /// uwzględniając specyfikę gry: dla League of Legends każdy gracz dostaje
+        /// inną postać i inne zakresy KDA niż w Counter-Strike. Agreguje też
+        /// statystyki użytkownika w rozbiciu na grę.
+        /// </summary>
+        private async Task GenerateTeamStatsAsync(MatchDomain matchEntity, TeamDomain? team, string game, Random random, ISet<string> usedChampions)
+        {
+            if (team == null) return;
+            bool isLol = GameCatalog.IsLol(game);
+            var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team.Id);
+            var allMemberIds = new HashSet<string>(memberIds) { team.CaptainId };
+            foreach (var userId in allMemberIds)
             {
-                var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team1.Id);
-                var allMemberIds = new HashSet<string>(memberIds) { team1.CaptainId };
-                foreach (var userId in allMemberIds)
+                int kills, deaths, assists;
+                string? champion = null;
+                if (isLol)
                 {
-                    int kills = random.Next(0, 21);
-                    int deaths = random.Next(0, 21);
-                    int assists = random.Next(0, 11);
-                    var playerStat = new PlayerMatchStatDomain
-                    {
-                        MatchId = matchEntity.Id,
-                        UserId = userId,
-                        Kills = kills,
-                        Deaths = deaths,
-                        Assists = assists
-                    };
-                    await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
-                    var agg = await _playerStatsRepository.GetUserStatsAsync(userId);
-                    if (agg == null)
-                    {
-                        agg = new UserStatDomain { UserId = userId, TotalKills = kills, TotalDeaths = deaths, TotalAssists = assists, MatchesPlayed = 1 };
-                        await _playerStatsRepository.AddUserStatsAsync(agg);
-                    }
-                    else
-                    {
-                        agg.TotalKills += kills;
-                        agg.TotalDeaths += deaths;
-                        agg.TotalAssists += assists;
-                        agg.MatchesPlayed += 1;
-                        await _playerStatsRepository.UpdateUserStats(agg);
-                    }
+                    // typowe zakresy KDA dla pojedynczej gry LoL
+                    kills = random.Next(0, 16);
+                    deaths = random.Next(0, 12);
+                    assists = random.Next(0, 25);
+                    champion = PickChampion(usedChampions, random);
+                }
+                else
+                {
+                    kills = random.Next(0, 21);
+                    deaths = random.Next(0, 21);
+                    assists = random.Next(0, 11);
+                }
+                var playerStat = new PlayerMatchStatDomain
+                {
+                    MatchId = matchEntity.Id,
+                    UserId = userId,
+                    Kills = kills,
+                    Deaths = deaths,
+                    Assists = assists,
+                    Game = game,
+                    Champion = champion
+                };
+                await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
+                var agg = await _playerStatsRepository.GetUserStatsAsync(userId, game);
+                if (agg == null)
+                {
+                    agg = new UserStatDomain { UserId = userId, Game = game, TotalKills = kills, TotalDeaths = deaths, TotalAssists = assists, MatchesPlayed = 1 };
+                    await _playerStatsRepository.AddUserStatsAsync(agg);
+                }
+                else
+                {
+                    agg.TotalKills += kills;
+                    agg.TotalDeaths += deaths;
+                    agg.TotalAssists += assists;
+                    agg.MatchesPlayed += 1;
+                    await _playerStatsRepository.UpdateUserStats(agg);
                 }
             }
-            // team2 stats
-            if (team2 != null)
+        }
+
+        /// <summary>
+        /// Losuje postać (champion) jeszcze nieużytą w danym meczu. Gdy pula się
+        /// wyczerpie, dopuszcza powtórzenia.
+        /// </summary>
+        private static string PickChampion(ISet<string> usedChampions, Random random)
+        {
+            var available = GameCatalog.Champions.Where(c => !usedChampions.Contains(c)).ToList();
+            if (available.Count == 0)
             {
-                var memberIds2 = await _tournamentsRepository.GetTeamMemberIdsAsync(team2.Id);
-                var allMemberIds2 = new HashSet<string>(memberIds2) { team2.CaptainId };
-                foreach (var userId in allMemberIds2)
-                {
-                    int kills = random.Next(0, 21);
-                    int deaths = random.Next(0, 21);
-                    int assists = random.Next(0, 11);
-                    var playerStat = new PlayerMatchStatDomain
-                    {
-                        MatchId = matchEntity.Id,
-                        UserId = userId,
-                        Kills = kills,
-                        Deaths = deaths,
-                        Assists = assists
-                    };
-                    await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
-                    var agg = await _playerStatsRepository.GetUserStatsAsync(userId);
-                    if (agg == null)
-                    {
-                        agg = new UserStatDomain { UserId = userId, TotalKills = kills, TotalDeaths = deaths, TotalAssists = assists, MatchesPlayed = 1 };
-                        await _playerStatsRepository.AddUserStatsAsync(agg);
-                    }
-                    else
-                    {
-                        agg.TotalKills += kills;
-                        agg.TotalDeaths += deaths;
-                        agg.TotalAssists += assists;
-                        agg.MatchesPlayed += 1;
-                        await _playerStatsRepository.UpdateUserStats(agg);
-                    }
-                }
+                available = GameCatalog.Champions.ToList();
             }
+            var champion = available[random.Next(available.Count)];
+            usedChampions.Add(champion);
+            return champion;
+        }
+
+        /// <summary>
+        /// Generuje wynik pojedynczego meczu zależnie od gry. Counter-Strike używa
+        /// rund (0–15), League of Legends serii Bo3 (zwycięzca 2 mapy, przegrany 0–1).
+        /// </summary>
+        private static (int team1Score, int team2Score) GenerateMatchScores(string game, Random random)
+        {
+            if (GameCatalog.IsLol(game))
+            {
+                int loserMaps = random.Next(0, 2); // 0 lub 1
+                bool team1Wins = random.Next(0, 2) == 0;
+                return team1Wins ? (2, loserMaps) : (loserMaps, 2);
+            }
+            return (random.Next(0, 16), random.Next(0, 16));
         }
 
         /// <summary>
@@ -642,9 +764,11 @@ namespace ClashZone.App.Services
         /// </summary>
         /// 
         //in
-        private static List<List<MatchInfoDomain>> GenerateBracketWithResults(List<string> teamNames)
+        private static List<List<MatchInfoDomain>> GenerateBracketWithResults(List<string> teamNames, string game)
         {
             var random = new Random();
+            // Wynik dla drużyny przechodzącej dalej bez gry (bye).
+            int byeScore = GameCatalog.IsLol(game) ? 2 : random.Next(0, 16);
             var shuffled = teamNames.OrderBy(_ => random.Next()).ToList();
             int n = shuffled.Count;
             int rounds = (int)Math.Ceiling(Math.Log2(n));
@@ -668,21 +792,22 @@ namespace ClashZone.App.Services
                     continue;
                 }
                 var m = new MatchInfoDomain { Team1Name = t1, Team2Name = t2 };
-                if (t1 != null)
-                {
-                    m.Team1Score = random.Next(0, 16);
-                }
-                if (t2 != null)
-                {
-                    m.Team2Score = random.Next(0, 16);
-                }
                 if (t1 != null && t2 != null)
                 {
-                    winners.Add(m.Team1Score >= m.Team2Score ? t1 : t2);
+                    var (s1, s2) = GenerateMatchScores(game, random);
+                    m.Team1Score = s1;
+                    m.Team2Score = s2;
+                    winners.Add(s1 >= s2 ? t1 : t2);
                 }
-                else if (t1 != null || t2 != null)
+                else if (t1 != null)
                 {
-                    winners.Add(t1 ?? t2);
+                    m.Team1Score = byeScore;
+                    winners.Add(t1);
+                }
+                else if (t2 != null)
+                {
+                    m.Team2Score = byeScore;
+                    winners.Add(t2);
                 }
                 else
                 {
@@ -719,9 +844,10 @@ namespace ClashZone.App.Services
                     }
                     if (nameA != null && nameB != null)
                     {
-                        m.Team1Score = random.Next(0, 16);
-                        m.Team2Score = random.Next(0, 16);
-                        nextWinners.Add(m.Team1Score >= m.Team2Score ? nameA : nameB);
+                        var (s1, s2) = GenerateMatchScores(game, random);
+                        m.Team1Score = s1;
+                        m.Team2Score = s2;
+                        nextWinners.Add(s1 >= s2 ? nameA : nameB);
                     }
                     else
                     {
@@ -786,7 +912,6 @@ namespace ClashZone.App.Services
                     teamNameMap[name] = team;
                 }
             }
-            var random = new Random();
             foreach (var round in rounds)
             {
                 foreach (var matchInfo in round)
@@ -813,76 +938,8 @@ namespace ClashZone.App.Services
                         PlayedAt = DateTime.UtcNow
                     };
                     await _matchesRepository.AddMatchAsync(match);
-                    // Generate stats for players of team1
-                    if (team1 != null)
-                    {
-                        var memberIds = await _tournamentsRepository.GetTeamMemberIdsAsync(team1.Id);
-                        var allMemberIds = new HashSet<string>(memberIds) { team1.CaptainId };
-                        foreach (var userId in allMemberIds)
-                        {
-                            int kills = random.Next(0, 21);
-                            int deaths = random.Next(0, 21);
-                            int assists = random.Next(0, 11);
-                            var playerStat = new PlayerMatchStatDomain
-                            {
-                                MatchId = match.Id,
-                                UserId = userId,
-                                Kills = kills,
-                                Deaths = deaths,
-                                Assists = assists
-                            };
-                            await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
-                            var agg = await _playerStatsRepository.GetUserStatsAsync(userId);
-                            if (agg == null)
-                            {
-                                agg = new UserStatDomain { UserId = userId, TotalKills = kills, TotalDeaths = deaths, TotalAssists = assists, MatchesPlayed = 1 };
-                                await _playerStatsRepository.AddUserStatsAsync(agg);
-                            }
-                            else
-                            {
-                                agg.TotalKills += kills;
-                                agg.TotalDeaths += deaths;
-                                agg.TotalAssists += assists;
-                                agg.MatchesPlayed += 1;
-                                await _playerStatsRepository.UpdateUserStats(agg);
-                            }
-                        }
-                    }
-                    // Generate stats for players of team2
-                    if (team2 != null)
-                    {
-                        var memberIds2 = await _tournamentsRepository.GetTeamMemberIdsAsync(team2.Id);
-                        var allMemberIds2 = new HashSet<string>(memberIds2) { team2.CaptainId };
-                        foreach (var userId in allMemberIds2)
-                        {
-                            int kills = random.Next(0, 21);
-                            int deaths = random.Next(0, 21);
-                            int assists = random.Next(0, 11);
-                            var playerStat = new PlayerMatchStatDomain
-                            {
-                                MatchId = match.Id,
-                                UserId = userId,
-                                Kills = kills,
-                                Deaths = deaths,
-                                Assists = assists
-                            };
-                            await _playerStatsRepository.AddPlayerMatchStatAsync(playerStat);
-                            var agg = await _playerStatsRepository.GetUserStatsAsync(userId);
-                            if (agg == null)
-                            {
-                                agg = new UserStatDomain { UserId = userId, TotalKills = kills, TotalDeaths = deaths, TotalAssists = assists, MatchesPlayed = 1 };
-                                await _playerStatsRepository.AddUserStatsAsync(agg);
-                            }
-                            else
-                            {
-                                agg.TotalKills += kills;
-                                agg.TotalDeaths += deaths;
-                                agg.TotalAssists += assists;
-                                agg.MatchesPlayed += 1;
-                                await _playerStatsRepository.UpdateUserStats(agg);
-                            }
-                        }
-                    }
+                    // Generuje statystyki obu drużyn (zależne od gry) przez wspólny helper.
+                    await GenerateStatsForMatchAsync(match, team1, team2, tournament.GameTitle);
                 }
             }
 

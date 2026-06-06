@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Mecze turnieju";
+    var scoreLabel = GameCatalog.ScoreLabel(Model.Tournament.GameTitle);
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
@@ -23,7 +24,7 @@
             <thead>
                 <tr>
                     <th>Drużyna 1</th>
-                    <th class="text-center">Wynik</th>
+                    <th class="text-center">@scoreLabel</th>
                     <th class="text-end">Drużyna 2</th>
                     <th></th>
                 </tr>

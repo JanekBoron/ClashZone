@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Szczegóły meczu";
+    var usesChampions = GameCatalog.UsesChampions(Model.GameTitle);
+    var scoreLabel = GameCatalog.ScoreLabel(Model.GameTitle);
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
@@ -16,14 +18,14 @@
             <img src="@Url.Content(Model.Team1ProfileUrl)" alt="Drużyna 1" class="rounded-circle me-2" style="width:48px;height:48px;object-fit:cover;" />
             <div>
                 <h4 class="mb-0">@Model.Team1Name</h4>
-                <small>Wynik: <strong>@Model.Match.Team1Score</strong></small>
+                <small>@scoreLabel: <strong>@Model.Match.Team1Score</strong></small>
             </div>
         </div>
         <div class="display-6 fw-bold">vs</div>
         <div class="d-flex align-items-center text-end">
             <div class="me-2">
                 <h4 class="mb-0">@Model.Team2Name</h4>
-                <small>Wynik: <strong>@Model.Match.Team2Score</strong></small>
+                <small>@scoreLabel: <strong>@Model.Match.Team2Score</strong></small>
             </div>
             <img src="@Url.Content(Model.Team2ProfileUrl)" alt="Drużyna 2" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;" />
         </div>
@@ -36,10 +38,14 @@
                 <thead>
                     <tr>
                         <th>Gracz</th>
+                        @if (usesChampions)
+                        {
+                            <th>Postać</th>
+                        }
                         <th>Kills</th>
                         <th>Deaths</th>
                         <th>Assists</th>
-                        <th>K/D</th>
+                        <th>@(usesChampions ? "KDA" : "K/D")</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,10 +58,14 @@
                                     <span>@(stat.Player.DisplayName ?? stat.Player.UserName)</span>
                                 </div>
                             </td>
+                            @if (usesChampions)
+                            {
+                                <td>@stat.Champion</td>
+                            }
                             <td>@stat.Kills</td>
                             <td>@stat.Deaths</td>
                             <td>@stat.Assists</td>
-                            <td>@stat.KDRatio.ToString("0.00")</td>
+                            <td>@((usesChampions ? stat.KDA : stat.KDRatio).ToString("0.00"))</td>
                         </tr>
                     }
                 </tbody>
@@ -67,10 +77,14 @@
                 <thead>
                     <tr>
                         <th>Gracz</th>
+                        @if (usesChampions)
+                        {
+                            <th>Postać</th>
+                        }
                         <th>Kills</th>
                         <th>Deaths</th>
                         <th>Assists</th>
-                        <th>K/D</th>
+                        <th>@(usesChampions ? "KDA" : "K/D")</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,10 +97,14 @@
                                     <span>@(stat.Player.DisplayName ?? stat.Player.UserName)</span>
                                 </div>
                             </td>
+                            @if (usesChampions)
+                            {
+                                <td>@stat.Champion</td>
+                            }
                             <td>@stat.Kills</td>
                             <td>@stat.Deaths</td>
                             <td>@stat.Assists</td>
-                            <td>@stat.KDRatio.ToString("0.00")</td>
+                            <td>@((usesChampions ? stat.KDA : stat.KDRatio).ToString("0.00"))</td>
                         </tr>
                     }
                 </tbody>

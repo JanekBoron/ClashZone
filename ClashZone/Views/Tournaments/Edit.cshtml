@@ -2,36 +2,26 @@
 
 @{
     ViewData["Title"] = "Edytuj turniej";
+    var allowedFormatsJson = System.Text.Json.JsonSerializer.Serialize(
+        GameCatalog.AllGames.ToDictionary(g => g, g => GameCatalog.AllowedFormats(g)));
+    var defaultRulesJson = System.Text.Json.JsonSerializer.Serialize(
+        GameCatalog.AllGames.ToDictionary(g => g, g => string.Join("\n", GameCatalog.DefaultRules(g))));
 
-    // Read prizes directly from the model
+    // Nagrody są wyłącznie w ClashCoins — wyciągamy liczbę z zapisu "1000 ClashCoins".
     string[] prizes =
     {
-    Model.FirstPlacePrize ?? string.Empty,
-    Model.SecondPlacePrize ?? string.Empty,
-    Model.ThirdPlacePrize ?? string.Empty
-};
+        Model.FirstPlacePrize ?? string.Empty,
+        Model.SecondPlacePrize ?? string.Empty,
+        Model.ThirdPlacePrize ?? string.Empty
+    };
 
-    bool[] isCoinsPrize = new bool[3];
     int[] prizeCoins = new int[3];
-    string[] prizeDesc = new string[3];
-
     for (int i = 0; i < 3; i++)
     {
-        var part = prizes[i].Trim();
-
-        if (!string.IsNullOrWhiteSpace(part) && part.Contains("ClashCoins"))
+        var p = prizes[i].Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (p.Length > 0 && int.TryParse(p[0], out var coins))
         {
-            isCoinsPrize[i] = true;
-
-            var p = part.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            if (p.Length > 0 && int.TryParse(p[0], out var coins))
-            {
-                prizeCoins[i] = coins;
-            }
-        }
-        else
-        {
-            prizeDesc[i] = part;
+            prizeCoins[i] = coins;
         }
     }
 }
@@ -48,8 +38,11 @@
 
         <div class="mb-3">
             <label asp-for="GameTitle" class="form-label"></label>
-            <select asp-for="GameTitle" class="form-select">
-                <option value="Counter Strike 2">Counter Strike 2</option>
+            <select asp-for="GameTitle" id="gameTitleSelect" class="form-select">
+                @foreach (var g in GameCatalog.AllGames)
+                {
+                    <option value="@g">@g</option>
+                }
             </select>
             <span asp-validation-for="GameTitle" class="text-danger"></span>
         </div>
@@ -62,7 +55,7 @@
 
         <div class="mb-3">
             <label asp-for="Format" class="form-label">Format drużyn</label>
-            <select asp-for="Format" class="form-select">
+            <select asp-for="Format" id="formatSelect" class="form-select">
                 <option value="1v1">1v1</option>
                 <option value="2v2">2v2</option>
                 <option value="5v5">5v5</option>
@@ -70,69 +63,32 @@
             <span asp-validation-for="Format" class="text-danger"></span>
         </div>
 
-        <!-- Nagrody -->
-        <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody</strong></div>
+        <div class="mb-3">
+            <label asp-for="Rules" class="form-label">Reguły turnieju</label>
+            <textarea asp-for="Rules" id="rulesTextarea" class="form-control" rows="5"
+                      placeholder="Każda reguła w osobnej linii"></textarea>
+            <small class="text-muted">Każdą regułę wpisz w osobnej linii.</small>
+            <span asp-validation-for="Rules" class="text-danger"></span>
+        </div>
 
-        <!-- 1. miejsce -->
+        <!-- Nagrody — wyłącznie w ClashCoins (puste/0 = brak nagrody). -->
+        <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody (ClashCoins)</strong></div>
+
         <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
             <div class="mb-1"><strong>1. miejsce</strong></div>
-            @if (!isCoinsPrize[0])
-            {
-                <select name="prizeOption1" class="form-select mb-2">
-                    <option value="text" selected>Opis</option>
-                    <option value="coins">ClashCoins</option>
-                </select>
-            }
-            else
-            {
-                <select name="prizeOption1" class="form-select mb-2">
-                    <option value="text">Opis</option>
-                    <option value="coins" selected>ClashCoins</option>
-                </select>
-            }
-            <input name="prizeDescription1" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[0]" />
+            <label class="form-label">Ilość ClashCoins</label>
             <input name="prizeCoins1" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[0]" />
         </div>
 
-        <!-- 2. miejsce -->
         <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
             <div class="mb-1"><strong>2. miejsce</strong></div>
-            @if (!isCoinsPrize[1])
-            {
-                <select name="prizeOption2" class="form-select mb-2">
-                    <option value="text" selected>Opis</option>
-                    <option value="coins">ClashCoins</option>
-                </select>
-            }
-            else
-            {
-                <select name="prizeOption2" class="form-select mb-2">
-                    <option value="text">Opis</option>
-                    <option value="coins" selected>ClashCoins</option>
-                </select>
-            }
-            <input name="prizeDescription2" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[1]" />
+            <label class="form-label">Ilość ClashCoins</label>
             <input name="prizeCoins2" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[1]" />
         </div>
 
-        <!-- 3. miejsce -->
         <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
             <div class="mb-1"><strong>3. miejsce</strong></div>
-            @if (!isCoinsPrize[2])
-            {
-                <select name="prizeOption3" class="form-select mb-2">
-                    <option value="text" selected>Opis</option>
-                    <option value="coins">ClashCoins</option>
-                </select>
-            }
-            else
-            {
-                <select name="prizeOption3" class="form-select mb-2">
-                    <option value="text">Opis</option>
-                    <option value="coins" selected>ClashCoins</option>
-                </select>
-            }
-            <input name="prizeDescription3" class="form-control mb-2" placeholder="Opis nagrody" value="@prizeDesc[2]" />
+            <label class="form-label">Ilość ClashCoins</label>
             <input name="prizeCoins3" type="number" min="0" class="form-control" placeholder="Ilość ClashCoins" value="@prizeCoins[2]" />
         </div>
 
@@ -142,6 +98,12 @@
                 Publiczny (widoczny dla wszystkich)
             </label>
         </div>
+        <div class="form-check mb-3">
+            <input asp-for="IsPremium" class="form-check-input" />
+            <label asp-for="IsPremium" class="form-check-label">
+                Turniej premium (dostępny tylko dla pakietu Premium/Ultra)
+            </label>
+        </div>
 
         <button type="submit" class="btn" style="background-color:#FF2B3E; color:#fff;">Zapisz zmiany</button>
     </form>
@@ -149,5 +111,8 @@
         @{
             await Html.RenderPartialAsync("_ValidationScriptsPartial");
         }
+        <script id="allowedFormatsData" type="application/json">@Html.Raw(allowedFormatsJson)</script>
+        <script id="defaultRulesData" type="application/json">@Html.Raw(defaultRulesJson)</script>
+        <script src="~/js/tournament-form.js" asp-append-version="true"></script>
     }
 </div>

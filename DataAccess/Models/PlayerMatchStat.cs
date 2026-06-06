@@ -13,13 +13,32 @@ namespace ClashZone.DataAccess.Models
     public class PlayerMatchStat
     {
         public int Id { get; set; }
-        public int MatchId { get; set; }
+
+        /// <summary>FK do meczu turniejowego. Null dla statystyk meczów ligowych.</summary>
+        public int? MatchId { get; set; }
+
+        /// <summary>FK do meczu ligowego (<see cref="LeagueMatch"/>). Null dla turniejów.</summary>
+        public int? LeagueMatchId { get; set; }
+
         public string UserId { get; set; } = null!;
         public int Kills { get; set; }
         public int Deaths { get; set; }
         public int Assists { get; set; }
 
-        public Match Match { get; set; } = null!;
+        /// <summary>
+        /// Tytuł gry, której dotyczy statystyka (np. "Counter Strike 2",
+        /// "League of Legends"). Denormalizowany z turnieju, aby ułatwić
+        /// zapytania o statystyki i rankingi w rozbiciu na grę.
+        /// </summary>
+        public string Game { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Postać (champion) wybrana przez gracza. Wypełniane tylko dla gier,
+        /// w których gracze grają postaciami (League of Legends).
+        /// </summary>
+        public string? Champion { get; set; }
+
+        public Match? Match { get; set; }
         public ClashUser User { get; set; } = null!;
 
         /// <summary>

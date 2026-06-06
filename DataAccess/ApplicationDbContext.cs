@@ -61,5 +61,12 @@ namespace DataAccess
         public DbSet<Match> Matches { get; set; } = null!;
         public DbSet<PlayerMatchStat> PlayerMatchStats { get; set; } = null!;
         public DbSet<UserStat> UserStats { get; set; } = null!;
+
+        // League feature
+        public DbSet<LeagueTeam> LeagueTeams { get; set; } = null!;
+        public DbSet<LeagueTeamMember> LeagueTeamMembers { get; set; } = null!;
+        public DbSet<Season> Seasons { get; set; } = null!;
+        public DbSet<LeagueRegistration> LeagueRegistrations { get; set; } = null!;
+        public DbSet<LeagueMatch> LeagueMatches { get; set; } = null!;
     }
 }

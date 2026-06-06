@@ -37,13 +37,16 @@ namespace ClashZone.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("SeasonId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TournamentId")
+                    b.Property<int?>("TournamentId")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -107,6 +110,12 @@ namespace ClashZone.DataAccess.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("ProfilePicturePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RiotId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RiotPuuid")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Score")
@@ -183,6 +192,147 @@ namespace ClashZone.DataAccess.Migrations
                     b.ToTable("CoinWalletTransactions");
                 });
 
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueMatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AwayRegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AwayScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("HomeRegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HomeScore")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPlayed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPlayoff")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProposedByRegistrationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProposedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Round")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Server")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Week")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeagueMatches");
+                });
+
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueRegistration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("FeePaid")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRemoved")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LeagueTeamId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RegisteredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeagueTeamId");
+
+                    b.ToTable("LeagueRegistrations");
+                });
+
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueTeam", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CaptainId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Game")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JoinCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LogoPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeagueTeams");
+                });
+
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueTeamMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LeagueTeamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeagueTeamId");
+
+                    b.ToTable("LeagueTeamMembers");
+                });
+
             modelBuilder.Entity("ClashZone.DataAccess.Models.PlayerMatchStat", b =>
                 {
                     b.Property<int>("Id")
@@ -194,13 +344,23 @@ namespace ClashZone.DataAccess.Migrations
                     b.Property<int>("Assists")
                         .HasColumnType("int");
 
+                    b.Property<string>("Champion")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Deaths")
                         .HasColumnType("int");
+
+                    b.Property<string>("Game")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Kills")
                         .HasColumnType("int");
 
-                    b.Property<int>("MatchId")
+                    b.Property<int?>("LeagueMatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MatchId")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -342,6 +502,70 @@ namespace ClashZone.DataAccess.Migrations
                     b.ToTable("ProductRedeems");
                 });
 
+            modelBuilder.Entity("ClashZone.DataAccess.Models.Season", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DefaultMatchDay")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FirstPlacePrize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Game")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PlayoffSpots")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RegistrationCloseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("RegistrationOpenDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RosterSize")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Rules")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SecondPlacePrize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ThirdPlacePrize")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Seasons");
+                });
+
             modelBuilder.Entity("ClashZone.DataAccess.Models.SubscriptionPlan", b =>
                 {
                     b.Property<int>("Id")
@@ -383,6 +607,9 @@ namespace ClashZone.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsConfirmed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("JoinCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -406,6 +633,9 @@ namespace ClashZone.DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsReady")
+                        .HasColumnType("bit");
+
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
@@ -427,6 +657,10 @@ namespace ClashZone.DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Game")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MatchesPlayed")
                         .HasColumnType("int");
@@ -553,6 +787,9 @@ namespace ClashZone.DataAccess.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Rules")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SecondPlacePrize")
@@ -715,13 +952,33 @@ namespace ClashZone.DataAccess.Migrations
                     b.Navigation("Wallet");
                 });
 
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueRegistration", b =>
+                {
+                    b.HasOne("ClashZone.DataAccess.Models.LeagueTeam", "LeagueTeam")
+                        .WithMany()
+                        .HasForeignKey("LeagueTeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeagueTeam");
+                });
+
+            modelBuilder.Entity("ClashZone.DataAccess.Models.LeagueTeamMember", b =>
+                {
+                    b.HasOne("ClashZone.DataAccess.Models.LeagueTeam", "LeagueTeam")
+                        .WithMany()
+                        .HasForeignKey("LeagueTeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeagueTeam");
+                });
+
             modelBuilder.Entity("ClashZone.DataAccess.Models.PlayerMatchStat", b =>
                 {
                     b.HasOne("DataAccess.Models.Match", "Match")
                         .WithMany("PlayerStats")
-                        .HasForeignKey("MatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("MatchId");
 
                     b.HasOne("ClashZone.DataAccess.Models.ClashUser", "User")
                         .WithMany()

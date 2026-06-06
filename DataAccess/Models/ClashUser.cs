@@ -47,5 +47,18 @@ namespace ClashZone.DataAccess.Models
 
         [Required]
         public bool IsBanned { get; set; } = false;
+
+        /// <summary>
+        /// Riot ID wpisany przez gracza w formacie "Nazwa#TAG" (np. "Faker#KR1").
+        /// Służy wyłącznie do prezentacji i ponownej weryfikacji powiązania konta.
+        /// </summary>
+        public string? RiotId { get; set; }
+
+        /// <summary>
+        /// Globalny, stały identyfikator konta Riot (PUUID) rozwiązany z <see cref="RiotId"/>
+        /// przez Account-V1. To po nim mapujemy uczestników meczu League of Legends
+        /// (z Match-V5) na użytkowników ClashZone przy zapisie statystyk.
+        /// </summary>
+        public string? RiotPuuid { get; set; }
     }
 }

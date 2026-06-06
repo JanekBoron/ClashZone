@@ -1,0 +1,84 @@
+@model ClashZone.App.ViewModels.LeagueTeamDetailsViewModel
+@{
+    var t = Model.Team;
+    ViewData["Title"] = t.Name ?? $"Drużyna #{t.Id}";
+}
+
+<div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">@(t.Name ?? $"Drużyna #{t.Id}")</h2>
+            <small class="text-muted">
+                <span class="game-badge @(GameCatalog.IsLol(t.Game) ? "game-badge--lol" : "game-badge--cs2")">@GameCatalog.ShortBadge(t.Game)</span>
+                <span class="ms-2">@t.Game</span>
+            </small>
+        </div>
+        @if (Model.IsCaptain)
+        {
+            <button type="button" class="btn" style="background-color:#FF2B3E; color:#fff;" data-bs-toggle="modal" data-bs-target="#inviteModal">Zaproś graczy</button>
+        }
+    </div>
+
+    <hr style="border-color:#444;" />
+
+    @if (TempData["TeamInfo"] != null)
+    {
+        <div class="alert alert-success">@TempData["TeamInfo"]</div>
+    }
+    @if (TempData["TeamError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["TeamError"]</div>
+    }
+
+    <h4>Skład (@Model.MemberNames.Count)</h4>
+    <ul class="list-group mb-3">
+        @foreach (var m in Model.MemberNames)
+        {
+            <li class="list-group-item" style="background-color:#1a1a1a; color:#f8f9fa; border-color:#444;">@m</li>
+        }
+    </ul>
+
+    <a asp-controller="Team" asp-action="Index" class="btn btn-outline-light btn-sm">&larr; Moje drużyny</a>
+
+    <!-- Modal zaproszenia przez link -->
+    <div class="modal fade" id="inviteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color:#111; color:#f8f9fa; border:1px solid #444;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Zaproś graczy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Udostępnij ten link, aby zaprosić graczy do drużyny.</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="inviteLinkInput" readonly value="@Model.InviteLink" style="background-color:#222; border-color:#444; color:#fff;">
+                        <button class="btn" type="button" id="copyInviteLink" style="background-color:#FF2B3E; color:#fff;">Kopiuj</button>
+                    </div>
+                    <small class="text-muted d-block mt-2">Kod drużyny: <strong>@t.JoinCode</strong></small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var btn = document.getElementById('copyInviteLink');
+            if (btn) {
+                btn.addEventListener('click', function () {
+                    var input = document.getElementById('inviteLinkInput');
+                    if (input && input.value) {
+                        navigator.clipboard.writeText(input.value).then(function () {
+                            btn.innerHTML = 'Skopiowano';
+                            setTimeout(function () { btn.innerHTML = 'Kopiuj'; }, 2000);
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+}

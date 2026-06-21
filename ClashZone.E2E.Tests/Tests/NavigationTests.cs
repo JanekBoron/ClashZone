@@ -4,9 +4,6 @@ using NUnit.Framework;
 
 namespace ClashZone.E2E.Tests.Tests
 {
-    /// <summary>
-    /// Podstawowa nawigacja i renderowanie kluczowych stron publicznych.
-    /// </summary>
     [TestFixture]
     public class NavigationTests : E2ETestBase
     {

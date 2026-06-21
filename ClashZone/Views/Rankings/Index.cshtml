@@ -87,7 +87,7 @@
                         <td>@(stat.User.DisplayName ?? stat.User.UserName)</td>
                         @if (isLol)
                         {
-                            <td>@(row.FavoriteChampion ?? "—")</td>
+                            <td>@(row.FavoriteChampion ?? "-")</td>
                             <td>@stat.AverageKDA.ToString("0.00")</td>
                         }
                         else

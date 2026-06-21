@@ -20,7 +20,6 @@ namespace ClashZone.App.Domains
         public string? Rules { get; set; }
         public int Status { get; set; }
         public string? CreatedByUserId { get; set; }
-
         public SeasonStatus StatusEnum => (SeasonStatus)Status;
     }
 }

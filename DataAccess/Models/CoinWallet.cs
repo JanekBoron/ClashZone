@@ -10,7 +10,7 @@ namespace ClashZone.DataAccess.Models
 {
     public class CoinWallet
     {
-        [Key] // klucz = to samo Id co użytkownik (AspNetUsers.Id)
+        [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string UserId { get; set; } = default!;
 

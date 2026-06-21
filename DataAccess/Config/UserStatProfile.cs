@@ -13,7 +13,9 @@ namespace ClashZone.DataAccess.Config
     {
         public UserStatProfile()
         {
-            CreateMap<UserStat, UserStatDomain>().ReverseMap();
+            CreateMap<UserStat, UserStatDomain>()
+                .ReverseMap()
+                .ForMember(d => d.User, opt => opt.Ignore());
         }
     }
 }

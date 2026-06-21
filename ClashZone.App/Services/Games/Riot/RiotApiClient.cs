@@ -6,13 +6,6 @@ using ClashZone.App.Ports.Games;
 
 namespace ClashZone.App.Services.Games.Riot
 {
-    /// <summary>
-    /// Implementacja <see cref="IRiotApiClient"/> oparta o typed HttpClient.
-    /// Host bazowy (regionalny) i nagłówek X-Riot-Token są konfigurowane przy
-    /// rejestracji klienta w kontenerze DI. Klient jest defensywny: przy braku
-    /// klucza, błędzie HTTP czy wyjątku sieciowym zwraca null/pustą listę, aby
-    /// nie wywracać przepływu turnieju (CS2 i tak działa niezależnie).
-    /// </summary>
     public sealed class RiotApiClient : IRiotApiClient
     {
         private readonly HttpClient _http;
@@ -97,11 +90,6 @@ namespace ClashZone.App.Services.Games.Riot
             };
         }
 
-        /// <summary>
-        /// Wykonuje GET i deserializuje JSON. Obsługuje pojedynczy retry przy 429
-        /// (limit zapytań) z poszanowaniem nagłówka Retry-After. Każdy inny błąd
-        /// (4xx/5xx, wyjątek sieciowy) kończy się zwróceniem domyślnej wartości.
-        /// </summary>
         private async Task<T?> GetJsonAsync<T>(string url, CancellationToken ct)
         {
             for (var attempt = 0; attempt < 2; attempt++)
@@ -139,7 +127,6 @@ namespace ClashZone.App.Services.Games.Riot
             return default;
         }
 
-        // ---- Wewnętrzne DTO odwzorowujące kształt odpowiedzi Riota (camelCase) ----
 
         private sealed class AccountDto
         {

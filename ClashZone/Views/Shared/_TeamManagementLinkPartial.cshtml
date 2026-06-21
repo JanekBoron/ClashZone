@@ -2,8 +2,6 @@
 @using ClashZone.DataAccess.Models
 @inject SignInManager<ClashUser> SignInManager
 
-@* Zarządzanie drużyną — widoczne tylko dla zalogowanych graczy, którzy nie są
-   administratorem ani organizatorem (im ta funkcja nie jest potrzebna). *@
 
 @if (SignInManager.IsSignedIn(User) && !User.IsInRole("Admin") && !User.IsInRole("Organizer"))
 {

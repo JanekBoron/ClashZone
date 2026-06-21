@@ -8,11 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.DataAccess.Repository
 {
-    /// <summary>
-    /// Provides methods for accessing tournament data.  It supports filtering
-    /// upcoming tournaments by format, retrieving tournaments for a specific
-    /// user and fetching a single tournament by its identifier.
-    /// </summary>
     public class TournamentsRepository : ITournamentsRepository
     {
         private readonly ApplicationDbContext _db;
@@ -36,16 +31,12 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<IEnumerable<TournamentDomain>>(tournaments);
         }
 
-        /// <inheritdoc/>
         public async Task<IEnumerable<TournamentDomain>> GetUserTournamentsAsync(string userId)
         {
             if (string.IsNullOrEmpty(userId))
             {
                 return Array.Empty<TournamentDomain>();
             }
-            // If you have a UserTournaments join table: return tournaments where the
-            // user is a participant.  Otherwise fall back to tournaments created by
-            // the user.
             var tournaments = await _db.Tournaments
                 .Where(t => t.CreatedByUserId == userId)
                 .OrderBy(t => t.StartDate)
@@ -53,13 +44,11 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<IEnumerable<TournamentDomain>>(tournaments);
         }
 
-        /// <inheritdoc/>
         public async Task AddTournamentAsync(TournamentDomain tournament)
         {
             if (tournament == null)
                 throw new ArgumentNullException(nameof(tournament));
 
-            // If the tournament is private, generate a join code
             if (!tournament.IsPublic)
             {
                 tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
@@ -69,14 +58,12 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
         public async Task<TournamentDomain?> GetTournamentByIdAsync(int id)
         {
             var tournament = await _db.Tournaments.FirstOrDefaultAsync(t => t.Id == id);
             return _mapper.Map<TournamentDomain?>(tournament);
         }
 
-        /// <inheritdoc/>
         public async Task UpdateTournamentAsync(TournamentDomain tournament)
         {
             if (tournament == null) throw new ArgumentNullException(nameof(tournament));
@@ -86,7 +73,14 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
+        public async Task<bool> TryMarkInitialMatchRemindersSentAsync(int tournamentId)
+        {
+            var rows = await _db.Tournaments
+                .Where(t => t.Id == tournamentId && t.InitialMatchRemindersSentAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.InitialMatchRemindersSentAt, DateTime.UtcNow));
+            return rows > 0;
+        }
+
         public async Task DeleteTournamentAsync(int id)
         {
             var tournament = await _db.Tournaments.FindAsync(id);
@@ -97,11 +91,9 @@ namespace ClashZone.DataAccess.Repository
             }
         }
 
-        /// <inheritdoc/>
         public async Task<TeamDomain?> GetUserTeamAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) return null;
-            // find membership including team relation
             var membership = await _db.TeamMembers
                 .Include(tm => tm.Team)
                 .FirstOrDefaultAsync(tm => tm.UserId == userId && tm.Team.TournamentId == tournamentId);
@@ -110,7 +102,6 @@ namespace ClashZone.DataAccess.Repository
             return teamDomain;
         }
 
-        /// <inheritdoc/>
         public async Task<List<string>> GetTeamMemberIdsAsync(int teamId)
         {
             return await _db.TeamMembers
@@ -119,7 +110,6 @@ namespace ClashZone.DataAccess.Repository
                 .ToListAsync();
         }
 
-        /// <inheritdoc/>
         public async Task<List<TeamMemberDomain>> GetTeamMembersAsync(int teamId)
         {
             var members = await _db.TeamMembers
@@ -128,7 +118,6 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<List<TeamMemberDomain>>(members);
         }
 
-        /// <inheritdoc/>
         public async Task SetMemberReadyAsync(int teamId, string userId, bool ready)
         {
             var member = await _db.TeamMembers
@@ -138,7 +127,6 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
         public async Task ConfirmTeamAsync(int teamId)
         {
             var team = await _db.Teams.FindAsync(teamId);
@@ -147,14 +135,12 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
         public async Task<int> GetConfirmedTeamCountAsync(int tournamentId)
         {
             return await _db.Teams
                 .CountAsync(t => t.TournamentId == tournamentId && t.IsConfirmed);
         }
 
-        /// <inheritdoc/>
         public async Task<List<TeamDomain>> GetCaptainTeamsAsync(string userId)
         {
             if (string.IsNullOrEmpty(userId)) return new List<TeamDomain>();
@@ -164,11 +150,9 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<List<TeamDomain>>(teams);
         }
 
-        /// <inheritdoc/>
         public async Task<TeamDomain> CreateTeamWithCaptainAsync(int tournamentId, string userId)
         {
             if (string.IsNullOrEmpty(userId)) throw new ArgumentNullException(nameof(userId));
-            // Create new team and generate join code
             var team = new Team
             {
                 TournamentId = tournamentId,
@@ -178,19 +162,16 @@ namespace ClashZone.DataAccess.Repository
             };
             _db.Teams.Add(team);
             await _db.SaveChangesAsync();
-            // Add captain as the first member
             var member = new TeamMember { TeamId = team.Id, UserId = userId };
             _db.TeamMembers.Add(member);
             await _db.SaveChangesAsync();
             return _mapper.Map<TeamDomain>(team);
         }
 
-        /// <inheritdoc/>
         public async Task<int?> AddUserToTeamAsync(int teamId, string userId, string code)
         {
             var team = await _db.Teams.FindAsync(teamId);
             if (team == null || team.JoinCode != code) return null;
-            // Check if user already a member
             var existing = await _db.TeamMembers.FirstOrDefaultAsync(tm => tm.UserId == userId && tm.TeamId == teamId);
             if (existing == null)
             {
@@ -200,7 +181,6 @@ namespace ClashZone.DataAccess.Repository
             return team.TournamentId;
         }
 
-        /// <inheritdoc/>
         public async Task AddChatMessageAsync(ChatMessageDomain message)
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
@@ -208,7 +188,6 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        /// <inheritdoc/>
         public async Task<List<ChatMessageDomain>> GetAllChatMessagesAsync(int tournamentId)
         {
             var messages = await _db.ChatMessages
@@ -218,7 +197,6 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<List<ChatMessageDomain>>(messages);
         }
 
-        /// <inheritdoc/>
         public async Task<List<ChatMessageDomain>> GetTeamChatMessagesAsync(int tournamentId, int teamId)
         {
             var messages = await _db.ChatMessages
@@ -234,14 +212,11 @@ namespace ClashZone.DataAccess.Repository
 
         public async Task<List<ChatMessageDomain>> GetReportChatMessagesAsync(int tournamentId, int? teamId, bool isAdmin)
         {
-            // Pobieramy wszystkie zgłoszenia dla turnieju
             IQueryable<ChatMessage> query = _db.ChatMessages
                 .Where(cm => cm.TournamentId == tournamentId && cm.IsReport);
 
-            // Jeśli użytkownik nie jest administratorem, ograniczamy wyniki do jego drużyny
             if (!isAdmin)
             {
-                // Brak drużyny oznacza brak dostępu do zgłoszeń
                 if (teamId == null)
                 {  
                     return new List<ChatMessageDomain>();
@@ -250,7 +225,6 @@ namespace ClashZone.DataAccess.Repository
                 query = query.Where(cm => cm.TeamId == teamId);
             }
 
-            // Sortujemy zgłoszenia chronologicznie
             var chatMessages = await query.OrderBy(cm => cm.SentAt).ToListAsync();
             return _mapper.Map<List<ChatMessageDomain>>(chatMessages);
         }
@@ -258,9 +232,6 @@ namespace ClashZone.DataAccess.Repository
 
         public async Task<List<TeamDomain>> GetTeamsForTournamentAsync(int tournamentId)
         {
-            // Uczestnicy turnieju = wyłącznie drużyny potwierdzone przez kapitana.
-            // Niepotwierdzone (niepełny skład / brak gotowości) nie liczą się do
-            // limitu i nie wchodzą do drabinki.
             var teams = await _db.Teams
                 .Where(t => t.TournamentId == tournamentId && t.IsConfirmed)
                 .ToListAsync();

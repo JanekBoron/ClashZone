@@ -26,8 +26,10 @@ namespace ClashZone.App.Services
         public Task<ProductDomain?> GetProductAsync(int id) =>
             _products.GetAsync(id);
 
-        public async Task<(bool ok, string? error)> PurchaseAsync(int productId, string userId)
+        public async Task<(bool ok, string? error)> PurchaseAsync(int productId, string userId, ShippingAddressDomain shipping)
         {
+            if (shipping == null) return (false, "Brak danych adresu wysyłki.");
+
             var product = await _products.GetAsync(productId);
             if (product == null || !product.IsActive) return (false, "Produkt niedostępny.");
             if (product.Stock.HasValue && product.Stock.Value <= 0) return (false, "Brak w magazynie.");
@@ -48,7 +50,13 @@ namespace ClashZone.App.Services
             {
                 UserId = userId,
                 ProductId = product.Id,
-                Status = "Pending"
+                Status = "Pending",
+                ShippingFullName = shipping.FullName,
+                ShippingPhone = shipping.Phone,
+                ShippingStreet = shipping.Street,
+                ShippingPostalCode = shipping.PostalCode,
+                ShippingCity = shipping.City,
+                ShippingCountry = shipping.Country
             });
 
             if (product.Stock.HasValue) product.Stock--;

@@ -41,6 +41,7 @@
                     <th data-sort-col="2">Koszt</th>
                     <th data-sort-col="3">Data</th>
                     <th data-sort-col="4">Status</th>
+                    <th>Szczegóły</th>
                     <th>Zmień status</th>
                 </tr>
             </thead>
@@ -54,6 +55,12 @@
                         <td>@o.RedeemedAt.ToString("dd.MM.yyyy HH:mm")</td>
                         <td>
                             <span class="badge @OrderStatus.BadgeClass(o.Status)">@OrderStatus.Label(o.Status)</span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-light"
+                                    data-bs-toggle="modal" data-bs-target="#orderModal-@o.Id">
+                                Szczegóły
+                            </button>
                         </td>
                         <td>
                             <form asp-controller="Orders" asp-action="UpdateStatus" method="post" class="d-flex gap-2 align-items-center">
@@ -79,6 +86,63 @@
                 }
             </tbody>
         </table>
+
+        @foreach (var o in Model)
+        {
+            <div class="modal fade" id="orderModal-@o.Id" tabindex="-1" aria-labelledby="orderModalLabel-@o.Id" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="background-color:#1b1b1b; color:#f8f9fa; border:1px solid #2a2a2a;">
+                        <div class="modal-header" style="border-bottom:1px solid #2a2a2a;">
+                            <h5 class="modal-title" id="orderModalLabel-@o.Id" style="color:#FF2B3E;">
+                                Zamówienie #@o.Id - @o.ProductName
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <div class="text-secondary small">Zamawiający</div>
+                                <div>@o.UserName</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-secondary small">Produkt / koszt</div>
+                                <div>@o.ProductName - <span class="cc-price">C @o.ClashCoins</span></div>
+                            </div>
+
+                            <hr style="border-color:#2a2a2a;" />
+                            <h6 class="mb-2" style="color:#FF2B3E;">Adres wysyłki</h6>
+                            @if (o.HasShippingAddress)
+                            {
+                                <address class="mb-0">
+                                    <strong>@o.ShippingFullName</strong><br />
+                                    @o.ShippingStreet<br />
+                                    @o.ShippingPostalCode @o.ShippingCity<br />
+                                    @o.ShippingCountry<br />
+                                    @if (!string.IsNullOrWhiteSpace(o.ShippingPhone))
+                                    {
+                                        <span class="text-secondary">tel: @o.ShippingPhone</span>
+                                    }
+                                </address>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Brak adresu wysyłki dla tego zamówienia.</p>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(o.Notes))
+                            {
+                                <hr style="border-color:#2a2a2a;" />
+                                <div class="text-secondary small">Notatka</div>
+                                <div>@o.Notes</div>
+                            }
+                        </div>
+                        <div class="modal-footer" style="border-top:1px solid #2a2a2a;">
+                            <span class="badge @OrderStatus.BadgeClass(o.Status) me-auto">@OrderStatus.Label(o.Status)</span>
+                            <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Zamknij</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 

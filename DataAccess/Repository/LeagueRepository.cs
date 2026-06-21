@@ -7,10 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.DataAccess.Repository
 {
-    /// <summary>
-    /// Repozytorium ligi: sezony, zgłoszenia, mecze, czat sezonu oraz statystyki
-    /// graczy meczów ligowych. Wzorowane na <see cref="TournamentsRepository"/>.
-    /// </summary>
     public class LeagueRepository : ILeagueRepository
     {
         private readonly ApplicationDbContext _db;
@@ -22,7 +18,6 @@ namespace ClashZone.DataAccess.Repository
             _mapper = mapper;
         }
 
-        // ----------------------------- Sezony -----------------------------
 
         public async Task AddSeasonAsync(SeasonDomain season)
         {
@@ -52,7 +47,6 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        // -------------------------- Zgłoszenia ----------------------------
 
         public async Task<LeagueRegistrationDomain> AddRegistrationAsync(LeagueRegistrationDomain registration)
         {
@@ -99,7 +93,6 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        // ----------------------------- Mecze ------------------------------
 
         public async Task AddMatchAsync(LeagueMatchDomain match)
         {
@@ -132,7 +125,6 @@ namespace ClashZone.DataAccess.Repository
             await _db.SaveChangesAsync();
         }
 
-        // ---------------------------- Czat --------------------------------
 
         public async Task AddChatMessageAsync(ChatMessageDomain message)
         {
@@ -171,7 +163,6 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<List<ChatMessageDomain>>(messages);
         }
 
-        // ------------------- Statystyki meczów ligowych -------------------
 
         public async Task<List<PlayerMatchStatDomain>> GetPlayerStatsForLeagueMatchAsync(int leagueMatchId)
         {

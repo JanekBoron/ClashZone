@@ -4,23 +4,6 @@ using ClashZone.App.ViewModels;
 
 namespace ClashZone.App.Services
 {
-
-
-
-
-
-    /// <summary>
-    /// ERROR HERE
-    /// </summary>
-
-
-
-
-
-
-
-
-
     public class SubscriptionService : ISubscriptionService
     {
         private readonly ISubscriptionRepository _subscriptionRepository;
@@ -37,7 +20,7 @@ namespace ClashZone.App.Services
             return new SubscriptionIndexViewModel
             {
                 Plans = plans.ToList(),
-                //ActiveSubscription = active
+                ActiveSubscription = active
             };
         }
 

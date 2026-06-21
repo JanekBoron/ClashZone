@@ -21,7 +21,6 @@ namespace ClashZone.App.Services
             _userRepository = userRepository;
         }
 
-        /// <inheritdoc />
         public async Task<List<MatchListItemViewModel>> GetMatchesForTournamentAsync(int tournamentId)
         {
             var matches = await _matchesRepository.GetMatchesByTournamentAsync(tournamentId);
@@ -30,7 +29,6 @@ namespace ClashZone.App.Services
             var items = new List<MatchListItemViewModel>();
             foreach (var match in matches)
             {
-                // Resolve team entities
                 var team1 = match.Team1Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team1Id.Value) : null;
                 var team2 = match.Team2Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team2Id.Value) : null;
 
@@ -73,7 +71,6 @@ namespace ClashZone.App.Services
                     team2Name = captain?.UserName ?? "[UNNAMED TEAM]";
                 }
 
-                // Resolve captain avatars
                 string team1Profile = string.Empty;
                 string team2Profile = string.Empty;
                 if (team1 != null)
@@ -92,7 +89,6 @@ namespace ClashZone.App.Services
                         team2Profile = captain.ProfilePicturePath;
                     }
                 }
-                // Fallback to default images if no custom avatar exists
                 if (string.IsNullOrEmpty(team1Profile))
                 {
                     team1Profile = "/images/default-profile.png";
@@ -114,8 +110,6 @@ namespace ClashZone.App.Services
             }
             return items;
         }
-
-        /// <inheritdoc />
         public async Task<MatchDetailsViewModel?> GetMatchDetailsAsync(int tournamentId, int matchId)
         {
             var match = await _matchesRepository.GetMatchByIdAsync(matchId, tournamentId);
@@ -125,7 +119,6 @@ namespace ClashZone.App.Services
             }
             var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
             var gameTitle = tournament?.GameTitle ?? string.Empty;
-            // Load teams
             var team1 = match.Team1Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team1Id.Value) : null;
             var team2 = match.Team2Id.HasValue ? await _matchesRepository.GetTeamByIdAsync(match.Team2Id.Value) : null;
 
@@ -185,18 +178,14 @@ namespace ClashZone.App.Services
                     team2Profile = captain.ProfilePicturePath;
                 }
             }
-
-            // Load per-player stats
             var stats = await _matchesRepository.GetPlayerStatsForMatchAsync(match.Id);
             var team1Stats = new List<PlayerStatViewModel>();
             var team2Stats = new List<PlayerStatViewModel>();
-            // Determine team membership lists for each team; if team1 exists gather member IDs
             var team1MemberIds = new List<string>();
             if (team1 != null)
             {
                 team1MemberIds = (await _tournamentsRepository.GetTeamMemberIdsAsync(team1.Id)).ToList();
             }
-            // Build view models per player
             foreach (var stat in stats)
             {
                 var user = await _userRepository.FindByIdAsync(stat.UserId);
@@ -209,7 +198,6 @@ namespace ClashZone.App.Services
                     Assists = stat.Assists,
                     Champion = stat.Champion
                 };
-                // Assign to appropriate team based on membership; if membership cannot be resolved, default to team2
                 if (team1MemberIds.Contains(user.Id))
                 {
                     team1Stats.Add(vm);

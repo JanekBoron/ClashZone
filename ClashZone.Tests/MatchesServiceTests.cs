@@ -9,11 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="MatchesService"/> — mapowanie meczów na modele widoku,
-    /// nazwy drużyn (w tym BYE), awatary kapitanów, podział statystyk graczy
-    /// na drużyny oraz przeniesienie tytułu gry i postaci (champion).
-    /// </summary>
     public class MatchesServiceTests
     {
         private static MatchesService CreateService(
@@ -61,7 +56,6 @@ namespace ClashZone.Tests
             Assert.Equal("Bravo", result[0].Team2Name);
             Assert.Equal("/avatars/c1.png", result[0].Team1ProfileUrl);
             Assert.Equal(GameCatalog.Lol, result[0].GameTitle);
-            // Second match: team2 missing => BYE, captain3 has no avatar => default image
             Assert.Equal("Charlie", result[1].Team1Name);
             Assert.Equal("BYE", result[1].Team2Name);
             Assert.Equal("/images/default-profile.png", result[1].Team1ProfileUrl);
@@ -107,7 +101,6 @@ namespace ClashZone.Tests
 
             Assert.NotNull(model);
             Assert.Equal(GameCatalog.Lol, model!.GameTitle);
-            // p1 belongs to team1; p2 falls through to team2
             var p1 = Assert.Single(model.Team1Stats);
             Assert.Equal("p1", p1.Player.Id);
             Assert.Equal("Ahri", p1.Champion);

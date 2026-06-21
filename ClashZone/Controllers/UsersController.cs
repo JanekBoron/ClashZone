@@ -46,10 +46,8 @@ namespace ClashZone.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> RemoveAdmin(string id)
         {
-            // guard: prevent removing your own admin role
             if (User?.Identity?.Name is string name && !string.IsNullOrWhiteSpace(name))
             {
-                // Optional: Look up current user's Id; skipping for brevity
             }
             await _svc.RemoveFromRoleAsync(id, "Admin");
             return RedirectToAction(nameof(Index));

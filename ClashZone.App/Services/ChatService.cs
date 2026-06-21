@@ -23,7 +23,6 @@ namespace ClashZone.App.Services
             {
                 return null;
             }
-            // Determine whether the user has a team in this tournament
             TeamDomain? userTeam = null;
             if (!string.IsNullOrEmpty(userId))
             {
@@ -36,16 +35,12 @@ namespace ClashZone.App.Services
                 HasTeam = userTeam != null,
                 UserTeamId = userTeam?.Id
             };
-            // Load all‑chat messages
             model.AllMessages = await _tournamentsRepository.GetAllChatMessagesAsync(tournamentId);
-            // Load team‑chat messages if user belongs to a team
             if (userTeam != null)
             {
                 model.TeamMessages = await _tournamentsRepository.GetTeamChatMessagesAsync(tournamentId, userTeam.Id);
             }
-            // Load problem report messages.  Administrators see all reports; players see only their own team's reports
             model.ReportMessages = await _tournamentsRepository.GetReportChatMessagesAsync(tournamentId, userTeam?.Id, isAdmin);
-            // Build a dictionary of user IDs to display names to avoid repeated lookups in the view
             var allUserIds = model.AllMessages.Select(m => m.UserId)
                 .Concat(model.TeamMessages.Select(m => m.UserId))
                 .Concat(model.ReportMessages.Select(m => m.UserId))
@@ -75,7 +70,6 @@ namespace ClashZone.App.Services
                 var team = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
                 if (team == null)
                 {
-                    // User attempted to post to team chat but is not a member; skip posting.
                     return;
                 }
                 teamId = team.Id;
@@ -101,14 +95,12 @@ namespace ClashZone.App.Services
             int? finalTeamId = null;
             if (isAdmin)
             {
-                // Admin can specify a team id to post to.
                 if (teamId.HasValue)
                 {
                     finalTeamId = teamId;
                 }
                 else
                 {
-                    // Without a team target the report cannot be routed
                     return;
                 }
             }
@@ -117,7 +109,6 @@ namespace ClashZone.App.Services
                 var team = await _tournamentsRepository.GetUserTeamAsync(tournamentId, userId);
                 if (team == null)
                 {
-                    // Only team members can post reports
                     return;
                 }
                 finalTeamId = team.Id;

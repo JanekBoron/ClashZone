@@ -8,11 +8,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="RiotApiClient"/> — parsowania odpowiedzi Account-V1/Match-V5
-    /// oraz defensywnego zachowania (brak klucza, błędny status). HTTP jest
-    /// podstawiane przez własny <see cref="StubHandler"/>, bez realnej sieci.
-    /// </summary>
     public class RiotApiClientTests
     {
         private sealed class StubHandler : HttpMessageHandler
@@ -61,7 +56,7 @@ namespace ClashZone.Tests
             var account = await client.ResolveAccountAsync("Faker", "KR1");
 
             Assert.Null(account);
-            Assert.Equal(0, handler.Calls); // bez klucza nie wykonujemy żadnego żądania
+            Assert.Equal(0, handler.Calls);
         }
 
         [Fact]

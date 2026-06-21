@@ -9,10 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="ProductsService"/> — obsługa obrazu głównego oraz
-    /// aktualizacja/usuwanie produktów.
-    /// </summary>
     public class ProductsServiceTests
     {
         [Fact]

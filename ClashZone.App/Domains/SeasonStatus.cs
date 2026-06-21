@@ -1,9 +1,5 @@
 namespace ClashZone.App.Domains
 {
-    /// <summary>
-    /// Fazy sezonu ligi. Wartości liczbowe są utrwalane w kolumnie
-    /// <c>Season.Status</c>.
-    /// </summary>
     public enum SeasonStatus
     {
         Registration = 0,

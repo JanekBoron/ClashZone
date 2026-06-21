@@ -18,7 +18,6 @@ namespace ClashZone.Controllers
             _stripeSettings = stripeSettings.Value;
         }
 
-        // Utwórz sesję Checkout i przekieruj użytkownika
         public async Task<IActionResult> CreateCheckoutSession(int planId)
         {
             var plan = (await _subscriptionRepository.GetAllPlansAsync()).First(p => p.Id == planId);
@@ -29,10 +28,10 @@ namespace ClashZone.Controllers
                 LineItems = new List<SessionLineItemOptions> {
           new SessionLineItemOptions {
             PriceData = new SessionLineItemPriceDataOptions {
-              UnitAmount = (long)(plan.Price * 100), // Stripe przyjmuje kwoty w centach
+              UnitAmount = (long)(plan.Price * 100), 
               Currency = "eur",
               ProductData = new SessionLineItemPriceDataProductDataOptions {
-                Name = $"{plan.Name} – miesięczna subskrypcja"
+                Name = $"{plan.Name} - miesięczna subskrypcja"
               }
             },
             Quantity = 1
@@ -46,7 +45,6 @@ namespace ClashZone.Controllers
             return Redirect(session.Url);
         }
 
-        // Po sukcesie płatności utwórz subskrypcję w bazie
         public async Task<IActionResult> Success(int planId)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

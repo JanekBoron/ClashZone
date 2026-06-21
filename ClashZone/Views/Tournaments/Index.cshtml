@@ -6,7 +6,6 @@
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
-    <!-- Navigation tabs between browsing and user's tournaments -->
     <ul class="nav nav-tabs mb-3" style="border-bottom:1px solid #FF2B3E;">
         <li class="nav-item">
             <a class="nav-link @(isMy ? "" : "active")" asp-action="Index" style="color:#FF2B3E; border:none;">Przeglądaj</a>
@@ -15,7 +14,6 @@
             <a class="nav-link @(isMy ? "active" : "")" asp-action="MyTournaments" style="color:#FF2B3E; border:none;">Moje turnieje</a>
         </li>
     </ul>
-    <!-- Filter buttons for team size -->
     <div class="btn-group mb-3" role="group">
         <a class="btn" asp-action="Index" asp-route-format="1v1"
            style="@(selectedFormat == "1v1" ? "background-color:#FF2B3E; color:#fff; border-color:#FF2B3E;" : "background-color:transparent; color:#FF2B3E; border-color:#FF2B3E;")">

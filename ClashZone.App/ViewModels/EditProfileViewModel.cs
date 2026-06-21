@@ -2,11 +2,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace ClashZone.App.ViewModels
 {
-    /// <summary>
-    /// View model used for editing a user's profile.  Fields are bound
-    /// to the edit form allowing the user to change their username,
-    /// display name, email, profile picture and optionally their password.
-    /// </summary>
     public class EditProfileViewModel
     {
         public string UserName { get; set; } = string.Empty;

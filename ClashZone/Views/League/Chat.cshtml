@@ -1,19 +1,18 @@
 @model ClashZone.App.ViewModels.LeagueChatViewModel
 @{
     var s = Model.Season;
-    ViewData["Title"] = $"Czat – {s.Name}";
+    ViewData["Title"] = $"Czat - {s.Name}";
 
     string NameOf(string userId) => Model.UserNames.TryGetValue(userId, out var n) ? n : userId;
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
-    <h2 class="mb-1">Czat – @s.Name</h2>
+    <h2 class="mb-1">Czat - @s.Name</h2>
     <small class="text-muted">Liga: @s.Game</small>
     <hr style="border-color:#444;" />
 
     @await Html.PartialAsync("_LeagueNav", (s.Id, "Chat"))
 
-    <!-- Czat ogólny -->
     <div class="chat-section my-4">
         <h2>Czat ogólny</h2>
         @if (Model.AllMessages.Any())
@@ -42,7 +41,6 @@
         }
     </div>
 
-    <!-- Czat drużynowy -->
     <div class="chat-section my-4">
         <h2>Czat drużynowy</h2>
         @if (Model.HasTeam)
@@ -78,7 +76,6 @@
         }
     </div>
 
-    <!-- Zgłoszenia problemów -->
     <div class="chat-section my-4">
         <h2>Zgłoszenia problemów</h2>
         @if (Model.HasTeam || User.IsInRole("Admin"))

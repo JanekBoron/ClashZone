@@ -16,10 +16,6 @@ namespace ClashZone.DataAccess.Models
         public string? Name { get; set; }
         public string JoinCode { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Czy drużyna została potwierdzona przez kapitana (pełny skład + wszyscy gotowi).
-        /// Tylko potwierdzone drużyny liczą się do limitu turnieju i wchodzą do drabinki.
-        /// </summary>
         public bool IsConfirmed { get; set; } = false;
     }
 }

@@ -8,10 +8,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="UserAdminService"/> — budowa listy użytkowników z rolami
-    /// oraz delegowanie operacji ról/banów do repozytorium.
-    /// </summary>
     public class UserAdminServiceTests
     {
         [Fact]

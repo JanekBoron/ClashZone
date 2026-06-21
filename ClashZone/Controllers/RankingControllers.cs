@@ -17,8 +17,6 @@ namespace ClashZone.Controllers
 
         public async Task<IActionResult> Index(string? game = null, int page = 1, string? search = null)
         {
-            // Domyślnie pokazujemy ranking Counter-Strike 2; nieznana gra również
-            // sprowadzana jest do wartości domyślnej.
             var selectedGame = GameCatalog.Normalize(game) ?? GameCatalog.Cs2;
 
             if (page < 1)
@@ -32,8 +30,6 @@ namespace ClashZone.Controllers
                 .OrderByDescending(us => GameCatalog.IsLol(selectedGame) ? us.AverageKDA : us.AverageKD)
                 .ToList();
 
-            // Filtr wyszukiwania po nazwie gracza (DisplayName lub UserName).
-            // Stosowany przed paginacją, aby liczba stron odpowiadała wynikom.
             var searchTerm = search?.Trim();
             if (!string.IsNullOrEmpty(searchTerm))
             {

@@ -12,10 +12,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="BracketService"/> skupione na deterministycznych
-    /// ścieżkach: brak turnieju oraz zbyt mała liczba drużyn.
-    /// </summary>
     public class BracketServiceTests
     {
         private static BracketService CreateService(
@@ -75,8 +71,6 @@ namespace ClashZone.Tests
             Assert.Null(await CreateService(tournaments).SimulateMatchAsync(1, 1, 1));
         }
 
-        // Cztery nazwane drużyny dają deterministyczną strukturę drabinki:
-        // 2 mecze półfinałowe + 1 finał (brak bye'ów), niezależnie od losowania.
         private static List<TeamDomain> FourTeams() => new()
         {
             new() { Id = 1, Name = "Alpha", CaptainId = "cap1" },
@@ -107,11 +101,9 @@ namespace ClashZone.Tests
             var model = await CreateService(tournaments, matches, stats).GetBracketWithResultsAsync(1);
 
             Assert.NotNull(model);
-            // 4 drużyny => półfinały (2 mecze) + finał (1 mecz)
             Assert.Equal(2, model!.Rounds.Count);
             Assert.Equal(2, model.Rounds[0].Count);
             Assert.Single(model.Rounds[1]);
-            // Każdy mecz półfinału ma obu uczestników i wylosowany wynik.
             Assert.All(model.Rounds[0], m =>
             {
                 Assert.False(string.IsNullOrEmpty(m.Team1Name));
@@ -119,7 +111,6 @@ namespace ClashZone.Tests
                 Assert.True(m.Team1Score.HasValue);
                 Assert.True(m.Team2Score.HasValue);
             });
-            // Ta metoda jedynie symuluje w pamięci — nic nie zapisuje do bazy.
             matches.Verify(r => r.AddMatchAsync(It.IsAny<MatchDomain>()), Times.Never);
             stats.Verify(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()), Times.Never);
         }
@@ -139,7 +130,6 @@ namespace ClashZone.Tests
             var tournaments = new Mock<ITournamentsRepository>();
             tournaments.Setup(r => r.GetTournamentByIdAsync(1)).ReturnsAsync(new TournamentDomain { Id = 1, GameTitle = GameCatalog.Cs2 });
             tournaments.Setup(r => r.GetTeamsForTournamentAsync(1)).ReturnsAsync(FourTeams());
-            // Brak dodatkowych członków — każda drużyna to sam kapitan.
             tournaments.Setup(r => r.GetTeamMemberIdsAsync(It.IsAny<int>())).ReturnsAsync(new List<string>());
 
             var matches = new Mock<IMatchesRepository>();
@@ -160,17 +150,14 @@ namespace ClashZone.Tests
 
             Assert.NotNull(model);
             Assert.Equal(2, model!.Rounds.Count);
-            // 2 półfinały + finał = 3 zapisane mecze.
             Assert.Equal(3, addedMatches.Count);
             Assert.All(addedMatches, m => Assert.Equal(1, m.TournamentId));
-            // Każdy mecz zapisuje statystyki obu kapitanów => 3 * 2 = 6 rekordów (CS2 bez championa).
             Assert.Equal(6, addedStats.Count);
             Assert.All(addedStats, s =>
             {
                 Assert.Equal(GameCatalog.Cs2, s.Game);
                 Assert.Null(s.Champion);
             });
-            // Skoro agregaty nie istniały (GetUserStatsAsync => null), dla każdego rekordu tworzony jest nowy.
             stats.Verify(r => r.AddUserStatsAsync(It.IsAny<UserStatDomain>()), Times.Exactly(6));
             stats.Verify(r => r.UpdateUserStats(It.IsAny<UserStatDomain>()), Times.Never);
         }
@@ -197,7 +184,6 @@ namespace ClashZone.Tests
 
             Assert.NotNull(model);
             Assert.NotEmpty(addedStats);
-            // W LoL każdy gracz dostaje championa z katalogu gry.
             Assert.All(addedStats, s =>
             {
                 Assert.Equal(GameCatalog.Lol, s.Game);
@@ -206,7 +192,6 @@ namespace ClashZone.Tests
             });
         }
 
-        // Dwie nazwane drużyny LoL: drabinka = pojedynczy finał (runda 1, mecz 1).
         private static Mock<ITournamentsRepository> TwoLolTeams()
         {
             var tournaments = new Mock<ITournamentsRepository>();
@@ -227,7 +212,6 @@ namespace ClashZone.Tests
 
             var matches = new Mock<IMatchesRepository>();
             matches.Setup(r => r.GetMatchesByTournamentAsync(1)).ReturnsAsync(new List<MatchDomain>());
-            // Finał => unikamy ścieżki przyznawania nagród.
             matches.Setup(r => r.IsTournamentAlreadyAwardedAsync(It.IsAny<int>(), It.IsAny<List<List<MatchInfoDomain>>>())).ReturnsAsync(true);
             var addedMatches = new List<MatchDomain>();
             matches.Setup(r => r.AddMatchAsync(It.IsAny<MatchDomain>()))
@@ -256,11 +240,9 @@ namespace ClashZone.Tests
             var model = await CreateService(tournaments, matches, stats, riot).SimulateMatchAsync(1, 1, 1);
 
             Assert.NotNull(model);
-            // Wynik meczu pochodzi z danych Riota (1-0), a nie z losowania.
             var persisted = Assert.Single(addedMatches);
             Assert.Equal(1, persisted.Team1Score);
             Assert.Equal(0, persisted.Team2Score);
-            // Statystyki graczy to dokładnie to, co zwrócił Riot.
             Assert.Equal(2, addedStats.Count);
             Assert.Contains(addedStats, s => s.UserId == "cap1" && s.Kills == 7 && s.Champion == "Ahri");
             Assert.Contains(addedStats, s => s.UserId == "cap2" && s.Deaths == 8 && s.Champion == "Zed");
@@ -284,7 +266,6 @@ namespace ClashZone.Tests
 
             var model = await CreateService(tournaments, matches, stats, riot).SimulateMatchAsync(1, 1, 1);
 
-            // Brak realnego meczu => nic nie zapisujemy i sygnalizujemy brak wyniku.
             Assert.Null(model);
             matches.Verify(r => r.AddMatchAsync(It.IsAny<MatchDomain>()), Times.Never);
             stats.Verify(r => r.AddPlayerMatchStatAsync(It.IsAny<PlayerMatchStatDomain>()), Times.Never);

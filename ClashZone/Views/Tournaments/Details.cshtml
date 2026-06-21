@@ -1,17 +1,9 @@
 ﻿@model ClashZone.App.ViewModels.TournamentDetailsViewModel
 
 @{
-    // Set page title to tournament name
     ViewData["Title"] = Model.Tournament.Name;
 }
 
-<!--
-    Tournament details page.  Presents an overview of the selected tournament
-    using a dark theme (#111) with red accents (#FF2B3E) to match the
-    existing site style.  Future sections such as chat, bracket, participants,
-    matches and rules can be implemented and linked via the navigation tabs
-    when available.
--->
 <div class="container mt-4" style="background-color:#111; padding: 20px; border-radius: 10px; color: #f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -19,7 +11,6 @@
             <small class="text-muted">Zorganizowane przez @Model.Tournament.CreatedByUserId</small>
         </div>
         <div>
-            @* Dołączyć można tylko, gdy nie ma się jeszcze drużyny w tym turnieju. *@
             @if (Model.UserTeam == null)
             {
                 <form asp-action="Join" asp-route-id="@Model.Tournament.Id" method="post" class="d-inline">
@@ -40,7 +31,6 @@
                         var input = document.getElementById('inviteLinkInput');
                         if (input && input.value) {
                             navigator.clipboard.writeText(input.value).then(function () {
-                                // Optionally notify the user that the link has been copied
                                 copyBtn.innerHTML = 'Skopiowano';
                                 setTimeout(function () {
                                     copyBtn.innerHTML = 'Kopiuj zaproszenie';
@@ -58,7 +48,6 @@
 
     @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Details"))
 
-    <!-- Overview section -->
     <div class="row">
         <div class="col-md-8">
             <h4 class="mb-3">Szczegóły</h4>
@@ -78,11 +67,10 @@
                 <dt class="col-sm-4">Check‑in</dt>
                 <dd class="col-sm-8">
                     @{
-                        // define a check‑in window: 30 minutes before start time by default
                         var start = Model.Tournament.StartDate;
                         var checkinStart = Model.Tournament.StartDate.AddMinutes(-30);
                     }
-                    @checkinStart.ToString("dd MMM yyyy, HH:mm") – @start.ToString("dd MMM yyyy, HH:mm") CEST
+                    @checkinStart.ToString("dd MMM yyyy, HH:mm") - @start.ToString("dd MMM yyyy, HH:mm") CEST
                 </dd>
 
                 <dt class="col-sm-4">Rozpoczęcia</dt>
@@ -97,7 +85,7 @@
             <h4 class="mt-4">Informacje</h4>
             @if (GameCatalog.IsLol(Model.Tournament.GameTitle))
             {
-                <p>Rozgrywka odbywa się na mapie Summoner's Rift w trybie Draft Pick. Każdy zawodnik wybiera inną postać (championa) — pamiętaj o przygotowaniu swojej puli postaci przed fazą draftu.</p>
+                <p>Rozgrywka odbywa się na mapie Summoner's Rift w trybie Draft Pick. Każdy zawodnik wybiera inną postać (championa) - pamiętaj o przygotowaniu swojej puli postaci przed fazą draftu.</p>
                 <p>Mecze rozgrywane są w formacie Bo3 (do dwóch wygranych map). Upewnij się, że klient gry jest zaktualizowany i gotowy podczas check‑in.</p>
             }
             else
@@ -107,7 +95,6 @@
             }
         </div>
 
-        @* Komunikaty akcji drużyny (gotowość / potwierdzenie). *@
         @if (TempData["TeamInfo"] != null)
         {
             <div class="alert alert-success mt-3">@TempData["TeamInfo"]</div>
@@ -117,7 +104,6 @@
             <div class="alert alert-danger mt-3">@TempData["TeamError"]</div>
         }
 
-        @* Display user's team if they have joined *@
         @if (Model.UserTeam != null)
         {
             var missing = Model.RequiredRosterSize - Model.Members.Count;
@@ -207,7 +193,6 @@
             </div>
         }
 
-        @* Modal for inviting friends or selecting a team.  Uses Bootstrap classes for layout and dark styling. *@
         <div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="background-color:#111; color:#f8f9fa; border:1px solid #444;">

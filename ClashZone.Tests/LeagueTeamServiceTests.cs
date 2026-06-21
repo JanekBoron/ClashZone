@@ -8,10 +8,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="LeagueTeamService"/> — dołączanie linkiem/kodem oraz
-    /// egzekwowanie okresów karencji (cooldown).
-    /// </summary>
     public class LeagueTeamServiceTests
     {
         private static LeagueTeamService CreateService(

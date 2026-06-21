@@ -29,8 +29,8 @@
                 <tr>
                     <td>@p.Id</td>
                     <td>@p.Name</td>
-                    <td>F @p.ClashCoins</td>
-                    <td>@(p.IsActive ? "✓" : "—")</td>
+                    <td>C @p.ClashCoins</td>
+                    <td>@(p.IsActive ? "✓" : "-")</td>
                     <td>@(p.Stock?.ToString() ?? "∞")</td>
                     <td>@p.Category?.Name</td>
                     <td class="text-end">

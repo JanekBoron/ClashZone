@@ -1,14 +1,13 @@
 @model ClashZone.App.ViewModels.BracketViewModel
 
 @{
-    // Title with tournament name
-    ViewData["Title"] = $"Drabinka – {Model.Tournament.Name}";
+    ViewData["Title"] = $"Drabinka - {Model.Tournament.Name}";
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h2 class="mb-1">Drabinka – @Model.Tournament.Name</h2>
+            <h2 class="mb-1">Drabinka - @Model.Tournament.Name</h2>
             <small class="text-muted">Turniej: @Model.Tournament.GameTitle</small>
         </div>
         <form asp-action="GenerateResults" asp-controller="Tournaments" method="post" class="d-inline">
@@ -23,7 +22,6 @@
 
     <hr style="border-color:#444;" />
 
-    <!-- Unified navigation partial -->
     @await Html.PartialAsync("_TournamentNav", (Model.Tournament.Id, "Bracket"))
 
     @if (Model.Rounds == null || Model.Rounds.Count == 0)
@@ -32,7 +30,6 @@
     }
     else
     {
-        <!-- Horizontally scrollable rounds -->
         <div class="row flex-nowrap" style="overflow-x:auto;">
             @for (int r = 0; r < Model.Rounds.Count; r++)
             {
@@ -66,7 +63,6 @@
                                     }
                                 </div>
 
-                                @* Show the simulation button only when both teams are present and no result exists *@
                                 @if (!string.IsNullOrEmpty(match.Team1Name) && !string.IsNullOrEmpty(match.Team2Name) && !match.Team1Score.HasValue && !match.Team2Score.HasValue)
                                 {
                                     <form asp-action="SimulateMatch" asp-controller="Bracket" method="post" class="mt-2">

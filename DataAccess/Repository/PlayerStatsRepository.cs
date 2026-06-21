@@ -29,7 +29,6 @@ namespace ClashZone.DataAccess.Repository
 
             await _context.PlayerMatchStats.AddAsync(playerStat);
 
-            // REQUIRED - inserting data
             await _context.SaveChangesAsync();
         }
 
@@ -70,14 +69,11 @@ namespace ClashZone.DataAccess.Repository
 
             await _context.UserStats.AddAsync(stats);
 
-            // REQUIRED - inserting data
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateUserStats(UserStatDomain statsDomain)
         {
-            // Klucz główny UserStat to Id (int) — wyszukujemy po nim, a w razie
-            // jego braku po parze UserId + Game.
             var existing = statsDomain.Id != 0
                 ? await _context.UserStats.FindAsync(statsDomain.Id)
                 : await _context.UserStats.FirstOrDefaultAsync(s => s.UserId == statsDomain.UserId && s.Game == statsDomain.Game);

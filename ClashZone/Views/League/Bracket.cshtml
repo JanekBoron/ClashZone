@@ -1,13 +1,13 @@
 @model ClashZone.App.ViewModels.LeagueBracketViewModel
 @{
     var s = Model.Season;
-    ViewData["Title"] = $"Play-off – {s.Name}";
+    ViewData["Title"] = $"Play-off - {s.Name}";
     bool isManager = User.IsInRole("Organizer") || User.IsInRole("Admin");
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
-        <h2 class="mb-1">Play-off – @s.Name</h2>
+        <h2 class="mb-1">Play-off - @s.Name</h2>
         @if (isManager)
         {
             <div class="d-flex gap-2">

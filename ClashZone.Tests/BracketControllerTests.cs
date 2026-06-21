@@ -8,10 +8,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="BracketController"/> — symulacja meczu zwraca widok
-    /// drabinki lub przekierowanie, gdy symulacja jest niemożliwa.
-    /// </summary>
     public class BracketControllerTests
     {
         [Fact]

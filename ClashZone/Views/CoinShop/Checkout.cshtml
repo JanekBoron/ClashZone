@@ -1,0 +1,92 @@
+@model ClashZone.App.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Zamówienie - adres wysyłki";
+    var img = Model.ImageUrl ?? "/images/placeholder.png";
+    var notEnough = Model.Balance < Model.ClashCoins;
+}
+@await Html.PartialAsync("~/Views/Shared/_CoinShopStyles.cshtml")
+
+<div class="container my-4 text-white">
+    <h2 class="mb-3" style="color:#FF2B3E;">Adres wysyłki</h2>
+
+    <div class="row g-4">
+        <div class="col-md-5 order-md-2">
+            <div class="card">
+                <div class="img">
+                    <img src="@img" alt="@Model.ProductName" />
+                </div>
+                <div class="body">
+                    <div class="title">@Model.ProductName</div>
+                    <div class="meta">Do zapłaty</div>
+                    <div class="cc-price mb-2">C @Model.ClashCoins</div>
+                    <div class="text-secondary">Twoje saldo: <span class="@(notEnough ? "text-danger" : "text-success")">C @Model.Balance</span></div>
+                    @if (notEnough)
+                    {
+                        <div class="alert alert-danger mt-2 mb-0 py-2">Za mało Clash Coins na ten zakup.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 order-md-1">
+            <form asp-action="Checkout" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ProductId" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <input asp-for="FullName" class="form-control" autocomplete="name"
+                           style="background-color:#222; color:#fff; border-color:#444;" />
+                    <span asp-validation-for="FullName" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" autocomplete="tel"
+                           style="background-color:#222; color:#fff; border-color:#444;" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Street" class="form-label"></label>
+                    <input asp-for="Street" class="form-control" autocomplete="street-address"
+                           style="background-color:#222; color:#fff; border-color:#444;" />
+                    <span asp-validation-for="Street" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-4 mb-3">
+                        <label asp-for="PostalCode" class="form-label"></label>
+                        <input asp-for="PostalCode" class="form-control" autocomplete="postal-code"
+                               style="background-color:#222; color:#fff; border-color:#444;" />
+                        <span asp-validation-for="PostalCode" class="text-danger"></span>
+                    </div>
+                    <div class="col-8 mb-3">
+                        <label asp-for="City" class="form-label"></label>
+                        <input asp-for="City" class="form-control" autocomplete="address-level2"
+                               style="background-color:#222; color:#fff; border-color:#444;" />
+                        <span asp-validation-for="City" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Country" class="form-label"></label>
+                    <input asp-for="Country" class="form-control" autocomplete="country-name"
+                           style="background-color:#222; color:#fff; border-color:#444;" />
+                    <span asp-validation-for="Country" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <a asp-action="Details" asp-route-id="@Model.ProductId" class="btn btn-outline-light">Anuluj</a>
+                    <button type="submit" class="btn-cc" @(notEnough ? "disabled" : "")>Potwierdź i zapłać Clash Coins</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

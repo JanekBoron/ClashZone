@@ -8,10 +8,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="ChatService"/> — budowa modelu czatu oraz reguły
-    /// publikowania wiadomości ogólnych, drużynowych i zgłoszeń.
-    /// </summary>
     public class ChatServiceTests
     {
         private static ChatService CreateService(Mock<ITournamentsRepository> tournaments, Mock<IUserRepository>? users = null)

@@ -1,7 +1,6 @@
 ﻿@model ClashZone.App.ViewModels.TournamentFormViewModel
 
 @{
-    // Ustaw tytuł strony dla górnego paska przeglądarki oraz widoku.
     ViewData["Title"] = "Utwórz turniej";
     var allowedFormatsJson = System.Text.Json.JsonSerializer.Serialize(
         GameCatalog.AllGames.ToDictionary(g => g, g => GameCatalog.AllowedFormats(g)));
@@ -31,7 +30,6 @@
     </div>
     <div class="mb-3">
         <label asp-for="StartDate" class="form-label">Data startowa</label>
-        <!-- `datetime-local` umożliwia wybór daty i godziny w jednym polu -->
         <input asp-for="StartDate" type="datetime-local" class="form-control" />
         <span asp-validation-for="StartDate" class="text-danger"></span>
     </div>
@@ -56,7 +54,6 @@
         <small class="text-muted">Każdą regułę wpisz w osobnej linii. Pozostaw domyślne lub dostosuj do swojego turnieju.</small>
         <span asp-validation-for="Rules" class="text-danger"></span>
     </div>
-    <!-- Nagrody — wyłącznie w ClashCoins (puste/0 = brak nagrody). -->
     <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody (ClashCoins)</strong></div>
 
     <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">
@@ -92,7 +89,6 @@
 
 @section Scripts {
     @{
-        // Załaduj częściowe widoki z walidacją JavaScript (jQuery validation)
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script id="allowedFormatsData" type="application/json">@Html.Raw(allowedFormatsJson)</script>

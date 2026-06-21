@@ -9,10 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="TournamentService"/> — tworzenie turniejów, szczegóły
-    /// oraz logika dołączania (limit uczestników, premium, ponowne dołączenie).
-    /// </summary>
     public class TournamentServiceTests
     {
         private static TournamentService CreateService(

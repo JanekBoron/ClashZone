@@ -6,15 +6,12 @@ using ClashZone.App.Services.Interfaces;
 using ClashZone.App.ViewModels;
 using ClashZone.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="TournamentsController"/> — reguły (własne vs domyślne),
-    /// walidacja formatu per gra oraz obsługa braku turnieju.
-    /// </summary>
     public class TournamentsControllerTests
     {
         private static TournamentsController CreateController(
@@ -31,7 +28,8 @@ namespace ClashZone.Tests
                 (repo ?? new Mock<ITournamentsRepository>()).Object,
                 new Mock<IEmailService>().Object,
                 new Mock<IMatchesService>().Object,
-                (mapper ?? new Mock<IMapper>()).Object);
+                (mapper ?? new Mock<IMapper>()).Object,
+                NullLogger<TournamentsController>.Instance);
         }
 
         [Fact]
@@ -80,7 +78,6 @@ namespace ClashZone.Tests
             var controller = CreateController(service: service);
             TestSupport.SetUser(controller, "org1", roles: "Organizer");
 
-            // League of Legends nie dopuszcza formatu 2v2.
             var model = new TournamentFormViewModel { Name = "Cup", GameTitle = GameCatalog.Lol, Format = "2v2" };
             var result = await controller.CreateTournament(model, null, null, null);
 

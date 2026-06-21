@@ -18,10 +18,6 @@ namespace ClashZone.Controllers
             _environment = environment;
         }
 
-        /// <summary>
-        /// Zapisuje przesłany plik zdjęcia do wwwroot/images/products i zwraca
-        /// publiczną ścieżkę (jak przy zdjęciach profilowych). Null gdy brak pliku.
-        /// </summary>
         private async Task<string?> SaveImageAsync(IFormFile? image)
         {
             if (image == null || image.Length == 0) return null;

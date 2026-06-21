@@ -6,10 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClashZone.Controllers
 {
-    /// <summary>
-    /// Panel administratora do zarządzania zamówieniami (realizacjami nagród
-    /// ze sklepu). Pozwala przeglądać wszystkie zamówienia i zmieniać ich status.
-    /// </summary>
     [Authorize(Roles = "Admin")]
     [Route("admin/orders")]
     public class OrdersController : Controller
@@ -27,8 +23,6 @@ namespace ClashZone.Controllers
         public async Task<IActionResult> Index()
         {
             var orders = await _orders.GetAllAsync();
-
-            // Rozwiązujemy loginy zamawiających (z buforowaniem, by uniknąć powtórek).
             var nameCache = new Dictionary<string, string>();
             var items = new List<OrderListItemViewModel>(orders.Count);
             foreach (var o in orders)
@@ -43,11 +37,17 @@ namespace ClashZone.Controllers
                 {
                     Id = o.Id,
                     UserName = userName,
-                    ProductName = o.Product?.Name ?? "—",
+                    ProductName = o.Product?.Name ?? "-",
                     ClashCoins = o.Product?.ClashCoins ?? 0,
                     RedeemedAt = o.RedeemedAt,
                     Status = o.Status,
-                    Notes = o.Notes
+                    Notes = o.Notes,
+                    ShippingFullName = o.ShippingFullName,
+                    ShippingPhone = o.ShippingPhone,
+                    ShippingStreet = o.ShippingStreet,
+                    ShippingPostalCode = o.ShippingPostalCode,
+                    ShippingCity = o.ShippingCity,
+                    ShippingCountry = o.ShippingCountry
                 });
             }
             return View(items);

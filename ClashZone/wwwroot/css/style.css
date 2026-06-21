@@ -46,7 +46,7 @@ a {
     overflow: hidden;
     text-decoration: none;
     color: white;
-    background-color: #111; /* black card background */
+    background-color: #111; 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -111,6 +111,50 @@ a {
         transform: translateY(-1px);
     }
 
+/* ---- Strony autoryzacji (logowanie / rejestracja / reset hasła) ---- */
+.auth-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--cz-gray);
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 28px 26px;
+    color: #f8f9fa;
+}
+
+    .auth-card h1 {
+        color: var(--cz-red);
+        font-size: 1.8rem;
+        margin: 0 0 20px;
+    }
+
+    .auth-card .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .auth-card .control-label,
+    .auth-card .form-check-label {
+        font-weight: 600;
+    }
+
+.auth-links {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+    .auth-links a {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
 .grid-products {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -168,7 +212,6 @@ a {
     font-size: .75rem;
 }
 
-/* Admin table search box */
 .cc-table-search {
     max-width: 320px;
     background: var(--cz-gray);
@@ -187,7 +230,6 @@ a {
         box-shadow: 0 0 0 .2rem rgba(255, 43, 62, .25);
     }
 
-/* Admin table pagination */
 .cc-pagination {
     margin-top: 1rem;
 }
@@ -215,7 +257,6 @@ a {
         border-color: #2a2a2a;
     }
 
-/* Game badges */
 .game-badge {
     display: inline-block;
     padding: 2px 10px;
@@ -235,7 +276,6 @@ a {
     background: #1f7a8c;
 }
 
-/* Sortable table headers */
 th.cc-sortable {
     cursor: pointer;
     user-select: none;
@@ -257,7 +297,6 @@ th.cc-sortable {
         opacity: 1;
     }
 
-/* ===== Sponsor ad carousel ===== */
 .sponsor-carousel {
     position: relative;
     max-width: 800px;
@@ -282,7 +321,6 @@ th.cc-sortable {
     animation: sponsor-fade 20s infinite;
 }
 
-    /* 4 slides, each visible for ~25% of the cycle with a crossfade */
     .sponsor-slide:nth-child(1) { animation-delay: 0s; }
     .sponsor-slide:nth-child(2) { animation-delay: 5s; }
     .sponsor-slide:nth-child(3) { animation-delay: 10s; }
@@ -315,7 +353,6 @@ th.cc-sortable {
     100% { opacity: 0; }
 }
 
-/* ===== Infinite sponsor logo marquee ===== */
 .sponsor-marquee {
     max-width: 800px;
     margin: 20px auto 0;
@@ -363,18 +400,14 @@ th.cc-sortable {
     filter: grayscale(0);
 }
 
+.sponsor-square {
+    width: 50px;
+    height: 50px;
+    background: var(--cz-black);
+    border-radius: 6px;
+}
+
 @keyframes sponsor-scroll {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .sponsor-slide,
-    .sponsor-marquee__track {
-        animation: none;
-    }
-
-    .sponsor-slide:nth-child(1) {
-        opacity: 1;
-    }
 }

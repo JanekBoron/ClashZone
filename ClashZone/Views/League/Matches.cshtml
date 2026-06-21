@@ -1,13 +1,13 @@
 @model ClashZone.App.ViewModels.LeagueMatchesViewModel
 @{
     var s = Model.Season;
-    ViewData["Title"] = $"Mecze – {s.Name}";
+    ViewData["Title"] = $"Mecze - {s.Name}";
     var scoreLabel = GameCatalog.ScoreLabel(s.Game);
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <div class="d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">@s.Name – Mecze</h2>
+        <h2 class="mb-0">@s.Name - Mecze</h2>
     </div>
     <hr style="border-color:#444;" />
 
@@ -47,7 +47,7 @@
                             <td class="text-center">
                                 @if (item.Match.IsPlayed)
                                 {
-                                    <strong>@item.Match.HomeScore</strong> <span>–</span> <strong>@item.Match.AwayScore</strong>
+                                    <strong>@item.Match.HomeScore</strong> <span>-</span> <strong>@item.Match.AwayScore</strong>
                                 }
                                 else
                                 {

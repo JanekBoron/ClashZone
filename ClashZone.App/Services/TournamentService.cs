@@ -37,7 +37,6 @@ namespace ClashZone.App.Services
         {
             if (tournament == null) throw new ArgumentNullException(nameof(tournament));
             tournament.CreatedByUserId = createdByUserId;
-            // Generate join code for private tournaments if not already set
             if (!tournament.IsPublic && string.IsNullOrEmpty(tournament.JoinCode))
             {
                 tournament.JoinCode = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
@@ -105,14 +104,13 @@ namespace ClashZone.App.Services
             var me = members.FirstOrDefault(m => m.UserId == userId);
             var newReady = !(me?.IsReady ?? false);
 
-            // Ustawienie gotowości ma sens tylko, gdy są jeszcze wolne sloty.
             if (newReady && !team.IsConfirmed)
             {
                 var tournament = await _tournamentsRepository.GetTournamentByIdAsync(tournamentId);
                 var confirmedCount = await _tournamentsRepository.GetConfirmedTeamCountAsync(tournamentId);
                 if (tournament != null && tournament.MaxParticipants > 0 && confirmedCount >= tournament.MaxParticipants)
                 {
-                    return new TeamActionResult { Success = false, Message = "Turniej osiągnął limit drużyn — nie można ustawić gotowości." };
+                    return new TeamActionResult { Success = false, Message = "Turniej osiągnął limit drużyn - nie można ustawić gotowości." };
                 }
             }
 
@@ -160,7 +158,7 @@ namespace ClashZone.App.Services
             }
 
             await _tournamentsRepository.ConfirmTeamAsync(team.Id);
-            return new TeamActionResult { Success = true, Message = "Drużyna potwierdzona — wchodzi do drabinki." };
+            return new TeamActionResult { Success = true, Message = "Drużyna potwierdzona - wchodzi do drabinki." };
         }
 
         public async Task<JoinTournamentResult> JoinTournamentAsync(int id, string userId)
@@ -172,14 +170,12 @@ namespace ClashZone.App.Services
                 result.NotFound = true;
                 return result;
             }
-            // Check if the tournament has reached its maximum number of participants
             var existingTeams = await _tournamentsRepository.GetTeamsForTournamentAsync(id);
             if (tournament.MaxParticipants > 0 && existingTeams != null && existingTeams.Count >= tournament.MaxParticipants)
             {
                 result.MaxParticipantsExceeded = true;
                 return result;
             }
-            // Check premium requirement
             if (tournament.IsPremium)
             {
                 var subscription = await _subscriptionRepository.GetActiveSubscriptionAsync(userId);
@@ -189,14 +185,12 @@ namespace ClashZone.App.Services
                     return result;
                 }
             }
-            // Check if already joined
             var existingTeam = await _tournamentsRepository.GetUserTeamAsync(id, userId);
             if (existingTeam != null)
             {
                 result.AlreadyJoined = true;
                 return result;
             }
-            // Create new team with current user as captain
             var team = await _tournamentsRepository.CreateTeamWithCaptainAsync(id, userId);
             result.Team = team;
             result.TournamentFormat = tournament.Format;

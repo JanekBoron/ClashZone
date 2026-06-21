@@ -1,11 +1,11 @@
 @model ClashZone.App.ViewModels.LeagueRulesViewModel
 @{
     var s = Model.Season;
-    ViewData["Title"] = $"Reguły – {s.Name}";
+    ViewData["Title"] = $"Reguły - {s.Name}";
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
-    <h2 class="mb-1">@s.Name – Reguły</h2>
+    <h2 class="mb-1">@s.Name - Reguły</h2>
     <small class="text-muted">Liga: @s.Game</small>
     <hr style="border-color:#444;" />
 

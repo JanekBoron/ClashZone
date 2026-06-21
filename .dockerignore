@@ -1,0 +1,14 @@
+# Wyniki kompilacji (zależne od platformy hosta – nie pakować do obrazu)
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/node_modules/
+
+# Rzeczy niepotrzebne w obrazie / przyspieszenie builda
+Old/
+.github/
+ClashZone.Tests/
+ClashZone.E2E.Tests/
+**/*.user
+**/*.docx

@@ -12,11 +12,7 @@ namespace ClashZone.App.Services.Interfaces
         Task<JoinTournamentResult> JoinTournamentAsync(int id, string userId);
 
         Task<int?> JoinTeamAsync(int teamId, string userId, string code);
-
-        /// <summary>Przełącza gotowość zalogowanego gracza w jego drużynie turniejowej.</summary>
         Task<TeamActionResult> ToggleReadyAsync(int tournamentId, string userId);
-
-        /// <summary>Potwierdza drużynę kapitana (pełny skład + wszyscy gotowi).</summary>
         Task<TeamActionResult> ConfirmTeamAsync(int tournamentId, string userId);
     }
 }

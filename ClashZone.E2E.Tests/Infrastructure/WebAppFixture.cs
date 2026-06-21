@@ -1,28 +1,13 @@
 using System.Diagnostics;
 using NUnit.Framework;
 
-// UWAGA: namespace celowo nadrzędny (ClashZone.E2E.Tests), aby [SetUpFixture] objął
-// wszystkie testy w pod-namespace'ach (np. ClashZone.E2E.Tests.Tests). SetUpFixture
-// działa tylko dla swojego namespace i jego potomków.
 namespace ClashZone.E2E.Tests
 {
-    /// <summary>
-    /// Uruchamia prawdziwą aplikację ClashZone (Kestrel) raz na całą sesję testów E2E
-    /// i zatrzymuje ją po zakończeniu. Aplikacja celuje w osobną bazę
-    /// <c>CLASHZONE_E2E</c>, dzięki czemu testy nigdy nie dotykają danych
-    /// deweloperskich ani produkcyjnych. Migracje i seed (admin, przykładowe turnieje,
-    /// plany subskrypcji) wykonuje sama aplikacja w <c>DbInitializer</c> na starcie.
-    /// </summary>
     [SetUpFixture]
     public class WebAppFixture
     {
-        /// <summary>Adres, pod którym wystawiamy aplikację dla przeglądarki Playwright.</summary>
         public const string BaseUrl = "http://127.0.0.1:5099";
 
-        /// <summary>
-        /// Połączenie do osobnej bazy testowej. Pochodzenie z appsettings.json, ale inna
-        /// nazwa bazy. Można nadpisać zmienną środowiskową CLASHZONE_E2E_CONNECTION.
-        /// </summary>
         private static string TestConnectionString =>
             Environment.GetEnvironmentVariable("CLASHZONE_E2E_CONNECTION")
             ?? "Server=localhost\\SQLEXPRESS;Database=CLASHZONE_E2E;User Id=sa;Password=123;TrustServerCertificate=true";
@@ -33,7 +18,6 @@ namespace ClashZone.E2E.Tests
         [OneTimeSetUp]
         public async Task StartAppAsync()
         {
-            // Jeśli instancja już odpowiada (np. uruchomiona ręcznie pod tym portem), użyj jej.
             if (await IsUpAsync(TimeSpan.FromSeconds(2)))
             {
                 TestContext.Progress.WriteLine($"[fixture] Reusing app already listening at {BaseUrl}");
@@ -52,7 +36,6 @@ namespace ClashZone.E2E.Tests
                 RedirectStandardError = true,
                 WorkingDirectory = Path.GetDirectoryName(webCsproj)!
             };
-            // Tylko HTTP -> UseHttpsRedirection nie ma dokąd przekierować i serwuje po HTTP.
             psi.Environment["ASPNETCORE_URLS"] = BaseUrl;
             psi.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
             psi.Environment["ConnectionStrings__DefaultConnection"] = TestConnectionString;
@@ -65,7 +48,6 @@ namespace ClashZone.E2E.Tests
             _appProcess.BeginErrorReadLine();
             _startedByUs = true;
 
-            // Pierwszy start robi migracje + seed, więc dajemy spory zapas czasu.
             if (!await IsUpAsync(TimeSpan.FromSeconds(120)))
             {
                 throw new InvalidOperationException(
@@ -86,7 +68,6 @@ namespace ClashZone.E2E.Tests
             {
                 if (!_appProcess.HasExited)
                 {
-                    // dotnet run odpala aplikację jako proces potomny – ubijamy całe drzewo.
                     _appProcess.Kill(entireProcessTree: true);
                     _appProcess.WaitForExit(10_000);
                 }
@@ -115,18 +96,12 @@ namespace ClashZone.E2E.Tests
                 }
                 catch
                 {
-                    // serwer jeszcze nie słucha – próbujemy dalej
                 }
                 await Task.Delay(1000);
             }
             return false;
         }
 
-        /// <summary>
-        /// Idzie w górę od katalogu z testowym assembly aż napotka katalog repo,
-        /// w którym leży projekt webowy (ClashZone\ClashZone.csproj). Dzięki temu
-        /// nie zależymy od względnych ścieżek bin/.
-        /// </summary>
         private static string LocateWebCsproj()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);

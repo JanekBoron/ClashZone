@@ -24,6 +24,7 @@ namespace ClashZone.Controllers
         private readonly IEmailService _emailService;
         private readonly IMatchesService _matchesService;
         private readonly IMapper _mapper;
+        private readonly ILogger<TournamentsController> _logger;
 
         public TournamentsController(
             UserManager<ClashUser> userManager,
@@ -34,7 +35,8 @@ namespace ClashZone.Controllers
             ITournamentsRepository tournamentsRepository,
             IEmailService emailService,
             IMatchesService matchesService,
-            IMapper mapper)
+            IMapper mapper,
+            ILogger<TournamentsController> logger)
         {
             _userManager = userManager;
             _subscriptionRepository = subscriptionRepository;
@@ -45,6 +47,7 @@ namespace ClashZone.Controllers
             _emailService = emailService;
             _matchesService = matchesService;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [Authorize]
@@ -86,8 +89,6 @@ namespace ClashZone.Controllers
                 return NotFound();
             }
 
-            // Preferuj reguły wpisane przez organizatora; w razie ich braku użyj
-            // domyślnych reguł właściwych dla danej gry.
             var rules = !string.IsNullOrWhiteSpace(tournament.Rules)
                 ? tournament.Rules
                     .Split('\n')
@@ -256,7 +257,6 @@ namespace ClashZone.Controllers
                 await _tournamentService.CreateTournamentAsync(tournament, userId);
                 return RedirectToAction(nameof(Index));
             }
-            // Akcja nazywa się CreateTournament, więc jawnie wskazujemy widok Create.
             return View("Create", model);
         }
 
@@ -306,7 +306,16 @@ namespace ClashZone.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             if (user != null && tournament != null && !string.IsNullOrEmpty(user.Email))
             {
-                await _emailService.SendTournamentRegistrationConfirmationAsync(user.Email, tournament.Name);
+                try
+                {
+                    await _emailService.SendTournamentRegistrationConfirmationAsync(user.Email, tournament.Name);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Nie udało się wysłać potwierdzenia rejestracji do turnieju {TournamentId} na adres {Email}.",
+                        tournament.Id, user.Email);
+                }
             }
             return RedirectToAction(nameof(Details), new { id });
         }
@@ -400,15 +409,9 @@ namespace ClashZone.Controllers
 
         private static string ComputePrize(int? coins)
         {
-            // Nagrody są wyłącznie w ClashCoins. Brak/0 oznacza brak nagrody.
             return coins.HasValue && coins.Value > 0 ? $"{coins.Value} ClashCoins" : string.Empty;
         }
 
-        /// <summary>
-        /// Waliduje wybrany tytuł gry oraz format drużyn (różne gry dopuszczają
-        /// różne formaty — np. League of Legends nie ma 2v2). Błędy trafiają do
-        /// ModelState, aby formularz wyświetlił komunikaty.
-        /// </summary>
         private void ValidateGameAndFormat(TournamentFormViewModel model)
         {
             var game = GameCatalog.Normalize(model.GameTitle);

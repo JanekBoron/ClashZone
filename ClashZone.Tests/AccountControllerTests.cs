@@ -5,15 +5,12 @@ using ClashZone.Controllers;
 using ClashZone.DataAccess.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="AccountController"/> — logowanie i rejestracja
-    /// z mockowanym Identity (UserManager/SignInManager).
-    /// </summary>
     public class AccountControllerTests
     {
         private static AccountController CreateController(
@@ -22,7 +19,7 @@ namespace ClashZone.Tests
             Mock<IEmailService>? email = null)
         {
             var sm = signInManager ?? TestSupport.MockSignInManager(userManager.Object);
-            return new AccountController(userManager.Object, sm.Object, (email ?? new Mock<IEmailService>()).Object);
+            return new AccountController(userManager.Object, sm.Object, (email ?? new Mock<IEmailService>()).Object, NullLogger<AccountController>.Instance);
         }
 
         [Fact]

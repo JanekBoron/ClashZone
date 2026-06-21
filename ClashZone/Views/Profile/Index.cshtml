@@ -25,7 +25,6 @@
     </ul>
 
     <div class="tab-content">
-        <!-- Zakładka: Profil -->
         <div class="tab-pane fade show active" id="pane-profile" role="tabpanel" aria-labelledby="tab-profile">
             <div class="row">
                 <div class="col-md-4 text-center">
@@ -81,7 +80,6 @@
             </div>
         </div>
 
-        <!-- Zakładka: Statystyki -->
         <div class="tab-pane fade" id="pane-stats" role="tabpanel" aria-labelledby="tab-stats">
             @if (Model.Cs2Statistics == null && Model.LolStatistics == null)
             {
@@ -110,7 +108,7 @@
                         <strong class="ms-2">League of Legends</strong>
                         <ul class="list-unstyled mt-2">
                             <li>Mecze: @Model.LolStatistics.MatchesPlayed</li>
-                            <li>Ulubiona postać: @(Model.LolFavoriteChampion ?? "—")</li>
+                            <li>Ulubiona postać: @(Model.LolFavoriteChampion ?? "-")</li>
                             <li>Łącznie zabójstw: @Model.LolStatistics.TotalKills</li>
                             <li>Łącznie zgonów: @Model.LolStatistics.TotalDeaths</li>
                             <li>Łącznie asyst: @Model.LolStatistics.TotalAssists</li>

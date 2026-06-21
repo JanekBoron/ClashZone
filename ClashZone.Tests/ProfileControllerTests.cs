@@ -15,10 +15,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="ProfileController"/> — strona profilu prezentuje
-    /// statystyki w rozbiciu na gry oraz ulubioną postać LoL.
-    /// </summary>
     public class ProfileControllerTests
     {
         [Fact]

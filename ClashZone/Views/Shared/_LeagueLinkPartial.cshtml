@@ -2,8 +2,6 @@
 @using ClashZone.DataAccess.Models
 @inject SignInManager<ClashUser> SignInManager
 
-@* Link zarządzania ligą dla organizatorów i administratorów. Zwykli gracze
-   wchodzą do ligi przez kafelek na stronie głównej. *@
 
 @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Organizer") || User.IsInRole("Admin")))
 {

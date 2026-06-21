@@ -11,10 +11,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="ProductsController"/> (panel admina) — listowanie,
-    /// tworzenie, edycja i usuwanie produktów.
-    /// </summary>
     public class ProductsControllerTests
     {
         private static ProductsController CreateController(Mock<IProductsService> service)
@@ -57,7 +53,6 @@ namespace ClashZone.Tests
             var controller = CreateController(service);
             var model = new ProductDomain { Name = "Cap" };
 
-            // Brak przesłanego pliku → ścieżka zdjęcia null (produkt zapisany bez zmiany zdjęcia).
             var result = await controller.Create(model, null);
 
             var redirect = Assert.IsType<RedirectToActionResult>(result);

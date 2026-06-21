@@ -6,10 +6,6 @@ using ClashZone.App.ViewModels;
 
 namespace ClashZone.App.Services
 {
-    /// <summary>
-    /// Logika trwałych drużyn ligowych (Team Management): tworzenie drużyn,
-    /// dołączanie przez link/kod z egzekwowaniem okresów karencji.
-    /// </summary>
     public class LeagueTeamService : ILeagueTeamService
     {
         private static readonly TimeSpan Cooldown = TimeSpan.FromDays(7);
@@ -44,8 +40,6 @@ namespace ClashZone.App.Services
 
         public async Task<TeamManagementViewModel> GetUserTeamsAsync(string userId)
         {
-            // Pokazujemy tylko drużyny ZAŁOŻONE przez użytkownika (kapitan), nie te,
-            // do których jedynie dołączył — osobno ligowe i turniejowe.
             var leagueTeams = await _teamsRepository.GetUserTeamsAsync(userId);
             var ownedLeagueTeams = leagueTeams.Where(t => t.CaptainId == userId).ToList();
 
@@ -118,13 +112,11 @@ namespace ClashZone.App.Services
             }
 
             var since = DateTime.UtcNow - Cooldown;
-            // Gracz może dołączyć tylko do jednego zespołu na 7 dni.
             if (await _teamsRepository.UserJoinedAnyTeamSinceAsync(userId, since))
             {
                 result.UserCooldown = true;
                 return result;
             }
-            // Maksymalnie 3 graczy może dołączyć do rosteru na 7 dni.
             if (await _teamsRepository.CountMembersJoinedSinceAsync(teamId, since) >= MaxJoinsPerRosterPerWeek)
             {
                 result.RosterCooldown = true;

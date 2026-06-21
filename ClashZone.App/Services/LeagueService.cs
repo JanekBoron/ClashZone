@@ -5,12 +5,6 @@ using ClashZone.App.ViewModels;
 
 namespace ClashZone.App.Services
 {
-    /// <summary>
-    /// Logika ligi: zarządzanie sezonem, rejestracja drużyn (z wymogiem pakietu
-    /// ligi), generowanie i symulacja meczów sezonu regularnego oraz play-off,
-    /// tabela, czat i szczegóły meczów. Symulacja wyników/statystyk oraz
-    /// naliczanie nagród wzorowane na <see cref="BracketService"/>.
-    /// </summary>
     public class LeagueService : ILeagueService
     {
         private readonly ILeagueRepository _leagueRepository;
@@ -35,8 +29,6 @@ namespace ClashZone.App.Services
             _playerStatsRepository = playerStatsRepository;
             _coinWalletService = coinWalletService;
         }
-
-        // ============================ Sezony =============================
 
         public Task<List<SeasonDomain>> GetSeasonsAsync() => _leagueRepository.GetSeasonsAsync();
 
@@ -133,8 +125,6 @@ namespace ClashZone.App.Services
             Rules = m.Rules
         };
 
-        // ========================= Rejestracja ===========================
-
         public async Task<LeagueRegistrationResult> RegisterTeamAsync(int seasonId, int leagueTeamId, string userId)
         {
             var result = new LeagueRegistrationResult();
@@ -187,7 +177,7 @@ namespace ClashZone.App.Services
                 SeasonId = seasonId,
                 LeagueTeamId = leagueTeamId,
                 RegisteredAt = now,
-                FeePaid = true // posiadanie pakietu ligi traktujemy jak opłacone wpisowe
+                FeePaid = true 
             });
             result.Success = true;
             return result;
@@ -211,8 +201,6 @@ namespace ClashZone.App.Services
             await _leagueRepository.UpdateSeasonAsync(season);
         }
 
-        // ===================== Generowanie meczów ========================
-
         public async Task GenerateOpeningMatchupsAsync(int seasonId)
         {
             var season = await _leagueRepository.GetSeasonByIdAsync(seasonId);
@@ -221,11 +209,10 @@ namespace ClashZone.App.Services
             if (regs.Count < 2) return;
 
             var existing = await _leagueRepository.GetMatchesForSeasonAsync(seasonId);
-            if (existing.Any(m => !m.IsPlayoff)) return; // mecze otwarcia już wygenerowane
+            if (existing.Any(m => !m.IsPlayoff)) return; 
 
             var rng = new Random();
             var pairKeys = new HashSet<string>();
-            // Tydzień 1: 2 mecze na drużynę vs losowi przeciwnicy.
             await GenerateWeekMatchesAsync(season, 1, () => regs.OrderBy(_ => rng.Next()).ToList(), pairKeys);
         }
 
@@ -236,24 +223,20 @@ namespace ClashZone.App.Services
             var matches = await _leagueRepository.GetMatchesForSeasonAsync(seasonId);
             var regular = matches.Where(m => !m.IsPlayoff).ToList();
             if (!regular.Any()) { await GenerateOpeningMatchupsAsync(seasonId); return; }
-            if (regular.Any(m => !m.IsPlayed)) return; // dokończ bieżący tydzień przed kolejnym
+            if (regular.Any(m => !m.IsPlayed)) return; 
 
             int nextWeek = regular.Max(m => m.Week) + 1;
             var standings = await GetStandingsAsync(seasonId);
             var orderedRegIds = standings.Select(s => s.RegistrationId).ToList();
-
-            // odtwórz istniejące pary, aby unikać powtórek
             var pairKeys = new HashSet<string>();
             foreach (var m in regular.Where(m => m.HomeRegistrationId.HasValue && m.AwayRegistrationId.HasValue))
             {
                 pairKeys.Add(PairKey(m.HomeRegistrationId!.Value, m.AwayRegistrationId!.Value));
                 pairKeys.Add(PairKey(m.AwayRegistrationId!.Value, m.HomeRegistrationId!.Value));
             }
-            // parowanie wg zbliżonego win-ratio (sąsiedzi w tabeli)
             await GenerateWeekMatchesAsync(season, nextWeek, () => new List<int>(orderedRegIds), pairKeys);
         }
 
-        /// <summary>Tworzy 2 mecze na drużynę w danym tygodniu (dwie rundy parowania).</summary>
         private async Task GenerateWeekMatchesAsync(SeasonDomain season, int week, Func<List<int>> orderProvider, HashSet<string> pairKeys)
         {
             var baseTime = season.StartDate.AddDays((week - 1) * 7);
@@ -286,7 +269,7 @@ namespace ClashZone.App.Services
                 int a = remaining[0];
                 remaining.RemoveAt(0);
                 int idx = remaining.FindIndex(b => !existing.Contains(PairKey(a, b)));
-                if (idx < 0) idx = 0; // brak nowego przeciwnika — wymuszona powtórka
+                if (idx < 0) idx = 0;
                 int opp = remaining[idx];
                 remaining.RemoveAt(idx);
                 pairs.Add((a, opp));
@@ -295,7 +278,7 @@ namespace ClashZone.App.Services
             }
             if (remaining.Count == 1)
             {
-                pairs.Add((remaining[0], null)); // bye
+                pairs.Add((remaining[0], null));
             }
             return pairs;
         }
@@ -314,12 +297,10 @@ namespace ClashZone.App.Services
             }
         }
 
-        /// <summary>Symuluje pojedynczy mecz (wynik + statystyki) i zapisuje.</summary>
         private async Task PlayMatchAsync(SeasonDomain season, LeagueMatchDomain match, Random rng)
         {
             if (!match.AwayRegistrationId.HasValue)
             {
-                // bye — gospodarz przechodzi dalej
                 match.HomeScore = GameCatalog.IsLol(season.Game) ? 2 : 16;
                 match.AwayScore = 0;
                 match.IsPlayed = true;
@@ -382,7 +363,6 @@ namespace ClashZone.App.Services
                     Game = game,
                     Champion = champion
                 });
-                // agregacja statystyk użytkownika (wspólne rankingi z turniejami)
                 var agg = await _playerStatsRepository.GetUserStatsAsync(userId, game);
                 if (agg == null)
                 {
@@ -415,8 +395,6 @@ namespace ClashZone.App.Services
             used.Add(champion);
             return champion;
         }
-
-        // ============================ Tabela =============================
 
         public async Task<List<LeagueStandingRow>> GetStandingsAsync(int seasonId)
         {
@@ -467,8 +445,6 @@ namespace ClashZone.App.Services
             return $"Team_{reg.LeagueTeamId}";
         }
 
-        // =========================== Play-off ============================
-
         public async Task GeneratePlayoffsAsync(int seasonId)
         {
             var season = await _leagueRepository.GetSeasonByIdAsync(seasonId);
@@ -481,7 +457,6 @@ namespace ClashZone.App.Services
             if (spots < 2) return;
             var seeds = standings.Take(spots).Select(s => s.RegistrationId).ToList();
 
-            // Seeding 1 vs N: najlepszy gra z najsłabszym z zakwalifikowanych.
             int i = 0, j = seeds.Count - 1;
             var rng = new Random();
             while (i < j)
@@ -491,7 +466,6 @@ namespace ClashZone.App.Services
             }
             if (i == j)
             {
-                // nieparzysta liczba — najwyższy rozstawiony dostaje bye
                 await CreatePlayoffMatchAsync(season, 1, seeds[i], null, rng);
             }
 
@@ -509,11 +483,10 @@ namespace ClashZone.App.Services
                 IsPlayoff = true,
                 HomeRegistrationId = home,
                 AwayRegistrationId = away,
-                ScheduledTime = season.StartDate.AddDays(7 * 8 + round) // play-off po sezonie regularnym
+                ScheduledTime = season.StartDate.AddDays(7 * 8 + round) 
             };
             if (!away.HasValue)
             {
-                // bye — automatyczny awans
                 match.HomeScore = GameCatalog.IsLol(season.Game) ? 2 : 16;
                 match.AwayScore = 0;
                 match.IsPlayed = true;
@@ -532,7 +505,6 @@ namespace ClashZone.App.Services
             var rng = new Random();
             await PlayMatchAsync(season, match, rng);
 
-            // Po rozegraniu sprawdź, czy runda jest kompletna i zbuduj kolejną.
             var all = await _leagueRepository.GetMatchesForSeasonAsync(seasonId);
             int round = match.Round ?? 1;
             var roundMatches = all.Where(m => m.IsPlayoff && (m.Round ?? 1) == round).OrderBy(m => m.Id).ToList();
@@ -547,7 +519,6 @@ namespace ClashZone.App.Services
                 return;
             }
 
-            // utwórz kolejną rundę, jeśli jeszcze nie istnieje
             if (!all.Any(m => m.IsPlayoff && (m.Round ?? 1) == round + 1))
             {
                 for (int k = 0; k + 1 < winners.Count; k += 2)
@@ -618,8 +589,6 @@ namespace ClashZone.App.Services
                 await _coinWalletService.CreditAsync(userId, amount, $"League:{seasonId}:{place}Place");
             }
         }
-
-        // ===================== Widoki: mecze / tabela ====================
 
         public async Task<LeagueMatchesViewModel?> GetMatchesAsync(int seasonId)
         {
@@ -723,9 +692,6 @@ namespace ClashZone.App.Services
             if (!registrationId.HasValue) return "BYE";
             return cache.TryGetValue(registrationId.Value, out var name) ? name : "[?]";
         }
-
-        // ========================= Scheduling ============================
-
         public async Task<LeagueScheduleViewModel?> GetScheduleAsync(int matchId, string userId)
         {
             var match = await _leagueRepository.GetMatchByIdAsync(matchId);
@@ -760,7 +726,6 @@ namespace ClashZone.App.Services
             match.ProposedTime = proposedTime;
             match.ProposedByRegistrationId = proposerReg;
             match.Server = server;
-            // Podstawowy scheduling: propozycja zostaje zastosowana jako ustalony termin.
             match.ScheduledTime = proposedTime;
             await _leagueRepository.UpdateMatchAsync(match);
         }
@@ -772,8 +737,6 @@ namespace ClashZone.App.Services
             if (reg == null) return false;
             return await _teamsRepository.IsMemberAsync(reg.LeagueTeamId, userId);
         }
-
-        // ============================= Czat ==============================
 
         public async Task<LeagueChatViewModel?> GetChatAsync(int seasonId, string? userId, bool isAdmin)
         {
@@ -854,7 +817,6 @@ namespace ClashZone.App.Services
             });
         }
 
-        /// <summary>Id drużyny ligowej (rejestracji) gracza w danym sezonie lub null.</summary>
         private async Task<int?> GetUserSeasonTeamIdAsync(int seasonId, string? userId)
         {
             if (string.IsNullOrEmpty(userId)) return null;
@@ -868,8 +830,6 @@ namespace ClashZone.App.Services
             }
             return null;
         }
-
-        // ======================= Szczegóły meczu =========================
 
         public async Task<LeagueMatchDetailsViewModel?> GetMatchDetailsAsync(int seasonId, int matchId)
         {
@@ -888,7 +848,6 @@ namespace ClashZone.App.Services
                 Team2Name = ResolveName(nameCache, match.AwayRegistrationId)
             };
 
-            // rostery do podziału statystyk i awatary kapitanów
             var homeMemberIds = await GetRosterAsync(match.HomeRegistrationId);
             vm.Team1ProfileUrl = await CaptainAvatarAsync(match.HomeRegistrationId);
             vm.Team2ProfileUrl = await CaptainAvatarAsync(match.AwayRegistrationId);

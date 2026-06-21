@@ -11,10 +11,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="RiotMatchService"/> — mapowania użytkowników ClashZone na
-    /// uczestników prawdziwego meczu LoL oraz budowania wyniku z danych Riota.
-    /// </summary>
     public class RiotMatchServiceTests
     {
         private static Mock<IUserRepository> UsersWithPuuids(params (string UserId, string? Puuid)[] users)
@@ -77,7 +73,6 @@ namespace ClashZone.Tests
 
             Assert.NotNull(outcome);
             Assert.Equal("EUW1_1", outcome!.SourceMatchId);
-            // Drużyna 1 wygrała grę => 1-0.
             Assert.Equal(1, outcome.Team1Score);
             Assert.Equal(0, outcome.Team2Score);
             Assert.Equal(2, outcome.Players.Count);
@@ -88,8 +83,6 @@ namespace ClashZone.Tests
         [Fact]
         public async Task ResolveMatchAsync_DevMode_BuildsOutcome_FromSeedLatestMatch()
         {
-            // Tryb deweloperski: tylko jedno konto (admin = u1) jest powiązane;
-            // u2 nie ma konta Riot, a mimo to budujemy wynik z najnowszego meczu admina.
             var api = new Mock<IRiotApiClient>();
             api.SetupGet(a => a.IsConfigured).Returns(true);
             api.Setup(a => a.GetRecentMatchIdsAsync("p1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -100,9 +93,7 @@ namespace ClashZone.Tests
                     MatchId = "EUW1_42",
                     Participants = new List<RiotMatchParticipant>
                     {
-                        // Strona admina (przegrywa) -> drużyna 1 ClashZone.
                         new() { Puuid = "p1", TeamId = 200, Win = false, Kills = 1, Deaths = 9, Assists = 2, ChampionName = "Yasuo" },
-                        // Strona przeciwna -> drużyna 2 ClashZone.
                         new() { Puuid = "stranger", TeamId = 100, Win = true, Kills = 12, Deaths = 1, Assists = 4, ChampionName = "Garen" },
                     }
                 });
@@ -115,10 +106,8 @@ namespace ClashZone.Tests
 
             Assert.NotNull(outcome);
             Assert.Equal("EUW1_42", outcome!.SourceMatchId);
-            // Strona admina przegrała => drużyna 1 = 0, drużyna 2 = 1.
             Assert.Equal(0, outcome.Team1Score);
             Assert.Equal(1, outcome.Team2Score);
-            // Staty zmapowane po kolei: u1 <- uczestnik strony admina, u2 <- strona przeciwna.
             Assert.Contains(outcome.Players, p => p.UserId == "u1" && p.Deaths == 9 && p.Champion == "Yasuo");
             Assert.Contains(outcome.Players, p => p.UserId == "u2" && p.Kills == 12 && p.Champion == "Garen");
         }
@@ -126,7 +115,6 @@ namespace ClashZone.Tests
         [Fact]
         public async Task ResolveMatchAsync_ForceDevMode_BuildsOutcome_EvenWhenDevModeOff()
         {
-            // Admin odpala symulację (forceDevMode), więc ścieżka dev działa mimo DevMode=false.
             var api = new Mock<IRiotApiClient>();
             api.SetupGet(a => a.IsConfigured).Returns(true);
             api.Setup(a => a.GetRecentMatchIdsAsync("p1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -142,7 +130,6 @@ namespace ClashZone.Tests
                     }
                 });
             var users = UsersWithPuuids(("u1", "p1"), ("u2", null));
-            // DevMode wyłączony – wymuszamy ścieżkę dev tylko parametrem forceDevMode.
             var options = new RiotOptions { ApiKey = "x", DevMode = false };
 
             var service = new RiotMatchService(api.Object, users.Object, options);
@@ -164,7 +151,6 @@ namespace ClashZone.Tests
             api.SetupGet(a => a.IsConfigured).Returns(true);
             api.Setup(a => a.GetRecentMatchIdsAsync("p1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new[] { "EUW1_1" });
-            // Obaj gracze po tej samej stronie => to nie był mecz tych dwóch drużyn.
             api.Setup(a => a.GetMatchAsync("EUW1_1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new RiotMatch
                 {

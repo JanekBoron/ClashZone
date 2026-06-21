@@ -9,10 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="UsersController"/> (panel admina) — listowanie oraz
-    /// operacje na rolach i banach.
-    /// </summary>
     public class UsersControllerTests
     {
         [Fact]

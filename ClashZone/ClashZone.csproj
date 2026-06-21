@@ -24,4 +24,8 @@
     <ProjectReference Include="..\DataAccess\ClashZone.DataAccess.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\images\profiles\" />
+  </ItemGroup>
+
 </Project>

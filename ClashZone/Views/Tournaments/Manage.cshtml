@@ -1,12 +1,10 @@
 ﻿@model IEnumerable<ClashZone.App.Domains.TournamentDomain>
 @{
-    // Title for the manage tournaments page.
     ViewData["Title"] = "Zarządzaj turniejami";
 }
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
     <h2 style="color:#FF2B3E;">Zarządzaj turniejami</h2>
     <div class="mb-3 text-end">
-        <!-- Link to create a new tournament -->
         <a class="btn" style="background-color:#FF2B3E; color:#fff;" asp-action="Create">Dodaj turniej</a>
     </div>
     @if (!Model.Any())

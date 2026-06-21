@@ -8,9 +8,6 @@ using Microsoft.Extensions.Options;
 
 namespace ClashZone.Security
 {
-    /// <summary>
-    /// Blocks sign-in for users marked as IsBanned.
-    /// </summary>
     public class BannedAwareSignInManager : SignInManager<ClashUser>
     {
         public BannedAwareSignInManager(

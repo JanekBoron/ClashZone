@@ -7,11 +7,6 @@ using System.Security.Claims;
 
 namespace ClashZone.Controllers
 {
-    /// <summary>
-    /// Liga (sezony w stylu FACEIT/ESEA): przeglądanie, rejestracja drużyn,
-    /// tabela, mecze, play-off, czat i reguły. Akcje zarządcze (tworzenie sezonu,
-    /// generowanie meczów, wyniki, play-off) dostępne dla Organizer/Admin.
-    /// </summary>
     public class LeagueController : Controller
     {
         private readonly ILeagueService _leagueService;
@@ -25,7 +20,6 @@ namespace ClashZone.Controllers
             ? User.FindFirstValue(ClaimTypes.NameIdentifier)
             : null;
 
-        // --------------------------- Przeglądanie ---------------------------
 
         public async Task<IActionResult> Index()
         {
@@ -114,8 +108,6 @@ namespace ClashZone.Controllers
             return View(model);
         }
 
-        // ------------------------------ Czat -------------------------------
-
         [Authorize]
         public async Task<IActionResult> Chat(int id)
         {
@@ -144,8 +136,6 @@ namespace ClashZone.Controllers
             return RedirectToAction(nameof(Chat), new { id });
         }
 
-        // ---------------------------- Scheduling ----------------------------
-
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> Schedule(int matchId)
@@ -166,8 +156,6 @@ namespace ClashZone.Controllers
             TempData["LeagueInfo"] = "Termin meczu został zaktualizowany.";
             return RedirectToAction(nameof(Matches), new { id = model.Season.Id });
         }
-
-        // ------------------ Zarządzanie (Organizer/Admin) -------------------
 
         [Authorize(Roles = "Organizer,Admin")]
         public async Task<IActionResult> Manage()

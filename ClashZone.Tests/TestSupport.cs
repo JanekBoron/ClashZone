@@ -9,10 +9,6 @@ using Moq;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Wspólne narzędzia dla testów: fabryki mocków Identity oraz konfiguracja
-    /// kontekstu kontrolera (zalogowany użytkownik, TempData).
-    /// </summary>
     internal static class TestSupport
     {
         public static Mock<UserManager<ClashUser>> MockUserManager()
@@ -31,10 +27,6 @@ namespace ClashZone.Tests
                 userManager, contextAccessor.Object, claimsFactory.Object, null!, null!, null!, null!);
         }
 
-        /// <summary>
-        /// Ustawia na kontrolerze kontekst HTTP z (opcjonalnie) zalogowanym
-        /// użytkownikiem oraz działające TempData.
-        /// </summary>
         public static void SetUser(Controller controller, string? userId, bool isAuthenticated = true, params string[] roles)
         {
             var claims = new List<Claim>();

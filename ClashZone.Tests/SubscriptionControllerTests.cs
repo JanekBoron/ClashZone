@@ -9,9 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="SubscriptionController"/> — lista planów i zakup.
-    /// </summary>
     public class SubscriptionControllerTests
     {
         [Fact]

@@ -7,10 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.DataAccess.Repository
 {
-    /// <summary>
-    /// Repozytorium trwałych drużyn ligowych. Wzorowane na
-    /// <see cref="TournamentsRepository"/> (EF + AutoMapper).
-    /// </summary>
     public class LeagueTeamsRepository : ILeagueTeamsRepository
     {
         private readonly ApplicationDbContext _db;
@@ -27,7 +23,6 @@ namespace ClashZone.DataAccess.Repository
             var entity = _mapper.Map<LeagueTeam>(team);
             _db.LeagueTeams.Add(entity);
             await _db.SaveChangesAsync();
-            // Kapitan jest pierwszym członkiem rosteru.
             _db.LeagueTeamMembers.Add(new LeagueTeamMember
             {
                 LeagueTeamId = entity.Id,
@@ -84,8 +79,6 @@ namespace ClashZone.DataAccess.Repository
 
         public async Task<int> CountMembersJoinedSinceAsync(int teamId, DateTime since)
         {
-            // Liczymy tylko dołączenia graczy (z wyłączeniem założycielskiego
-            // dołączenia kapitana), zgodnie z regułą „3 graczy / 7 dni".
             var captainId = await _db.LeagueTeams
                 .Where(t => t.Id == teamId)
                 .Select(t => t.CaptainId)

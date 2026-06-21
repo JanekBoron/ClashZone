@@ -11,10 +11,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="LeagueService"/> — rejestracja drużyn (wymóg pakietu,
-    /// rozmiar rosteru) oraz wyliczanie tabeli (standings).
-    /// </summary>
     public class LeagueServiceTests
     {
         private readonly Mock<ILeagueRepository> _league = new();
@@ -60,7 +56,7 @@ namespace ClashZone.Tests
             WithLeaguePackage("u1");
             _teams.Setup(t => t.GetByIdAsync(10)).ReturnsAsync(new LeagueTeamDomain { Id = 10, CaptainId = "u1" });
             _league.Setup(r => r.GetRegistrationAsync(1, 10)).ReturnsAsync((LeagueRegistrationDomain?)null);
-            _teams.Setup(t => t.GetMemberIdsAsync(10)).ReturnsAsync(new List<string> { "u1", "u2" }); // 2 < 5
+            _teams.Setup(t => t.GetMemberIdsAsync(10)).ReturnsAsync(new List<string> { "u1", "u2" });
 
             var result = await Service.RegisterTeamAsync(1, 10, "u1");
 
@@ -95,11 +91,8 @@ namespace ClashZone.Tests
             });
             _league.Setup(r => r.GetMatchesForSeasonAsync(1)).ReturnsAsync(new List<LeagueMatchDomain>
             {
-                // Alpha (100) beats Bravo (200)
                 new() { Id = 1, HomeRegistrationId = 100, AwayRegistrationId = 200, HomeScore = 16, AwayScore = 7, IsPlayed = true },
-                // Alpha (100) beats Bravo (200) again
                 new() { Id = 2, HomeRegistrationId = 200, AwayRegistrationId = 100, HomeScore = 5, AwayScore = 16, IsPlayed = true },
-                // unplayed should be ignored
                 new() { Id = 3, HomeRegistrationId = 100, AwayRegistrationId = 200, IsPlayed = false }
             });
 

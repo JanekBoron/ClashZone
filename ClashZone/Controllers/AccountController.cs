@@ -7,40 +7,28 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClashZone.Controllers
 {
-    /// <summary>
-    /// Controller responsible for handling all user account related actions
-    /// including registration, login, logout, email confirmation and
-    /// password reset workflows.  Emails are dispatched using
-    /// <see cref="IEmailService"/> to provide links for account activation
-    /// and password resets.
-    /// </summary>
     public class AccountController : Controller
     {
         private readonly UserManager<ClashUser> _userManager;
         private readonly SignInManager<ClashUser> _signInManager;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             UserManager<ClashUser> userManager,
             SignInManager<ClashUser> signInManager,
-            IEmailService emailService)
+            IEmailService emailService,
+            ILogger<AccountController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailService = emailService;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// Displays the registration page.
-        /// </summary>
         [HttpGet]
         public IActionResult Register() => View();
 
-        /// <summary>
-        /// Handles the registration form submission.  Creates a new user and
-        /// sends an email confirmation link.  The user must confirm their
-        /// address before being able to log in.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
@@ -48,7 +36,6 @@ namespace ClashZone.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Check if username already exists
             var userByName = await _userManager.FindByNameAsync(model.UserName);
             if (userByName != null)
             {
@@ -56,7 +43,6 @@ namespace ClashZone.Controllers
                 return View(model);
             }
 
-            // Check if email already exists
             var userByEmail = await _userManager.FindByEmailAsync(model.Email);
             if (userByEmail != null)
             {
@@ -68,14 +54,14 @@ namespace ClashZone.Controllers
             {
                 UserName = model.UserName,
                 Email = model.Email,
-                EmailConfirmed = true
+                EmailConfirmed = false
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
             {
-/*                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
                 var callbackUrl = Url.Action(
                     nameof(ConfirmEmail),
@@ -88,15 +74,25 @@ namespace ClashZone.Controllers
                     $"<p>Aby aktywować konto, kliknij w link: " +
                     $"<a href=\"{callbackUrl}\">Aktywuj konto</a></p>";
 
-                await _emailService.SendEmailAsync(
-                    user.Email!,
-                    "Aktywacja konta ClashZone",
-                    message);
+                try
+                {
+                    await _emailService.SendEmailAsync(
+                        user.Email!,
+                        "Aktywacja konta ClashZone",
+                        message);
 
-                TempData["SuccessMessage"] =
-                    "Na podany adres e-mail wysłano link aktywacyjny.";
+                    TempData["SuccessMessage"] =
+                        "Na podany adres e-mail wysłano link aktywacyjny.";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Nie udało się wysłać maila aktywacyjnego do {Email}.", user.Email);
+                    TempData["SuccessMessage"] =
+                        "Konto zostało utworzone, ale nie udało się wysłać maila aktywacyjnego. Spróbuj zresetować hasło lub skontaktuj się z obsługą.";
+                }
 
-                return RedirectToAction(nameof(Login));*/
+                return RedirectToAction(nameof(Login));
             }
 
             foreach (var error in result.Errors)
@@ -107,18 +103,9 @@ namespace ClashZone.Controllers
             return View(model);
         }
 
-
-        /// <summary>
-        /// Displays the login form.
-        /// </summary>
         [HttpGet]
         public IActionResult Login() => View();
 
-        /// <summary>
-        /// Handles the login form submission.  Users must have confirmed their
-        /// email address before they can sign in.  Appropriate error messages
-        /// are displayed for invalid credentials or unconfirmed accounts.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -126,12 +113,10 @@ namespace ClashZone.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Szukamy użytkownika po adresie e-mail (logowanie po e-mailu)
             var user = await _userManager.FindByEmailAsync(model.Email?.Trim());
 
             if (user != null)
             {
-                // Ensure the user has confirmed their email before allowing login
                 if (!await _userManager.IsEmailConfirmedAsync(user))
                 {
                     ModelState.AddModelError(string.Empty, "Konto nie jest potwierdzone. Sprawdź skrzynkę e-mail.");
@@ -142,9 +127,8 @@ namespace ClashZone.Controllers
                     return View(model);
                 }
 
-                // Uwaga: PasswordSignInAsync wymaga NAZWY UŻYTKOWNIKA, nie e-maila
                 var result = await _signInManager.PasswordSignInAsync(
-                        user.UserName,               // <- kluczowa zmiana (wcześniej było user.Email)
+                        user.UserName,               
                         model.Password,
                         model.RememberMe,
                         lockoutOnFailure: false);
@@ -153,14 +137,10 @@ namespace ClashZone.Controllers
                     return RedirectToAction("Index", "Home");
             }
 
-            // Celowo nie zdradzamy, czy e-mail istnieje — komunikat ogólny
             ModelState.AddModelError(string.Empty, "Nieprawidłowa próba logowania.");
             return View(model);
         }
 
-        /// <summary>
-        /// Logs the user out of the application.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -169,19 +149,9 @@ namespace ClashZone.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        /// <summary>
-        /// Displays the forgot password form.  Users enter their registered
-        /// email address to receive a password reset link.
-        /// </summary>
         [HttpGet]
         public IActionResult ForgotPassword() => View();
 
-        /// <summary>
-        /// Handles the forgot password submission.  Generates a password reset
-        /// token and emails a link to the user if the account exists and is
-        /// confirmed.  Regardless of outcome a generic success message is
-        /// displayed to avoid revealing user information.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
@@ -190,7 +160,6 @@ namespace ClashZone.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
             {
-                // Hide whether the email exists or is confirmed
                 TempData["SuccessMessage"] = "Jeśli adres e-mail istnieje w naszym systemie, wysłano wiadomość z instrukcją resetowania hasła.";
                 return RedirectToAction(nameof(ForgotPassword));
             }
@@ -201,15 +170,19 @@ namespace ClashZone.Controllers
                 new { token, email = model.Email },
                 Request.Scheme) ?? string.Empty;
             var message = $"<p>Otrzymaliśmy prośbę o zresetowanie hasła do Twojego konta ClashZone.</p><p>Aby ustawić nowe hasło, kliknij w link: <a href=\"{callbackUrl}\">Resetuj hasło</a></p>";
-            await _emailService.SendEmailAsync(model.Email, "Resetowanie hasła w ClashZone", message);
+            try
+            {
+                await _emailService.SendEmailAsync(model.Email, "Resetowanie hasła w ClashZone", message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Nie udało się wysłać maila resetującego hasło do {Email}.", model.Email);
+            }
             TempData["SuccessMessage"] = "Jeśli adres e-mail istnieje w naszym systemie, wysłano wiadomość z instrukcją resetowania hasła.";
             return RedirectToAction(nameof(ForgotPassword));
         }
 
-        /// <summary>
-        /// Displays the reset password form.  The token and email are passed in
-        /// via the query string and bound to the view model for submission.
-        /// </summary>
         [HttpGet]
         public IActionResult ResetPassword(string token, string email)
         {
@@ -221,11 +194,6 @@ namespace ClashZone.Controllers
             return View(model);
         }
 
-        /// <summary>
-        /// Handles the reset password submission.  Validates the token and
-        /// updates the user's password.  Upon success the user is redirected
-        /// to the login page.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
@@ -234,7 +202,6 @@ namespace ClashZone.Controllers
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                // Do not reveal that the user does not exist
                 TempData["SuccessMessage"] = "Twoje hasło zostało zresetowane.";
                 return RedirectToAction(nameof(Login));
             }
@@ -251,11 +218,6 @@ namespace ClashZone.Controllers
             return View(model);
         }
 
-        /// <summary>
-        /// Confirms a user's email address using the token generated at
-        /// registration time.  Displays a success or failure message and
-        /// redirects to the login page.
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {

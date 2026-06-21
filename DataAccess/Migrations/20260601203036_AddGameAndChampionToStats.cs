@@ -10,8 +10,6 @@ namespace ClashZone.DataAccess.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Istniejące statystyki dotyczyły wyłącznie Counter-Strike 2 — backfill
-            // przez wartość domyślną kolumny Game.
             migrationBuilder.AddColumn<string>(
                 name: "Game",
                 table: "UserStats",

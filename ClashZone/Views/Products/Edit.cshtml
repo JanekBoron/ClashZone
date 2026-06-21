@@ -22,7 +22,7 @@
             <div class="col-md-3">
                 <label class="form-label">Kategoria</label>
                 <select asp-for="CategoryId" class="form-select">
-                    <option value="">—</option>
+                    <option value="">-</option>
                     @foreach (var c in categories)
                     {
                         <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>

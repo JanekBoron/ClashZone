@@ -7,6 +7,6 @@ namespace ClashZone.App.Services.Interfaces
     {
         Task<IReadOnlyList<ProductDomain>> GetCatalogAsync();
         Task<ProductDomain?> GetProductAsync(int id);
-        Task<(bool ok, string? error)> PurchaseAsync(int productId, string userId);
+        Task<(bool ok, string? error)> PurchaseAsync(int productId, string userId, ShippingAddressDomain shipping);
     }
 }

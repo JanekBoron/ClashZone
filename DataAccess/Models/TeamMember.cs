@@ -8,10 +8,6 @@ using System.Threading.Tasks;
 
 namespace ClashZone.DataAccess.Models
 {
-    /// <summary>
-    /// Represents a user belonging to a team.  This entity links a user
-    /// (identified by their ASP.NET Core Identity ID) to a team.
-    /// </summary>
     public class TeamMember
     {
         [Key]
@@ -20,17 +16,8 @@ namespace ClashZone.DataAccess.Models
         public int TeamId { get; set; }
         public string UserId { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Czy gracz oznaczył gotowość. Kapitan może potwierdzić drużynę dopiero,
-        /// gdy wszyscy członkowie pełnego składu są gotowi.
-        /// </summary>
         public bool IsReady { get; set; } = false;
 
-        /// <summary>
-        /// Navigation property to the associated <see cref="Team"/>.  This
-        /// allows Entity Framework to automatically load the team when
-        /// including <c>TeamMember.Team</c> in queries.
-        /// </summary>
         [ForeignKey(nameof(TeamId))]
         public Team Team { get; set; } = default!;
     }

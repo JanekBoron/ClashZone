@@ -5,9 +5,11 @@ using ClashZone.App.Ports.Games;
 namespace ClashZone.App.Services.Games.Riot
 {
     /// <summary>
-    /// Implementacja <see cref="IRiotMatchService"/>. Mapuje użytkowników ClashZone
-    /// na konta Riot (po zapisanym PUUID), wyszukuje ostatnią wspólną grę obu drużyn
-    /// w Match-V5 i buduje z niej <see cref="RiotMatchOutcome"/>.
+    /// Żeby uzyskać prawdziwe działanie tego serwisu potrzeba płatnej licencji Riot API, 
+    /// która umożliwia dostęp do endpointów z danymi meczów. 
+    /// Bez tego serwis będzie działał w trybie deweloperskim, 
+    /// który symuluje działanie na podstawie ostatniego zagranego meczu jednego z graczy (lub skonfigurowanego seed'a). 
+    /// Tryb deweloperski jest przydatny do testowania integracji i działania drabinki bez konieczności posiadania licencji Riot API.
     /// </summary>
     public sealed class RiotMatchService : IRiotMatchService
     {
@@ -33,28 +35,21 @@ namespace ClashZone.App.Services.Games.Riot
                 return null;
             }
 
-            // Tryb deweloperski: zamiast szukać wspólnej gry obu drużyn, bierzemy
-            // najnowszy realny mecz jednego konta-źródła (admina). Reszta graczy
-            // jest pomijana – staty mapujemy po kolei na składy ClashZone.
-            // Włączany globalną flagą Riot:DevMode lub wymuszany przez admina (forceDevMode).
+            // Tryb deweloperski (pokazanie działającego odbierania api jako admin bierze statystyki ostatniego zagranego meczu i wypełnia nimi drabinkę)
+
             if (_options.DevMode || forceDevMode)
             {
                 return await ResolveDevModeAsync(team1UserIds, team2UserIds, ct);
             }
-
-            // Mapowanie PUUID -> (userId, numer drużyny ClashZone). Pomijamy graczy
-            // bez powiązanego konta Riot.
             var puuidToUser = new Dictionary<string, (string UserId, int Team)>(StringComparer.OrdinalIgnoreCase);
             var team1Puuids = await CollectPuuidsAsync(team1UserIds, 1, puuidToUser);
             var team2Puuids = await CollectPuuidsAsync(team2UserIds, 2, puuidToUser);
 
-            // Bez choć jednego powiązanego konta po każdej stronie nie zweryfikujemy meczu.
             if (team1Puuids.Count == 0 || team2Puuids.Count == 0)
             {
                 return null;
             }
 
-            // Szukamy wspólnej gry, przeglądając ostatnie mecze jednego z graczy drużyny 1.
             var seedPuuid = team1Puuids[0];
             var matchIds = await _riotApi.GetRecentMatchIdsAsync(seedPuuid, _options.MatchLookbackCount, ct);
 
@@ -95,13 +90,6 @@ namespace ClashZone.App.Services.Games.Riot
             return puuids;
         }
 
-        // ---- Tryb deweloperski ----
-
-        /// <summary>
-        /// Buduje wynik z najnowszego realnego meczu konta-źródła (admina). Strona
-        /// admina w grze staje się drużyną 1 ClashZone, przeciwna – drużyną 2.
-        /// Zwraca null, gdy nie ma konta-źródła ani żadnego meczu z matchmakingu.
-        /// </summary>
         private async Task<RiotMatchOutcome?> ResolveDevModeAsync(
             IReadOnlyList<string> team1UserIds,
             IReadOnlyList<string> team2UserIds,
@@ -113,8 +101,6 @@ namespace ClashZone.App.Services.Games.Riot
                 return null;
             }
 
-            // Lista meczów zwraca tylko gry z matchmakingu (nie custom), więc
-            // pierwszy pasujący mecz to najnowsza realna gra konta-źródła.
             var matchIds = await _riotApi.GetRecentMatchIdsAsync(seedPuuid, _options.MatchLookbackCount, ct);
             foreach (var matchId in matchIds)
             {
@@ -132,11 +118,6 @@ namespace ClashZone.App.Services.Games.Riot
             return null;
         }
 
-        /// <summary>
-        /// Ustala PUUID konta-źródła: najpierw skonfigurowany Riot ID admina
-        /// (<see cref="RiotOptions.DevSeedRiotId"/>), a w razie braku – pierwsze
-        /// powiązane konto wśród graczy meczu.
-        /// </summary>
         private async Task<string?> ResolveSeedPuuidAsync(
             IReadOnlyList<string> team1UserIds,
             IReadOnlyList<string> team2UserIds,
@@ -189,10 +170,6 @@ namespace ClashZone.App.Services.Games.Riot
             };
         }
 
-        /// <summary>
-        /// Mapuje statystyki uczestników jednej strony gry na graczy ClashZone
-        /// (po kolei). Nadmiarowi uczestnicy/gracze są pomijani.
-        /// </summary>
         private static IEnumerable<RiotMatchPlayerStat> MapSide(
             IReadOnlyList<string> userIds,
             IReadOnlyList<RiotMatchParticipant> participants)
@@ -212,18 +189,12 @@ namespace ClashZone.App.Services.Games.Riot
             }
         }
 
-        /// <summary>
-        /// Buduje wynik z meczu Riota, jeśli zawiera on graczy z obu drużyn ClashZone
-        /// stojących po przeciwnych stronach. W przeciwnym razie zwraca null
-        /// (to nie był wspólny mecz turniejowy).
-        /// </summary>
         private static RiotMatchOutcome? BuildOutcome(
             RiotMatch match,
             IReadOnlyDictionary<string, (string UserId, int Team)> puuidToUser,
             IReadOnlyList<string> team1Puuids,
             IReadOnlyList<string> team2Puuids)
         {
-            // Uczestnicy meczu należący do naszych drużyn.
             var relevant = match.Participants
                 .Where(p => puuidToUser.ContainsKey(p.Puuid))
                 .ToList();
@@ -234,8 +205,6 @@ namespace ClashZone.App.Services.Games.Riot
             {
                 return null;
             }
-
-            // Obie drużyny ClashZone muszą stać po przeciwnych stronach gry.
             var riotTeam1 = team1InMatch[0].TeamId;
             var riotTeam2 = team2InMatch[0].TeamId;
             if (riotTeam1 == riotTeam2)

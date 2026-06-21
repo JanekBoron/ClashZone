@@ -4,11 +4,6 @@ using System.Linq;
 
 namespace ClashZone.App.Domains
 {
-    /// <summary>
-    /// Centralny katalog statusów zamówień (realizacji nagród ze sklepu).
-    /// Trzyma w jednym miejscu wartości przechowywane w bazie, ich polskie
-    /// etykiety oraz klasy odznak (Bootstrap) używane w widokach.
-    /// </summary>
     public static class OrderStatus
     {
         public const string Pending = "Pending";
@@ -25,7 +20,6 @@ namespace ClashZone.App.Domains
             !string.IsNullOrWhiteSpace(status) &&
             All.Contains(status, StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>Polska etykieta statusu prezentowana w UI.</summary>
         public static string Label(string? status) => status switch
         {
             Pending => "Oczekujące",
@@ -35,7 +29,6 @@ namespace ClashZone.App.Domains
             _ => status ?? string.Empty
         };
 
-        /// <summary>Klasa odznaki Bootstrap dopasowana do statusu.</summary>
         public static string BadgeClass(string? status) => status switch
         {
             Pending => "bg-secondary",

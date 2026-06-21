@@ -1,11 +1,11 @@
 @model ClashZone.App.ViewModels.LeagueParticipantsViewModel
 @{
     var s = Model.Season;
-    ViewData["Title"] = $"Uczestnicy – {s.Name}";
+    ViewData["Title"] = $"Uczestnicy - {s.Name}";
 }
 
 <div class="container mt-4" style="background-color:#111; padding:20px; border-radius:10px; color:#f8f9fa;">
-    <h2 class="mb-1">@s.Name – Uczestnicy</h2>
+    <h2 class="mb-1">@s.Name - Uczestnicy</h2>
     <hr style="border-color:#444;" />
 
     @await Html.PartialAsync("_LeagueNav", (s.Id, "Participants"))

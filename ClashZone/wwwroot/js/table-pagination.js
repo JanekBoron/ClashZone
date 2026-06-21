@@ -1,11 +1,3 @@
-// Reusable client-side search + filter + sort + pagination for admin tables.
-// Opt-in via markup:
-//   <input data-table-search="myTableId" ...>                         (optional search box)
-//   <select data-table-filter="myTableId" data-filter-col="4">...      (optional column filter; option value matches cell text, empty = all)
-//   <table id="myTableId" data-paginate data-page-size="10">
-//     <thead><tr><th data-sort-col="0">...</th> ...                    (optional sortable headers)
-//   </table>
-// A pagination control is generated automatically right after the table.
 (function () {
     'use strict';
 
@@ -19,7 +11,6 @@
 
         var state = { page: 1, query: '', filterValue: '', filterCol: -1, sortCol: -1, sortDir: 'asc' };
 
-        // "Brak wyników" row shown when the search/filter matches nothing.
         var emptyRow = document.createElement('tr');
         var emptyCell = document.createElement('td');
         emptyCell.colSpan = columnCount;
@@ -29,7 +20,6 @@
         emptyRow.style.display = 'none';
         tbody.appendChild(emptyRow);
 
-        // Pagination container right after the table.
         var pager = document.createElement('nav');
         pager.className = 'cc-pagination';
         table.parentNode.insertBefore(pager, table.nextSibling);
@@ -113,7 +103,6 @@
                 }
                 return cmp * dir;
             });
-            // Reorder DOM to match the sorted array; keep the empty row last.
             allRows.forEach(function (r) { tbody.appendChild(r); });
             tbody.appendChild(emptyRow);
 
@@ -125,7 +114,6 @@
             });
         }
 
-        // Search box.
         var search = document.querySelector('[data-table-search="' + table.id + '"]');
         if (search) {
             search.addEventListener('input', function () {
@@ -135,7 +123,6 @@
             });
         }
 
-        // Column filter (e.g. by game).
         var filterSelect = document.querySelector('select[data-table-filter="' + table.id + '"]');
         if (filterSelect) {
             state.filterCol = parseInt(filterSelect.getAttribute('data-filter-col'), 10);
@@ -147,7 +134,6 @@
             });
         }
 
-        // Sortable headers.
         var headers = table.tHead ? table.tHead.querySelectorAll('th[data-sort-col]') : [];
         Array.prototype.forEach.call(headers, function (th) {
             th.classList.add('cc-sortable');

@@ -9,10 +9,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="PaymentController"/> — utworzenie subskrypcji po sukcesie
-    /// płatności oraz anulowanie transakcji.
-    /// </summary>
     public class PaymentControllerTests
     {
         private static PaymentController CreateController(Mock<ISubscriptionRepository> repo)

@@ -27,5 +27,23 @@ namespace ClashZone.DataAccess.Models
 
         [MaxLength(256)]
         public string? Notes { get; set; }
+
+        [MaxLength(120)]
+        public string? ShippingFullName { get; set; }
+
+        [MaxLength(30)]
+        public string? ShippingPhone { get; set; }
+
+        [MaxLength(160)]
+        public string? ShippingStreet { get; set; }
+
+        [MaxLength(12)]
+        public string? ShippingPostalCode { get; set; }
+
+        [MaxLength(80)]
+        public string? ShippingCity { get; set; }
+
+        [MaxLength(80)]
+        public string? ShippingCountry { get; set; }
     }
 }

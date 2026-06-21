@@ -8,13 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.DataAccess.Repository
 {
-    /// <summary>
-    /// Concrete implementation of <see cref="IMatchesRepository"/> that uses
-    /// <see cref="ApplicationDbContext"/> to query match-related data.
-    /// Encapsulating EF Core queries within this class isolates data
-    /// access logic, making it easier to test and refactor without
-    /// affecting higher layers of the application.
-    /// </summary>
     public class MatchesRepository : IMatchesRepository
     {
         private readonly ApplicationDbContext _context;
@@ -69,8 +62,6 @@ namespace ClashZone.DataAccess.Repository
 
             await _context.SaveChangesAsync();
 
-            // Przepisujemy wygenerowane przez bazę Id z powrotem do domeny, aby
-            // wywołujący (np. zapisujący statystyki graczy z FK MatchId) miał poprawny klucz.
             matchEntity.Id = matchModel.Id;
         }
 

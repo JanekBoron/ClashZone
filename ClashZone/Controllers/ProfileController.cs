@@ -174,11 +174,6 @@ namespace ClashZone.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        /// <summary>
-        /// Powiązuje konto Riot użytkownika na podstawie Riot ID ("Nazwa#TAG").
-        /// Rozwiązuje PUUID przez Account-V1 i zapisuje go przy użytkowniku, dzięki
-        /// czemu jego mecze League of Legends mogą być pobierane z prawdziwego API.
-        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LinkRiot(string riotId)
@@ -192,7 +187,6 @@ namespace ClashZone.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Oczekiwany format: "Nazwa#TAG" (np. "Faker#KR1").
             var parts = (riotId ?? string.Empty).Split('#', 2, StringSplitOptions.TrimEntries);
             if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
             {

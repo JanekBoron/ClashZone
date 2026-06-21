@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ClashZone.App.ViewModels
 {
-    /// <summary>Formularz tworzenia/edycji sezonu ligi (admin/organizator).</summary>
     public class SeasonFormViewModel
     {
         public int Id { get; set; }

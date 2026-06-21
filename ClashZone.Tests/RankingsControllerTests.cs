@@ -12,10 +12,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="RankingsController"/> — sortowanie per gra, zakładki,
-    /// paginacja oraz ulubiona postać dla League of Legends.
-    /// </summary>
     public class RankingsControllerTests
     {
         private static UserStatDomain Stat(string id, int kills, int deaths, int assists = 0)
@@ -34,9 +30,9 @@ namespace ClashZone.Tests
             var repo = new Mock<IPlayerStatsRepository>();
             repo.Setup(r => r.GetAllUserStatsAsync(GameCatalog.Cs2)).ReturnsAsync(new List<UserStatDomain>
             {
-                Stat("u3", 8, 4),   // KD 2.0
-                Stat("u1", 10, 2),  // KD 5.0
-                Stat("u2", 3, 1)    // KD 3.0
+                Stat("u3", 8, 4),
+                Stat("u1", 10, 2),
+                Stat("u2", 3, 1)
             });
 
             var result = await new RankingsController(repo.Object).Index();
@@ -99,7 +95,6 @@ namespace ClashZone.Tests
         [Fact]
         public async Task Index_Search_RecomputesPagination_OverFilteredResults()
         {
-            // 15 graczy "playerNN", ale tylko 3 zawierają "1x" (player1, player10..14).
             var stats = Enumerable.Range(0, 15)
                 .Select(i => Stat($"player{i}", i + 1, 1))
                 .ToList();
@@ -109,7 +104,6 @@ namespace ClashZone.Tests
             var result = await new RankingsController(repo.Object).Index(search: "player1");
 
             var model = Assert.IsType<RankingViewModel>(Assert.IsType<ViewResult>(result).Model);
-            // player1, player10, player11, player12, player13, player14 = 6 trafień -> 1 strona.
             Assert.Equal(6, model.Rows.Count);
             Assert.Equal(1, model.TotalPages);
         }

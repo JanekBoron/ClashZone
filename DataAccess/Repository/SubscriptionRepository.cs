@@ -7,11 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClashZone.DataAccess.Repository
 {
-    /// <summary>
-    /// Implementacja repozytorium subskrypcji wykorzystująca Entity Framework.
-    /// Udostępnia metody do pobierania planów, sprawdzania aktywnej subskrypcji
-    /// oraz tworzenia nowej subskrypcji dla użytkownika.
-    /// </summary>
     public class SubscriptionRepository : ISubscriptionRepository
     {
         private readonly ApplicationDbContext _db;

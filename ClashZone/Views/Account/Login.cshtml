@@ -1,15 +1,14 @@
-﻿@model ClashZone.App.ViewModels.LoginViewModel
+@model ClashZone.App.ViewModels.LoginViewModel
 
 @{
     ViewData["Title"] = "Logowanie";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<header>
-    <h1>Logowanie</h1>
-</header>
-<hr />
-<div class="form-container">
-    <div class="col-md-4">
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Logowanie</h1>
+
         @if (TempData["SuccessMessage"] != null)
         {
             <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -18,6 +17,7 @@
         {
             <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
         }
+
         <form asp-action="Login" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -41,15 +41,13 @@
             <div class="form-group">
                 <button type="submit" class="btn-cc">Zaloguj</button>
             </div>
-            <div class="form-group">
-                <a asp-action="ForgotPassword">Zapomniałeś hasła?</a>
-            </div>
         </form>
-    </div>
-</div>
 
-<div class="registration-prompt">
-    Nie masz konta? <a asp-action="Register">Przejdź do rejestracji</a>
+        <div class="auth-links">
+            <a asp-action="ForgotPassword">Zapomniałeś hasła?</a>
+            <span>Nie masz konta? <a asp-action="Register">Przejdź do rejestracji</a></span>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

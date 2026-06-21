@@ -5,13 +5,6 @@ using Microsoft.Extensions.Configuration;
 
 namespace ClashZone.App.Services
 {
-    /// <summary>
-    /// Default implementation of <see cref="IEmailService"/> that uses SMTP to send
-    /// HTML formatted messages.  SMTP credentials and server details are read
-    /// from configuration (appsettings.json or environment variables) under the
-    /// "Smtp" section.  This service exposes helpers for common notification
-    /// scenarios used throughout the application.
-    /// </summary>
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _config;
@@ -21,14 +14,12 @@ namespace ClashZone.App.Services
             _config = config;
         }
 
-        /// <inheritdoc />
         public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
             if (string.IsNullOrWhiteSpace(toEmail))
             {
                 throw new ArgumentException("Recipient email must be provided", nameof(toEmail));
             }
-            // Read SMTP configuration.  Fallback values are provided for local development.
             var host = _config["Smtp:Host"] ?? "localhost";
             var portString = _config["Smtp:Port"] ?? "25";
             var username = _config["Smtp:Username"];
@@ -58,7 +49,6 @@ namespace ClashZone.App.Services
             await client.SendMailAsync(mail);
         }
 
-        /// <inheritdoc />
         public Task SendTournamentRegistrationConfirmationAsync(string toEmail, string tournamentName)
         {
             var subject = $"Potwierdzenie rejestracji do turnieju {tournamentName}";
@@ -66,7 +56,6 @@ namespace ClashZone.App.Services
             return SendEmailAsync(toEmail, subject, body);
         }
 
-        /// <inheritdoc />
         public Task SendMatchReminderAsync(string toEmail, string tournamentName, string opponentName, DateTime? scheduledAt)
         {
             var dateInfo = scheduledAt.HasValue ? $" Mecz odbędzie się {scheduledAt.Value:dd.MM.yyyy HH:mm}." : string.Empty;
@@ -75,11 +64,10 @@ namespace ClashZone.App.Services
             return SendEmailAsync(toEmail, subject, body);
         }
 
-        /// <inheritdoc />
-        public Task SendPromotionNotificationAsync(string toEmail, string tournamentName, int round)
+        public Task SendTournamentReminderAsync(string toEmail, string tournamentName, DateTime startDate)
         {
-            var subject = $"Awans do kolejnej rundy w turnieju {tournamentName}";
-            var body = $"<p>Gratulacje! Awansowałeś do rundy {round} w turnieju <strong>{WebUtility.HtmlEncode(tournamentName)}</strong>.</p>";
+            var subject = $"Przypomnienie: turniej {tournamentName} już wkrótce!";
+            var body = $"<p>Przypominamy, że turniej <strong>{WebUtility.HtmlEncode(tournamentName)}</strong> rozpocznie się {startDate:dd.MM.yyyy HH:mm} (UTC). Przygotuj się do rozgrywek i powodzenia!</p>";
             return SendEmailAsync(toEmail, subject, body);
         }
     }

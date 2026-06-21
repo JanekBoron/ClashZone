@@ -10,10 +10,6 @@ using Xunit;
 
 namespace ClashZone.Tests
 {
-    /// <summary>
-    /// Testy <see cref="OrdersController"/> (panel admina) — lista zamówień z
-    /// loginami oraz zmiana statusu (walidacja i delegacja do repozytorium).
-    /// </summary>
     public class OrdersControllerTests
     {
         private static OrdersController CreateController(Mock<IProductRedeemRepository> orders, Mock<IUserRepository>? users = null)
@@ -37,7 +33,6 @@ namespace ClashZone.Tests
             Assert.Collection(model,
                 i => { Assert.Equal("alice", i.UserName); Assert.Equal("Cap", i.ProductName); },
                 i => { Assert.Equal("alice", i.UserName); Assert.Equal("Hat", i.ProductName); });
-            // Login resolved once and cached for repeated user id.
             users.Verify(u => u.FindByIdAsync("u1"), Times.Once);
         }
 

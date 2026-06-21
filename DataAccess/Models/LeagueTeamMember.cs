@@ -4,11 +4,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClashZone.DataAccess.Models
 {
-    /// <summary>
-    /// Łączy użytkownika (Identity ID) z trwałą drużyną ligową
-    /// <see cref="LeagueTeam"/>. <see cref="JoinedAt"/> umożliwia egzekwowanie
-    /// okresów karencji (cooldown) przy dołączaniu do rosteru.
-    /// </summary>
     public class LeagueTeamMember
     {
         [Key]

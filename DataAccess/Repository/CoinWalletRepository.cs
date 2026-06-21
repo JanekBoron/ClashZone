@@ -24,8 +24,6 @@ namespace ClashZone.DataAccess.Repository
             return _mapper.Map<CoinWalletDomain>(wallet);
         }
 
-        // Zwraca śledzoną przez EF encję portfela, dzięki czemu zmiany salda
-        // zostaną zapisane przy najbliższym SaveChangesAsync.
         private async Task<CoinWallet> GetOrCreateEntityAsync(string userId)
         {
             var wallet = await _db.CoinWallets.Include(x => x.Transactions)

@@ -12,7 +12,7 @@
     <div class="col-md-3">
         <label asp-for="Game" class="form-label">Gra</label>
         <select asp-for="Game" class="form-select" style="background-color:#222; color:#fff; border-color:#444;">
-            <option value="">— wybierz —</option>
+            <option value="">- wybierz -</option>
             @foreach (var g in games)
             {
                 <option value="@g">@g</option>

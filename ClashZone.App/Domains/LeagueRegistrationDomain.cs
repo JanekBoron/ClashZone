@@ -10,8 +10,6 @@ namespace ClashZone.App.Domains
         public DateTime RegisteredAt { get; set; }
         public bool FeePaid { get; set; }
         public bool IsRemoved { get; set; }
-
-        /// <summary>Powiązana drużyna (jeśli załadowana przez repozytorium).</summary>
         public LeagueTeamDomain? LeagueTeam { get; set; }
     }
 }

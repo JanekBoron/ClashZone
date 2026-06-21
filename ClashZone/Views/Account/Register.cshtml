@@ -1,15 +1,14 @@
-﻿@model ClashZone.App.ViewModels.RegisterViewModel
+@model ClashZone.App.ViewModels.RegisterViewModel
 
 @{
     ViewData["Title"] = "Rejestracja";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<header>
-    <h1>Rejestracja</h1>
-</header>
-<hr />
-<div class="form-container">
-    <div class="col-md-4">
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Rejestracja</h1>
+
         @if (TempData["SuccessMessage"] != null)
         {
             <div class="alert alert-success">@TempData["SuccessMessage"]</div>
@@ -18,7 +17,8 @@
         {
             <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
         }
-        <form asp-action="Register" method="post">
+
+        <form asp-action="Register" method="post" id="registerForm">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group">
@@ -46,19 +46,32 @@
             </div>
 
             <div class="form-group">
-                <!-- Use custom colour scheme button consistent with site design -->
-                <button type="submit" class="btn-cc">Zarejestruj</button>
+                <button type="submit" class="btn-cc" id="registerSubmit">Zarejestruj</button>
             </div>
         </form>
-    </div>
-</div>
 
-<div class="registration-prompt">
-    Masz już konto? <a asp-action="Login">Przejdź do logowania</a>
+        <div class="auth-links">
+            <span>Masz już konto? <a asp-action="Login">Przejdź do logowania</a></span>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        (function () {
+            var form = document.getElementById('registerForm');
+            var btn = document.getElementById('registerSubmit');
+            if (!form || !btn) return;
+            form.addEventListener('submit', function () {
+                if (window.jQuery && jQuery(form).valid && !jQuery(form).valid()) {
+                    return;
+                }
+                btn.disabled = true;
+                btn.textContent = 'Rejestrowanie...';
+            });
+        })();
+    </script>
 }

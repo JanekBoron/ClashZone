@@ -6,10 +6,6 @@ using System.Security.Claims;
 
 namespace ClashZone.Controllers
 {
-    /// <summary>
-    /// Team Management — trwałe drużyny ligowe zarządzane przez użytkowników.
-    /// Obejmuje tworzenie drużyn, podgląd rosteru oraz dołączanie linkiem/kodem.
-    /// </summary>
     [Authorize]
     public class TeamController : Controller
     {

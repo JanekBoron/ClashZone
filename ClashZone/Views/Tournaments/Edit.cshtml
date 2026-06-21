@@ -7,7 +7,6 @@
     var defaultRulesJson = System.Text.Json.JsonSerializer.Serialize(
         GameCatalog.AllGames.ToDictionary(g => g, g => string.Join("\n", GameCatalog.DefaultRules(g))));
 
-    // Nagrody są wyłącznie w ClashCoins — wyciągamy liczbę z zapisu "1000 ClashCoins".
     string[] prizes =
     {
         Model.FirstPlacePrize ?? string.Empty,
@@ -71,7 +70,6 @@
             <span asp-validation-for="Rules" class="text-danger"></span>
         </div>
 
-        <!-- Nagrody — wyłącznie w ClashCoins (puste/0 = brak nagrody). -->
         <div class="mb-2"><strong style="color:#FF2B3E;">Nagrody (ClashCoins)</strong></div>
 
         <div class="mb-3 p-3" style="background-color:#0A0A0A; border:1px solid #333; border-radius:8px;">

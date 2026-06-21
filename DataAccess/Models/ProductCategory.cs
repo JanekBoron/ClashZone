@@ -14,7 +14,6 @@ namespace ClashZone.DataAccess.Models
         public int Id { get; set; }
 
         [Required, MaxLength(80)]
-      //  [Index(IsUnique = true)] // wymaga pakietu EFCore.IndexAttribute
         public string Name { get; set; } = default!;
 
         [MaxLength(160)]

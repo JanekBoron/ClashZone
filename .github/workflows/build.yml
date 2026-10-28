@@ -1,0 +1,28 @@
+name: build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore ClashZone/ClashZone.sln
+
+      - name: Build
+        run: dotnet build ClashZone/ClashZone.sln --configuration Release --no-restore
+
+      # Playwright E2E tests need a running app and SQL Server, so CI runs only the unit tests
+      - name: Test
+        run: dotnet test ClashZone.Tests/ClashZone.Tests.csproj --configuration Release --no-build --verbosity normal

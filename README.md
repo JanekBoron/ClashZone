@@ -6,6 +6,7 @@ Clash Zone automates the whole lifecycle of an e-sports competition: player and 
 
 The project was developed as my engineering thesis at the Polish-Japanese Academy of Information Technology (PJATK), *Business Applications* specialization, 2026.
 
+[![build](https://github.com/JanekBoron/ClashZone/actions/workflows/build.yml/badge.svg)](https://github.com/JanekBoron/ClashZone/actions/workflows/build.yml)
 ![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-MVC-512BD4)
 ![EF Core](https://img.shields.io/badge/EF%20Core-9-512BD4)
